@@ -30,7 +30,7 @@ function Faulty() {
     if (!store) return;
     const [{ data: r }, { data: p }] = await Promise.all([
       supabase.from("faulty_stocks").select("*").eq("store_id", store.id).order("reported_date", { ascending: false }),
-      supabase.from("products").select("id, name").eq("store_id", store.id),
+      supabase.from("products").select("id, name, stock_qty").eq("store_id", store.id),
     ]);
     setRows(r || []); setProducts(p || []);
   };
@@ -38,11 +38,20 @@ function Faulty() {
 
   const save = async () => {
     if (!store) return;
-    const p = products.find(pp => pp.id === form.product_id);
+    const p: any = products.find(pp => pp.id === form.product_id);
     if (!p) return toast.error("Select product");
+    if (form.quantity <= 0) return toast.error("Quantity must be > 0");
+    if ((p.stock_qty || 0) < form.quantity) return toast.error(`Only ${p.stock_qty || 0} in stock`);
     const { error } = await supabase.from("faulty_stocks").insert({ store_id: store.id, product_id: p.id, product_name: p.name, quantity: form.quantity, reason: form.reason, reported_date: form.reported_date });
     if (error) return toast.error(error.message);
-    toast.success("Faulty item logged");
+    const newBal = (p.stock_qty || 0) - form.quantity;
+    await supabase.from("products").update({ stock_qty: newBal }).eq("id", p.id);
+    await supabase.from("stock_movements").insert({
+      store_id: store.id, product_id: p.id, product_name: p.name,
+      type: "adjustment", qty_change: -form.quantity, balance: newBal,
+      reference: `Faulty: ${form.reason || "no reason"}`.slice(0, 120),
+    });
+    toast.success("Faulty item logged & stock adjusted");
     setOpen(false); setForm({ product_id: "", quantity: 1, reason: "", reported_date: new Date().toISOString().slice(0, 10) }); load();
   };
 
