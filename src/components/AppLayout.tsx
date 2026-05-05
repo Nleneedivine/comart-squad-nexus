@@ -5,7 +5,7 @@ import { formatNaira } from "@/lib/format";
 import {
   LayoutDashboard, Clock, Store, ShoppingCart, Building2, Headphones,
   Megaphone, Wallet, Boxes, Users, Banknote, UserCog, MessageSquare,
-  BarChart3, Zap, Plug, Webhook, Settings, Bell, Search, ChevronDown,
+  BarChart3, Zap, Plug, Webhook, Settings, Search, ChevronDown,
   ChevronRight, Maximize2, LogOut, Sun, Moon, Calculator, BookOpen, LifeBuoy,
   User as UserIcon, Menu, X,
 } from "lucide-react";
