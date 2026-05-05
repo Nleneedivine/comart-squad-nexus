@@ -22,7 +22,7 @@ function Dashboard() {
   const [orders, setOrders] = useState<any[]>([]);
   const [stockUnits, setStockUnits] = useState(0);
 
-  useEffect(() => {
+  const load = () => {
     if (!store) return;
     const now = new Date();
     const start = new Date(now);
@@ -36,6 +36,17 @@ function Dashboard() {
       .then(({ data }) => setOrders(data || []));
     supabase.from("products").select("stock_qty").eq("store_id", store.id)
       .then(({ data }) => setStockUnits((data || []).reduce((s, p: any) => s + (p.stock_qty || 0), 0)));
+  };
+  useEffect(() => { load(); }, [store, range]);
+
+  // Realtime: refresh KPIs/charts when orders or products change
+  useEffect(() => {
+    if (!store) return;
+    const ch = supabase.channel("dash-" + store.id)
+      .on("postgres_changes", { event: "*", schema: "public", table: "orders", filter: `store_id=eq.${store.id}` }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "products", filter: `store_id=eq.${store.id}` }, () => load())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
   }, [store, range]);
 
   const stats = useMemo(() => {
