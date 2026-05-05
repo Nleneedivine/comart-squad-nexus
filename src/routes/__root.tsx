@@ -2,6 +2,7 @@ import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/r
 import appCss from "../styles.css?url";
 import { AuthProvider } from "@/hooks/useAuth";
 import { Toaster } from "@/components/ui/sonner";
+import RouteErrorBoundary from "@/components/RouteErrorBoundary";
 
 function NotFoundComponent() {
   return (
@@ -36,6 +37,7 @@ export const Route = createRootRoute({
     </AuthProvider>
   ),
   notFoundComponent: NotFoundComponent,
+  errorComponent: RouteErrorBoundary,
 });
 
 function RootShell({ children }: { children: React.ReactNode }) {

@@ -5,7 +5,7 @@ import { formatNaira } from "@/lib/format";
 import {
   LayoutDashboard, Clock, Store, ShoppingCart, Building2, Headphones,
   Megaphone, Wallet, Boxes, Users, Banknote, UserCog, MessageSquare,
-  BarChart3, Zap, Plug, Webhook, Settings, Bell, Search, ChevronDown,
+  BarChart3, Zap, Plug, Webhook, Settings, Search, ChevronDown,
   ChevronRight, Maximize2, LogOut, Sun, Moon, Calculator, BookOpen, LifeBuoy,
   User as UserIcon, Menu, X,
 } from "lucide-react";
@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { canAccess } from "@/lib/rbac";
+import NotificationBell from "@/components/NotificationBell";
 
 type Item = { label: string; to?: string; icon: any; children?: { label: string; to: string }[] };
 
@@ -176,10 +177,7 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
             {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </button>
           <button className="p-2 hover:bg-muted rounded-md hidden sm:block"><Maximize2 className="h-4 w-4" /></button>
-          <button className="p-2 hover:bg-muted rounded-md relative">
-            <Bell className="h-4 w-4" />
-            <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 bg-primary rounded-full" />
-          </button>
+          <NotificationBell />
           <DropdownMenu>
             <DropdownMenuTrigger className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-muted">
               <div className="h-7 w-7 rounded-full bg-primary/15 flex items-center justify-center"><UserIcon className="h-4 w-4 text-primary" /></div>
