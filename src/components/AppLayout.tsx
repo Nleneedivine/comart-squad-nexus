@@ -1,5 +1,7 @@
 import { Link, useLocation, useNavigate, Outlet } from "@tanstack/react-router";
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { toast } from "sonner";
+import { formatNaira } from "@/lib/format";
 import {
   LayoutDashboard, Clock, Store, ShoppingCart, Building2, Headphones,
   Megaphone, Wallet, Boxes, Users, Banknote, UserCog, MessageSquare,
