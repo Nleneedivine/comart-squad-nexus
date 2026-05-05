@@ -527,6 +527,42 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          kind: string
+          link: string | null
+          read_at: string | null
+          store_id: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          link?: string | null
+          read_at?: string | null
+          store_id: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          link?: string | null
+          read_at?: string | null
+          store_id?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           created_at: string
@@ -776,6 +812,8 @@ export type Database = {
           email: string | null
           full_name: string | null
           id: string
+          onboarding_completed: boolean
+          onboarding_step: number
           phone: string | null
           theme_preference: string
           updated_at: string
@@ -788,6 +826,8 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id: string
+          onboarding_completed?: boolean
+          onboarding_step?: number
           phone?: string | null
           theme_preference?: string
           updated_at?: string
@@ -800,6 +840,8 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          onboarding_completed?: boolean
+          onboarding_step?: number
           phone?: string | null
           theme_preference?: string
           updated_at?: string
