@@ -57,7 +57,7 @@ function PricingPage() {
                     </li>
                   ))}
                 </ul>
-                <Link to="/auth" search={{ plan: p.id }} className={`mt-7 text-center py-2.5 rounded-md font-semibold ${p.featured ? "bg-primary text-primary-foreground hover:opacity-90" : "border border-border hover:bg-muted"}`}>Start Free Trial</Link>
+                <a href={`/auth?plan=${p.id}`} className={`mt-7 text-center py-2.5 rounded-md font-semibold ${p.featured ? "bg-primary text-primary-foreground hover:opacity-90" : "border border-border hover:bg-muted"}`}>Start Free Trial</a>
               </div>
             );
           })}

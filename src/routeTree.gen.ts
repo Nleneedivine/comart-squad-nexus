@@ -13,8 +13,10 @@ import { Route as WebhooksRouteImport } from './routes/webhooks'
 import { Route as WalletRouteImport } from './routes/wallet'
 import { Route as StaffRouteImport } from './routes/staff'
 import { Route as ProductivityRouteImport } from './routes/productivity'
+import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as OrdersRouteImport } from './routes/orders'
 import { Route as IntegrationsRouteImport } from './routes/integrations'
+import { Route as HealthRouteImport } from './routes/health'
 import { Route as FinanceRouteImport } from './routes/finance'
 import { Route as CustomerServiceRouteImport } from './routes/customer-service'
 import { Route as ChatRouteImport } from './routes/chat'
@@ -31,6 +33,7 @@ import { Route as StoreOrdersRouteImport } from './routes/store.orders'
 import { Route as ReportsExportRouteImport } from './routes/reports.export'
 import { Route as ReportsActivityRouteImport } from './routes/reports.activity'
 import { Route as OrdersIdRouteImport } from './routes/orders.$id'
+import { Route as OrderFormIdRouteImport } from './routes/order.$formId'
 import { Route as MarketingSalesFormsRouteImport } from './routes/marketing.sales-forms'
 import { Route as InventoryWaybillRouteImport } from './routes/inventory.waybill'
 import { Route as InventoryStockRecordRouteImport } from './routes/inventory.stock-record'
@@ -62,6 +65,11 @@ const ProductivityRoute = ProductivityRouteImport.update({
   path: '/productivity',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PricingRoute = PricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OrdersRoute = OrdersRouteImport.update({
   id: '/orders',
   path: '/orders',
@@ -70,6 +78,11 @@ const OrdersRoute = OrdersRouteImport.update({
 const IntegrationsRoute = IntegrationsRouteImport.update({
   id: '/integrations',
   path: '/integrations',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HealthRoute = HealthRouteImport.update({
+  id: '/health',
+  path: '/health',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FinanceRoute = FinanceRouteImport.update({
@@ -152,6 +165,11 @@ const OrdersIdRoute = OrdersIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => OrdersRoute,
 } as any)
+const OrderFormIdRoute = OrderFormIdRouteImport.update({
+  id: '/order/$formId',
+  path: '/order/$formId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MarketingSalesFormsRoute = MarketingSalesFormsRouteImport.update({
   id: '/marketing/sales-forms',
   path: '/marketing/sales-forms',
@@ -216,8 +234,10 @@ export interface FileRoutesByFullPath {
   '/chat': typeof ChatRoute
   '/customer-service': typeof CustomerServiceRoute
   '/finance': typeof FinanceRoute
+  '/health': typeof HealthRoute
   '/integrations': typeof IntegrationsRoute
   '/orders': typeof OrdersRouteWithChildren
+  '/pricing': typeof PricingRoute
   '/productivity': typeof ProductivityRoute
   '/staff': typeof StaffRoute
   '/wallet': typeof WalletRoute
@@ -231,6 +251,7 @@ export interface FileRoutesByFullPath {
   '/inventory/stock-record': typeof InventoryStockRecordRoute
   '/inventory/waybill': typeof InventoryWaybillRoute
   '/marketing/sales-forms': typeof MarketingSalesFormsRoute
+  '/order/$formId': typeof OrderFormIdRoute
   '/orders/$id': typeof OrdersIdRoute
   '/reports/activity': typeof ReportsActivityRoute
   '/reports/export': typeof ReportsExportRoute
@@ -250,8 +271,10 @@ export interface FileRoutesByTo {
   '/chat': typeof ChatRoute
   '/customer-service': typeof CustomerServiceRoute
   '/finance': typeof FinanceRoute
+  '/health': typeof HealthRoute
   '/integrations': typeof IntegrationsRoute
   '/orders': typeof OrdersRouteWithChildren
+  '/pricing': typeof PricingRoute
   '/productivity': typeof ProductivityRoute
   '/staff': typeof StaffRoute
   '/wallet': typeof WalletRoute
@@ -265,6 +288,7 @@ export interface FileRoutesByTo {
   '/inventory/stock-record': typeof InventoryStockRecordRoute
   '/inventory/waybill': typeof InventoryWaybillRoute
   '/marketing/sales-forms': typeof MarketingSalesFormsRoute
+  '/order/$formId': typeof OrderFormIdRoute
   '/orders/$id': typeof OrdersIdRoute
   '/reports/activity': typeof ReportsActivityRoute
   '/reports/export': typeof ReportsExportRoute
@@ -285,8 +309,10 @@ export interface FileRoutesById {
   '/chat': typeof ChatRoute
   '/customer-service': typeof CustomerServiceRoute
   '/finance': typeof FinanceRoute
+  '/health': typeof HealthRoute
   '/integrations': typeof IntegrationsRoute
   '/orders': typeof OrdersRouteWithChildren
+  '/pricing': typeof PricingRoute
   '/productivity': typeof ProductivityRoute
   '/staff': typeof StaffRoute
   '/wallet': typeof WalletRoute
@@ -300,6 +326,7 @@ export interface FileRoutesById {
   '/inventory/stock-record': typeof InventoryStockRecordRoute
   '/inventory/waybill': typeof InventoryWaybillRoute
   '/marketing/sales-forms': typeof MarketingSalesFormsRoute
+  '/order/$formId': typeof OrderFormIdRoute
   '/orders/$id': typeof OrdersIdRoute
   '/reports/activity': typeof ReportsActivityRoute
   '/reports/export': typeof ReportsExportRoute
@@ -321,8 +348,10 @@ export interface FileRouteTypes {
     | '/chat'
     | '/customer-service'
     | '/finance'
+    | '/health'
     | '/integrations'
     | '/orders'
+    | '/pricing'
     | '/productivity'
     | '/staff'
     | '/wallet'
@@ -336,6 +365,7 @@ export interface FileRouteTypes {
     | '/inventory/stock-record'
     | '/inventory/waybill'
     | '/marketing/sales-forms'
+    | '/order/$formId'
     | '/orders/$id'
     | '/reports/activity'
     | '/reports/export'
@@ -355,8 +385,10 @@ export interface FileRouteTypes {
     | '/chat'
     | '/customer-service'
     | '/finance'
+    | '/health'
     | '/integrations'
     | '/orders'
+    | '/pricing'
     | '/productivity'
     | '/staff'
     | '/wallet'
@@ -370,6 +402,7 @@ export interface FileRouteTypes {
     | '/inventory/stock-record'
     | '/inventory/waybill'
     | '/marketing/sales-forms'
+    | '/order/$formId'
     | '/orders/$id'
     | '/reports/activity'
     | '/reports/export'
@@ -389,8 +422,10 @@ export interface FileRouteTypes {
     | '/chat'
     | '/customer-service'
     | '/finance'
+    | '/health'
     | '/integrations'
     | '/orders'
+    | '/pricing'
     | '/productivity'
     | '/staff'
     | '/wallet'
@@ -404,6 +439,7 @@ export interface FileRouteTypes {
     | '/inventory/stock-record'
     | '/inventory/waybill'
     | '/marketing/sales-forms'
+    | '/order/$formId'
     | '/orders/$id'
     | '/reports/activity'
     | '/reports/export'
@@ -424,8 +460,10 @@ export interface RootRouteChildren {
   ChatRoute: typeof ChatRoute
   CustomerServiceRoute: typeof CustomerServiceRoute
   FinanceRoute: typeof FinanceRoute
+  HealthRoute: typeof HealthRoute
   IntegrationsRoute: typeof IntegrationsRoute
   OrdersRoute: typeof OrdersRouteWithChildren
+  PricingRoute: typeof PricingRoute
   ProductivityRoute: typeof ProductivityRoute
   StaffRoute: typeof StaffRoute
   WalletRoute: typeof WalletRoute
@@ -439,6 +477,7 @@ export interface RootRouteChildren {
   InventoryStockRecordRoute: typeof InventoryStockRecordRoute
   InventoryWaybillRoute: typeof InventoryWaybillRoute
   MarketingSalesFormsRoute: typeof MarketingSalesFormsRoute
+  OrderFormIdRoute: typeof OrderFormIdRoute
   ReportsActivityRoute: typeof ReportsActivityRoute
   ReportsExportRoute: typeof ReportsExportRoute
   StoreOrdersRoute: typeof StoreOrdersRoute
@@ -476,6 +515,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProductivityRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/pricing': {
+      id: '/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/orders': {
       id: '/orders'
       path: '/orders'
@@ -488,6 +534,13 @@ declare module '@tanstack/react-router' {
       path: '/integrations'
       fullPath: '/integrations'
       preLoaderRoute: typeof IntegrationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/health': {
+      id: '/health'
+      path: '/health'
+      fullPath: '/health'
+      preLoaderRoute: typeof HealthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/finance': {
@@ -602,6 +655,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrdersIdRouteImport
       parentRoute: typeof OrdersRoute
     }
+    '/order/$formId': {
+      id: '/order/$formId'
+      path: '/order/$formId'
+      fullPath: '/order/$formId'
+      preLoaderRoute: typeof OrderFormIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/marketing/sales-forms': {
       id: '/marketing/sales-forms'
       path: '/marketing/sales-forms'
@@ -698,8 +758,10 @@ const rootRouteChildren: RootRouteChildren = {
   ChatRoute: ChatRoute,
   CustomerServiceRoute: CustomerServiceRoute,
   FinanceRoute: FinanceRoute,
+  HealthRoute: HealthRoute,
   IntegrationsRoute: IntegrationsRoute,
   OrdersRoute: OrdersRouteWithChildren,
+  PricingRoute: PricingRoute,
   ProductivityRoute: ProductivityRoute,
   StaffRoute: StaffRoute,
   WalletRoute: WalletRoute,
@@ -713,6 +775,7 @@ const rootRouteChildren: RootRouteChildren = {
   InventoryStockRecordRoute: InventoryStockRecordRoute,
   InventoryWaybillRoute: InventoryWaybillRoute,
   MarketingSalesFormsRoute: MarketingSalesFormsRoute,
+  OrderFormIdRoute: OrderFormIdRoute,
   ReportsActivityRoute: ReportsActivityRoute,
   ReportsExportRoute: ReportsExportRoute,
   StoreOrdersRoute: StoreOrdersRoute,
