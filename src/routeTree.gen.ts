@@ -9,17 +9,82 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WebhooksRouteImport } from './routes/webhooks'
+import { Route as WalletRouteImport } from './routes/wallet'
 import { Route as StaffRouteImport } from './routes/staff'
+import { Route as ProductivityRouteImport } from './routes/productivity'
+import { Route as OrdersRouteImport } from './routes/orders'
+import { Route as IntegrationsRouteImport } from './routes/integrations'
+import { Route as FinanceRouteImport } from './routes/finance'
+import { Route as CustomerServiceRouteImport } from './routes/customer-service'
+import { Route as ChatRouteImport } from './routes/chat'
+import { Route as BusinessesRouteImport } from './routes/businesses'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AttendanceRouteImport } from './routes/attendance'
+import { Route as AgentsRouteImport } from './routes/agents'
 import { Route as SettingsRouteImport } from './routes/Settings'
 import { Route as DashboardRouteImport } from './routes/Dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as StoreProductsRouteImport } from './routes/store.products'
+import { Route as StoreOrdersRouteImport } from './routes/store.orders'
+import { Route as ReportsExportRouteImport } from './routes/reports.export'
+import { Route as ReportsActivityRouteImport } from './routes/reports.activity'
+import { Route as MarketingSalesFormsRouteImport } from './routes/marketing.sales-forms'
+import { Route as InventoryWaybillRouteImport } from './routes/inventory.waybill'
+import { Route as InventoryStockRecordRouteImport } from './routes/inventory.stock-record'
+import { Route as InventoryProductsRouteImport } from './routes/inventory.products'
+import { Route as InventoryFaultyRouteImport } from './routes/inventory.faulty'
+import { Route as InventoryBuyStockRouteImport } from './routes/inventory.buy-stock'
+import { Route as InventoryAgentStockRouteImport } from './routes/inventory.agent-stock'
 
+const WebhooksRoute = WebhooksRouteImport.update({
+  id: '/webhooks',
+  path: '/webhooks',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WalletRoute = WalletRouteImport.update({
+  id: '/wallet',
+  path: '/wallet',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const StaffRoute = StaffRouteImport.update({
   id: '/staff',
   path: '/staff',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProductivityRoute = ProductivityRouteImport.update({
+  id: '/productivity',
+  path: '/productivity',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrdersRoute = OrdersRouteImport.update({
+  id: '/orders',
+  path: '/orders',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IntegrationsRoute = IntegrationsRouteImport.update({
+  id: '/integrations',
+  path: '/integrations',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FinanceRoute = FinanceRouteImport.update({
+  id: '/finance',
+  path: '/finance',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CustomerServiceRoute = CustomerServiceRouteImport.update({
+  id: '/customer-service',
+  path: '/customer-service',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ChatRoute = ChatRouteImport.update({
+  id: '/chat',
+  path: '/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BusinessesRoute = BusinessesRouteImport.update({
+  id: '/businesses',
+  path: '/businesses',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -30,6 +95,11 @@ const AuthRoute = AuthRouteImport.update({
 const AttendanceRoute = AttendanceRouteImport.update({
   id: '/attendance',
   path: '/attendance',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AgentsRoute = AgentsRouteImport.update({
+  id: '/agents',
+  path: '/agents',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsRoute = SettingsRouteImport.update({
@@ -52,23 +122,113 @@ const StoreProductsRoute = StoreProductsRouteImport.update({
   path: '/store/products',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StoreOrdersRoute = StoreOrdersRouteImport.update({
+  id: '/store/orders',
+  path: '/store/orders',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReportsExportRoute = ReportsExportRouteImport.update({
+  id: '/reports/export',
+  path: '/reports/export',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReportsActivityRoute = ReportsActivityRouteImport.update({
+  id: '/reports/activity',
+  path: '/reports/activity',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MarketingSalesFormsRoute = MarketingSalesFormsRouteImport.update({
+  id: '/marketing/sales-forms',
+  path: '/marketing/sales-forms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InventoryWaybillRoute = InventoryWaybillRouteImport.update({
+  id: '/inventory/waybill',
+  path: '/inventory/waybill',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InventoryStockRecordRoute = InventoryStockRecordRouteImport.update({
+  id: '/inventory/stock-record',
+  path: '/inventory/stock-record',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InventoryProductsRoute = InventoryProductsRouteImport.update({
+  id: '/inventory/products',
+  path: '/inventory/products',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InventoryFaultyRoute = InventoryFaultyRouteImport.update({
+  id: '/inventory/faulty',
+  path: '/inventory/faulty',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InventoryBuyStockRoute = InventoryBuyStockRouteImport.update({
+  id: '/inventory/buy-stock',
+  path: '/inventory/buy-stock',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InventoryAgentStockRoute = InventoryAgentStockRouteImport.update({
+  id: '/inventory/agent-stock',
+  path: '/inventory/agent-stock',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/Dashboard': typeof DashboardRoute
   '/Settings': typeof SettingsRoute
+  '/agents': typeof AgentsRoute
   '/attendance': typeof AttendanceRoute
   '/auth': typeof AuthRoute
+  '/businesses': typeof BusinessesRoute
+  '/chat': typeof ChatRoute
+  '/customer-service': typeof CustomerServiceRoute
+  '/finance': typeof FinanceRoute
+  '/integrations': typeof IntegrationsRoute
+  '/orders': typeof OrdersRoute
+  '/productivity': typeof ProductivityRoute
   '/staff': typeof StaffRoute
+  '/wallet': typeof WalletRoute
+  '/webhooks': typeof WebhooksRoute
+  '/inventory/agent-stock': typeof InventoryAgentStockRoute
+  '/inventory/buy-stock': typeof InventoryBuyStockRoute
+  '/inventory/faulty': typeof InventoryFaultyRoute
+  '/inventory/products': typeof InventoryProductsRoute
+  '/inventory/stock-record': typeof InventoryStockRecordRoute
+  '/inventory/waybill': typeof InventoryWaybillRoute
+  '/marketing/sales-forms': typeof MarketingSalesFormsRoute
+  '/reports/activity': typeof ReportsActivityRoute
+  '/reports/export': typeof ReportsExportRoute
+  '/store/orders': typeof StoreOrdersRoute
   '/store/products': typeof StoreProductsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/Dashboard': typeof DashboardRoute
   '/Settings': typeof SettingsRoute
+  '/agents': typeof AgentsRoute
   '/attendance': typeof AttendanceRoute
   '/auth': typeof AuthRoute
+  '/businesses': typeof BusinessesRoute
+  '/chat': typeof ChatRoute
+  '/customer-service': typeof CustomerServiceRoute
+  '/finance': typeof FinanceRoute
+  '/integrations': typeof IntegrationsRoute
+  '/orders': typeof OrdersRoute
+  '/productivity': typeof ProductivityRoute
   '/staff': typeof StaffRoute
+  '/wallet': typeof WalletRoute
+  '/webhooks': typeof WebhooksRoute
+  '/inventory/agent-stock': typeof InventoryAgentStockRoute
+  '/inventory/buy-stock': typeof InventoryBuyStockRoute
+  '/inventory/faulty': typeof InventoryFaultyRoute
+  '/inventory/products': typeof InventoryProductsRoute
+  '/inventory/stock-record': typeof InventoryStockRecordRoute
+  '/inventory/waybill': typeof InventoryWaybillRoute
+  '/marketing/sales-forms': typeof MarketingSalesFormsRoute
+  '/reports/activity': typeof ReportsActivityRoute
+  '/reports/export': typeof ReportsExportRoute
+  '/store/orders': typeof StoreOrdersRoute
   '/store/products': typeof StoreProductsRoute
 }
 export interface FileRoutesById {
@@ -76,9 +236,29 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/Dashboard': typeof DashboardRoute
   '/Settings': typeof SettingsRoute
+  '/agents': typeof AgentsRoute
   '/attendance': typeof AttendanceRoute
   '/auth': typeof AuthRoute
+  '/businesses': typeof BusinessesRoute
+  '/chat': typeof ChatRoute
+  '/customer-service': typeof CustomerServiceRoute
+  '/finance': typeof FinanceRoute
+  '/integrations': typeof IntegrationsRoute
+  '/orders': typeof OrdersRoute
+  '/productivity': typeof ProductivityRoute
   '/staff': typeof StaffRoute
+  '/wallet': typeof WalletRoute
+  '/webhooks': typeof WebhooksRoute
+  '/inventory/agent-stock': typeof InventoryAgentStockRoute
+  '/inventory/buy-stock': typeof InventoryBuyStockRoute
+  '/inventory/faulty': typeof InventoryFaultyRoute
+  '/inventory/products': typeof InventoryProductsRoute
+  '/inventory/stock-record': typeof InventoryStockRecordRoute
+  '/inventory/waybill': typeof InventoryWaybillRoute
+  '/marketing/sales-forms': typeof MarketingSalesFormsRoute
+  '/reports/activity': typeof ReportsActivityRoute
+  '/reports/export': typeof ReportsExportRoute
+  '/store/orders': typeof StoreOrdersRoute
   '/store/products': typeof StoreProductsRoute
 }
 export interface FileRouteTypes {
@@ -87,27 +267,87 @@ export interface FileRouteTypes {
     | '/'
     | '/Dashboard'
     | '/Settings'
+    | '/agents'
     | '/attendance'
     | '/auth'
+    | '/businesses'
+    | '/chat'
+    | '/customer-service'
+    | '/finance'
+    | '/integrations'
+    | '/orders'
+    | '/productivity'
     | '/staff'
+    | '/wallet'
+    | '/webhooks'
+    | '/inventory/agent-stock'
+    | '/inventory/buy-stock'
+    | '/inventory/faulty'
+    | '/inventory/products'
+    | '/inventory/stock-record'
+    | '/inventory/waybill'
+    | '/marketing/sales-forms'
+    | '/reports/activity'
+    | '/reports/export'
+    | '/store/orders'
     | '/store/products'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/Dashboard'
     | '/Settings'
+    | '/agents'
     | '/attendance'
     | '/auth'
+    | '/businesses'
+    | '/chat'
+    | '/customer-service'
+    | '/finance'
+    | '/integrations'
+    | '/orders'
+    | '/productivity'
     | '/staff'
+    | '/wallet'
+    | '/webhooks'
+    | '/inventory/agent-stock'
+    | '/inventory/buy-stock'
+    | '/inventory/faulty'
+    | '/inventory/products'
+    | '/inventory/stock-record'
+    | '/inventory/waybill'
+    | '/marketing/sales-forms'
+    | '/reports/activity'
+    | '/reports/export'
+    | '/store/orders'
     | '/store/products'
   id:
     | '__root__'
     | '/'
     | '/Dashboard'
     | '/Settings'
+    | '/agents'
     | '/attendance'
     | '/auth'
+    | '/businesses'
+    | '/chat'
+    | '/customer-service'
+    | '/finance'
+    | '/integrations'
+    | '/orders'
+    | '/productivity'
     | '/staff'
+    | '/wallet'
+    | '/webhooks'
+    | '/inventory/agent-stock'
+    | '/inventory/buy-stock'
+    | '/inventory/faulty'
+    | '/inventory/products'
+    | '/inventory/stock-record'
+    | '/inventory/waybill'
+    | '/marketing/sales-forms'
+    | '/reports/activity'
+    | '/reports/export'
+    | '/store/orders'
     | '/store/products'
   fileRoutesById: FileRoutesById
 }
@@ -115,19 +355,102 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRoute: typeof DashboardRoute
   SettingsRoute: typeof SettingsRoute
+  AgentsRoute: typeof AgentsRoute
   AttendanceRoute: typeof AttendanceRoute
   AuthRoute: typeof AuthRoute
+  BusinessesRoute: typeof BusinessesRoute
+  ChatRoute: typeof ChatRoute
+  CustomerServiceRoute: typeof CustomerServiceRoute
+  FinanceRoute: typeof FinanceRoute
+  IntegrationsRoute: typeof IntegrationsRoute
+  OrdersRoute: typeof OrdersRoute
+  ProductivityRoute: typeof ProductivityRoute
   StaffRoute: typeof StaffRoute
+  WalletRoute: typeof WalletRoute
+  WebhooksRoute: typeof WebhooksRoute
+  InventoryAgentStockRoute: typeof InventoryAgentStockRoute
+  InventoryBuyStockRoute: typeof InventoryBuyStockRoute
+  InventoryFaultyRoute: typeof InventoryFaultyRoute
+  InventoryProductsRoute: typeof InventoryProductsRoute
+  InventoryStockRecordRoute: typeof InventoryStockRecordRoute
+  InventoryWaybillRoute: typeof InventoryWaybillRoute
+  MarketingSalesFormsRoute: typeof MarketingSalesFormsRoute
+  ReportsActivityRoute: typeof ReportsActivityRoute
+  ReportsExportRoute: typeof ReportsExportRoute
+  StoreOrdersRoute: typeof StoreOrdersRoute
   StoreProductsRoute: typeof StoreProductsRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/webhooks': {
+      id: '/webhooks'
+      path: '/webhooks'
+      fullPath: '/webhooks'
+      preLoaderRoute: typeof WebhooksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/wallet': {
+      id: '/wallet'
+      path: '/wallet'
+      fullPath: '/wallet'
+      preLoaderRoute: typeof WalletRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/staff': {
       id: '/staff'
       path: '/staff'
       fullPath: '/staff'
       preLoaderRoute: typeof StaffRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/productivity': {
+      id: '/productivity'
+      path: '/productivity'
+      fullPath: '/productivity'
+      preLoaderRoute: typeof ProductivityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/orders': {
+      id: '/orders'
+      path: '/orders'
+      fullPath: '/orders'
+      preLoaderRoute: typeof OrdersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/integrations': {
+      id: '/integrations'
+      path: '/integrations'
+      fullPath: '/integrations'
+      preLoaderRoute: typeof IntegrationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/finance': {
+      id: '/finance'
+      path: '/finance'
+      fullPath: '/finance'
+      preLoaderRoute: typeof FinanceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/customer-service': {
+      id: '/customer-service'
+      path: '/customer-service'
+      fullPath: '/customer-service'
+      preLoaderRoute: typeof CustomerServiceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/chat': {
+      id: '/chat'
+      path: '/chat'
+      fullPath: '/chat'
+      preLoaderRoute: typeof ChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/businesses': {
+      id: '/businesses'
+      path: '/businesses'
+      fullPath: '/businesses'
+      preLoaderRoute: typeof BusinessesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -142,6 +465,13 @@ declare module '@tanstack/react-router' {
       path: '/attendance'
       fullPath: '/attendance'
       preLoaderRoute: typeof AttendanceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/agents': {
+      id: '/agents'
+      path: '/agents'
+      fullPath: '/agents'
+      preLoaderRoute: typeof AgentsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/Settings': {
@@ -172,6 +502,76 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StoreProductsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/store/orders': {
+      id: '/store/orders'
+      path: '/store/orders'
+      fullPath: '/store/orders'
+      preLoaderRoute: typeof StoreOrdersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reports/export': {
+      id: '/reports/export'
+      path: '/reports/export'
+      fullPath: '/reports/export'
+      preLoaderRoute: typeof ReportsExportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reports/activity': {
+      id: '/reports/activity'
+      path: '/reports/activity'
+      fullPath: '/reports/activity'
+      preLoaderRoute: typeof ReportsActivityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/marketing/sales-forms': {
+      id: '/marketing/sales-forms'
+      path: '/marketing/sales-forms'
+      fullPath: '/marketing/sales-forms'
+      preLoaderRoute: typeof MarketingSalesFormsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/inventory/waybill': {
+      id: '/inventory/waybill'
+      path: '/inventory/waybill'
+      fullPath: '/inventory/waybill'
+      preLoaderRoute: typeof InventoryWaybillRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/inventory/stock-record': {
+      id: '/inventory/stock-record'
+      path: '/inventory/stock-record'
+      fullPath: '/inventory/stock-record'
+      preLoaderRoute: typeof InventoryStockRecordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/inventory/products': {
+      id: '/inventory/products'
+      path: '/inventory/products'
+      fullPath: '/inventory/products'
+      preLoaderRoute: typeof InventoryProductsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/inventory/faulty': {
+      id: '/inventory/faulty'
+      path: '/inventory/faulty'
+      fullPath: '/inventory/faulty'
+      preLoaderRoute: typeof InventoryFaultyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/inventory/buy-stock': {
+      id: '/inventory/buy-stock'
+      path: '/inventory/buy-stock'
+      fullPath: '/inventory/buy-stock'
+      preLoaderRoute: typeof InventoryBuyStockRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/inventory/agent-stock': {
+      id: '/inventory/agent-stock'
+      path: '/inventory/agent-stock'
+      fullPath: '/inventory/agent-stock'
+      preLoaderRoute: typeof InventoryAgentStockRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -179,9 +579,29 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRoute,
   SettingsRoute: SettingsRoute,
+  AgentsRoute: AgentsRoute,
   AttendanceRoute: AttendanceRoute,
   AuthRoute: AuthRoute,
+  BusinessesRoute: BusinessesRoute,
+  ChatRoute: ChatRoute,
+  CustomerServiceRoute: CustomerServiceRoute,
+  FinanceRoute: FinanceRoute,
+  IntegrationsRoute: IntegrationsRoute,
+  OrdersRoute: OrdersRoute,
+  ProductivityRoute: ProductivityRoute,
   StaffRoute: StaffRoute,
+  WalletRoute: WalletRoute,
+  WebhooksRoute: WebhooksRoute,
+  InventoryAgentStockRoute: InventoryAgentStockRoute,
+  InventoryBuyStockRoute: InventoryBuyStockRoute,
+  InventoryFaultyRoute: InventoryFaultyRoute,
+  InventoryProductsRoute: InventoryProductsRoute,
+  InventoryStockRecordRoute: InventoryStockRecordRoute,
+  InventoryWaybillRoute: InventoryWaybillRoute,
+  MarketingSalesFormsRoute: MarketingSalesFormsRoute,
+  ReportsActivityRoute: ReportsActivityRoute,
+  ReportsExportRoute: ReportsExportRoute,
+  StoreOrdersRoute: StoreOrdersRoute,
   StoreProductsRoute: StoreProductsRoute,
 }
 export const routeTree = rootRouteImport
