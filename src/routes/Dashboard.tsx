@@ -18,14 +18,25 @@ const RANGES = ["Today", "Week", "Month", "Year"] as const;
 
 function Dashboard() {
   const { store } = useAuth();
-  const [range, setRange] = useState<typeof RANGES[number]>("Today");
+  const [range, setRange] = useState<typeof RANGES[number]>("Month");
   const [orders, setOrders] = useState<any[]>([]);
+  const [stockUnits, setStockUnits] = useState(0);
 
   useEffect(() => {
     if (!store) return;
-    supabase.from("orders").select("*").eq("store_id", store.id).order("created_at", { ascending: false }).limit(100)
+    const now = new Date();
+    const start = new Date(now);
+    if (range === "Today") start.setHours(0, 0, 0, 0);
+    else if (range === "Week") start.setDate(now.getDate() - 6);
+    else if (range === "Month") start.setDate(now.getDate() - 29);
+    else if (range === "Year") start.setMonth(now.getMonth() - 11);
+    supabase.from("orders").select("*").eq("store_id", store.id)
+      .gte("created_at", start.toISOString())
+      .order("created_at", { ascending: false }).limit(1000)
       .then(({ data }) => setOrders(data || []));
-  }, [store]);
+    supabase.from("products").select("stock_qty").eq("store_id", store.id)
+      .then(({ data }) => setStockUnits((data || []).reduce((s, p: any) => s + (p.stock_qty || 0), 0)));
+  }, [store, range]);
 
   const stats = useMemo(() => {
     const expected = orders.reduce((s, o) => s + Number(o.amount), 0);
@@ -39,9 +50,19 @@ function Dashboard() {
   }, [orders]);
 
   const chartData = useMemo(() => {
-    const days = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-    return days.map(d => ({ day: d, Revenue: 0, Orders: 0 }));
-  }, []);
+    const buckets: Record<string, { Revenue: number; Orders: number }> = {};
+    const days = range === "Today" ? 1 : range === "Week" ? 7 : range === "Month" ? 30 : 365;
+    const now = new Date();
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date(now); d.setDate(now.getDate() - i);
+      buckets[d.toISOString().slice(0, 10)] = { Revenue: 0, Orders: 0 };
+    }
+    orders.forEach(o => {
+      const k = String(o.created_at).slice(0, 10);
+      if (buckets[k]) { buckets[k].Revenue += Number(o.amount); buckets[k].Orders += 1; }
+    });
+    return Object.entries(buckets).map(([day, v]) => ({ day: day.slice(5), ...v }));
+  }, [orders, range]);
 
   const kpis = [
     { label: "Expected Revenue", value: formatNaira(stats.expected) },
@@ -49,7 +70,7 @@ function Dashboard() {
     { label: "Total Orders", value: stats.totalOrders.toString() },
     { label: "Total Delivered Units", value: stats.totalDelivered.toString() },
     { label: "Average Order Value", value: formatNaira(stats.aov) },
-    { label: "Total Stock Unit", value: "0" },
+    { label: "Total Stock Unit", value: stockUnits.toString() },
   ];
 
   return (
