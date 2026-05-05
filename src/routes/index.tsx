@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ShoppingCart, Boxes, Banknote, UserCog, Users, Wallet, Check, ArrowRight, Play } from "lucide-react";
+import { ShoppingCart, Boxes, Banknote, UserCog, Users, Wallet, ArrowRight, Play } from "lucide-react";
 import PublicNav from "@/components/PublicNav";
 import PublicFooter from "@/components/PublicFooter";
 
