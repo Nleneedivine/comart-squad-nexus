@@ -1,0 +1,111 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import ProtectedShell from "@/components/ProtectedShell";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { formatNaira } from "@/lib/format";
+import { toast } from "sonner";
+import { ArrowLeft, Circle } from "lucide-react";
+
+export const Route = createFileRoute("/orders/$id")({
+  head: () => ({ meta: [{ title: "Order Detail — Comart+" }, { name: "description", content: "View order details and status timeline." }] }),
+  component: () => <ProtectedShell><OrderDetail /></ProtectedShell>,
+});
+
+const STATUSES = ["pending", "processing", "shipped", "delivered", "cancelled"] as const;
+
+function OrderDetail() {
+  const { id } = Route.useParams();
+  const { store, user } = useAuth();
+  const [order, setOrder] = useState<any>(null);
+  const [items, setItems] = useState<any[]>([]);
+  const [history, setHistory] = useState<any[]>([]);
+  const [newStatus, setNewStatus] = useState<string>("");
+
+  const load = async () => {
+    const { data: o } = await supabase.from("orders").select("*, customers(name, phone)").eq("id", id).maybeSingle();
+    setOrder(o); setNewStatus(o?.status || "");
+    const { data: it } = await supabase.from("order_items").select("*").eq("order_id", id);
+    setItems(it || []);
+    const { data: h } = await supabase.from("order_status_history").select("*").eq("order_id", id).order("created_at");
+    setHistory(h || []);
+  };
+  useEffect(() => { load(); }, [id]);
+
+  const updateStatus = async () => {
+    if (!order || !user || !store || newStatus === order.status) return;
+    const { error } = await supabase.from("orders").update({ status: newStatus as any }).eq("id", order.id);
+    if (error) return toast.error(error.message);
+    await supabase.from("order_status_history").insert({ order_id: order.id, store_id: store.id, status: newStatus as any, changed_by: user.id });
+    toast.success("Status updated"); load();
+  };
+
+  if (!order) return <Card className="p-8 text-center text-muted-foreground">Loading...</Card>;
+
+  return (
+    <div className="space-y-6">
+      <Link to="/orders" className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1"><ArrowLeft className="h-4 w-4" />Back to Orders</Link>
+      <Card className="p-6">
+        <div className="flex items-start justify-between flex-wrap gap-4">
+          <div>
+            <h1 className="text-2xl font-bold">Order {order.order_number || order.id.slice(0, 8)}</h1>
+            <p className="text-sm text-muted-foreground">{new Date(order.created_at).toLocaleString()}</p>
+            <p className="text-sm mt-2">Customer: <span className="font-medium">{order.customers?.name || order.customer_name || "—"}</span></p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Select value={newStatus} onValueChange={setNewStatus}>
+              <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+              <SelectContent>{STATUSES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+            </Select>
+            <Button onClick={updateStatus} disabled={newStatus === order.status}>Update</Button>
+          </div>
+        </div>
+      </Card>
+
+      <div className="grid md:grid-cols-2 gap-6">
+        <Card className="p-4">
+          <h2 className="font-semibold mb-3 px-2">Items</h2>
+          <Table>
+            <TableHeader><TableRow><TableHead>Product</TableHead><TableHead>Qty</TableHead><TableHead>Price</TableHead><TableHead>Subtotal</TableHead></TableRow></TableHeader>
+            <TableBody>
+              {items.map(i => (
+                <TableRow key={i.id}>
+                  <TableCell>{i.product_name}</TableCell>
+                  <TableCell>{i.quantity}</TableCell>
+                  <TableCell>{formatNaira(Number(i.unit_price))}</TableCell>
+                  <TableCell>{formatNaira(Number(i.subtotal))}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+          <div className="border-t mt-3 pt-3 flex justify-between px-2 font-bold"><span>Total</span><span className="text-primary">{formatNaira(Number(order.amount))}</span></div>
+        </Card>
+
+        <Card className="p-6">
+          <h2 className="font-semibold mb-4">Status Timeline</h2>
+          <ol className="space-y-4">
+            {history.length === 0 ? <p className="text-sm text-muted-foreground">No history.</p> :
+              history.map((h, i) => (
+                <li key={h.id} className="flex gap-3">
+                  <div className="flex flex-col items-center">
+                    <div className="h-6 w-6 rounded-full bg-primary/15 text-primary flex items-center justify-center"><Circle className="h-2 w-2 fill-current" /></div>
+                    {i < history.length - 1 && <div className="w-px flex-1 bg-border my-1" />}
+                  </div>
+                  <div className="flex-1 pb-3">
+                    <Badge variant="outline" className="capitalize">{h.status}</Badge>
+                    <div className="text-xs text-muted-foreground mt-1">{new Date(h.created_at).toLocaleString()}</div>
+                    {h.note && <div className="text-sm mt-1">{h.note}</div>}
+                  </div>
+                </li>
+              ))}
+          </ol>
+        </Card>
+      </div>
+    </div>
+  );
+}
