@@ -696,6 +696,7 @@ export type Database = {
           full_name: string | null
           id: string
           phone: string | null
+          theme_preference: string
           updated_at: string
         }
         Insert: {
@@ -707,6 +708,7 @@ export type Database = {
           full_name?: string | null
           id: string
           phone?: string | null
+          theme_preference?: string
           updated_at?: string
         }
         Update: {
@@ -718,6 +720,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           phone?: string | null
+          theme_preference?: string
           updated_at?: string
         }
         Relationships: []
@@ -948,20 +951,35 @@ export type Database = {
       }
       stores: {
         Row: {
+          address: string | null
+          contact_email: string | null
+          contact_phone: string | null
           created_at: string
+          description: string | null
           id: string
+          logo_url: string | null
           name: string
           owner_id: string
         }
         Insert: {
+          address?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
           created_at?: string
+          description?: string | null
           id?: string
+          logo_url?: string | null
           name: string
           owner_id: string
         }
         Update: {
+          address?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
           created_at?: string
+          description?: string | null
           id?: string
+          logo_url?: string | null
           name?: string
           owner_id?: string
         }
