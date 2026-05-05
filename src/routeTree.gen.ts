@@ -22,6 +22,7 @@ import { Route as BusinessesRouteImport } from './routes/businesses'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AttendanceRouteImport } from './routes/attendance'
 import { Route as AgentsRouteImport } from './routes/agents'
+import { Route as StoreManagementRouteImport } from './routes/StoreManagement'
 import { Route as SettingsRouteImport } from './routes/Settings'
 import { Route as DashboardRouteImport } from './routes/Dashboard'
 import { Route as IndexRouteImport } from './routes/index'
@@ -103,6 +104,11 @@ const AttendanceRoute = AttendanceRouteImport.update({
 const AgentsRoute = AgentsRouteImport.update({
   id: '/agents',
   path: '/agents',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StoreManagementRoute = StoreManagementRouteImport.update({
+  id: '/StoreManagement',
+  path: '/StoreManagement',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsRoute = SettingsRouteImport.update({
@@ -195,6 +201,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/Dashboard': typeof DashboardRoute
   '/Settings': typeof SettingsRoute
+  '/StoreManagement': typeof StoreManagementRoute
   '/agents': typeof AgentsRoute
   '/attendance': typeof AttendanceRoute
   '/auth': typeof AuthRoute
@@ -227,6 +234,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/Dashboard': typeof DashboardRoute
   '/Settings': typeof SettingsRoute
+  '/StoreManagement': typeof StoreManagementRoute
   '/agents': typeof AgentsRoute
   '/attendance': typeof AttendanceRoute
   '/auth': typeof AuthRoute
@@ -260,6 +268,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/Dashboard': typeof DashboardRoute
   '/Settings': typeof SettingsRoute
+  '/StoreManagement': typeof StoreManagementRoute
   '/agents': typeof AgentsRoute
   '/attendance': typeof AttendanceRoute
   '/auth': typeof AuthRoute
@@ -294,6 +303,7 @@ export interface FileRouteTypes {
     | '/'
     | '/Dashboard'
     | '/Settings'
+    | '/StoreManagement'
     | '/agents'
     | '/attendance'
     | '/auth'
@@ -326,6 +336,7 @@ export interface FileRouteTypes {
     | '/'
     | '/Dashboard'
     | '/Settings'
+    | '/StoreManagement'
     | '/agents'
     | '/attendance'
     | '/auth'
@@ -358,6 +369,7 @@ export interface FileRouteTypes {
     | '/'
     | '/Dashboard'
     | '/Settings'
+    | '/StoreManagement'
     | '/agents'
     | '/attendance'
     | '/auth'
@@ -391,6 +403,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRoute: typeof DashboardRoute
   SettingsRoute: typeof SettingsRoute
+  StoreManagementRoute: typeof StoreManagementRoute
   AgentsRoute: typeof AgentsRoute
   AttendanceRoute: typeof AttendanceRoute
   AuthRoute: typeof AuthRoute
@@ -510,6 +523,13 @@ declare module '@tanstack/react-router' {
       path: '/agents'
       fullPath: '/agents'
       preLoaderRoute: typeof AgentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/StoreManagement': {
+      id: '/StoreManagement'
+      path: '/StoreManagement'
+      fullPath: '/StoreManagement'
+      preLoaderRoute: typeof StoreManagementRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/Settings': {
@@ -649,6 +669,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRoute,
   SettingsRoute: SettingsRoute,
+  StoreManagementRoute: StoreManagementRoute,
   AgentsRoute: AgentsRoute,
   AttendanceRoute: AttendanceRoute,
   AuthRoute: AuthRoute,
