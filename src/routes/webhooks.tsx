@@ -79,6 +79,12 @@ function WebhookLogs() {
         </div>
       </div>
 
+      <div className="rounded-lg border bg-muted/30 p-4 text-sm">
+        <div className="font-medium mb-1">Paystack Webhook URL</div>
+        <code className="text-xs break-all">{typeof window !== "undefined" ? `${window.location.origin}/api/public/paystack-webhook` : "/api/public/paystack-webhook"}</code>
+        <p className="text-xs text-muted-foreground mt-2">Add this URL in your Paystack dashboard → Settings → API Keys & Webhooks. Signature is verified with your live secret key.</p>
+      </div>
+
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
           { label: "Total Events", value: stats.total, icon: Activity, color: "text-primary" },
