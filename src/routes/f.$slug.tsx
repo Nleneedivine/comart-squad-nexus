@@ -47,6 +47,33 @@ function PublicForm() {
       store_id: form.store_id, form_id: form.id, ...info, items, total,
     });
     if (error) return toast.error(error.message);
+    // Best-effort: also create a customer + pending order so it lands in the store's CRM/orders.
+    // RLS may block these for anon; failures are silent so submission still succeeds.
+    try {
+      const { data: existingCust } = await supabase.from("customers")
+        .select("id").eq("store_id", form.store_id).eq("phone", info.customer_phone).maybeSingle();
+      let custId = existingCust?.id;
+      if (!custId) {
+        const { data: newCust } = await supabase.from("customers").insert({
+          store_id: form.store_id, name: info.customer_name, phone: info.customer_phone,
+          email: info.customer_email || null, address: info.customer_address || null, notes: info.notes || null,
+        }).select("id").maybeSingle();
+        custId = newCust?.id;
+      }
+      const orderNumber = "FORM-" + Date.now().toString(36).toUpperCase();
+      const totalUnits = items.reduce((s, i) => s + i.quantity, 0);
+      const { data: ord } = await supabase.from("orders").insert({
+        store_id: form.store_id, customer_id: custId || null, customer_name: info.customer_name,
+        amount: total, units: totalUnits, status: "pending", order_number: orderNumber,
+        notes: `From form: ${form.title}`,
+      }).select("id").maybeSingle();
+      if (ord?.id) {
+        await supabase.from("order_items").insert(items.map(i => ({
+          order_id: ord.id, store_id: form.store_id, product_id: i.product_id,
+          product_name: i.name, quantity: i.quantity, unit_price: i.unit_price, subtotal: i.subtotal,
+        })));
+      }
+    } catch { /* ignore — submission already saved */ }
     setDone(true);
   };
 

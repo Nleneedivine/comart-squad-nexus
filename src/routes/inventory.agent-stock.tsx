@@ -28,26 +28,33 @@ function AgentStock() {
 
   const load = async () => {
     if (!store) return;
-    const [{ data: r }, { data: roles }, { data: p }] = await Promise.all([
+    const [{ data: r }, { data: ag }, { data: p }] = await Promise.all([
       supabase.from("agent_stocks").select("*").eq("store_id", store.id).order("allocated_at", { ascending: false }),
-      supabase.from("user_roles").select("user_id, profiles(full_name)").eq("store_id", store.id),
-      supabase.from("products").select("id, name").eq("store_id", store.id),
+      supabase.from("agents").select("id, name").eq("store_id", store.id).eq("status", "active"),
+      supabase.from("products").select("id, name, stock_qty").eq("store_id", store.id),
     ]);
     setRows(r || []);
-    const uniq = new Map();
-    (roles || []).forEach((row: any) => uniq.set(row.user_id, row.profiles?.full_name || "Unknown"));
-    setAgents(Array.from(uniq.entries()).map(([id, name]) => ({ id, name })));
+    setAgents((ag || []).map(a => ({ id: a.id, name: a.name })));
     setProducts(p || []);
   };
   useEffect(() => { load(); }, [store]);
 
   const save = async () => {
     if (!store) return;
-    const a = agents.find(x => x.id === form.agent_id); const p = products.find(x => x.id === form.product_id);
+    const a = agents.find(x => x.id === form.agent_id); const p: any = products.find(x => x.id === form.product_id);
     if (!a || !p) return toast.error("Select agent and product");
+    if (form.quantity <= 0) return toast.error("Quantity must be > 0");
+    if ((p.stock_qty || 0) < form.quantity) return toast.error(`Only ${p.stock_qty || 0} in stock`);
     const { error } = await supabase.from("agent_stocks").insert({ store_id: store.id, agent_id: a.id, agent_name: a.name, product_id: p.id, product_name: p.name, quantity: form.quantity });
     if (error) return toast.error(error.message);
-    toast.success("Stock allocated"); setOpen(false); load();
+    const newBal = (p.stock_qty || 0) - form.quantity;
+    await supabase.from("products").update({ stock_qty: newBal }).eq("id", p.id);
+    await supabase.from("stock_movements").insert({
+      store_id: store.id, product_id: p.id, product_name: p.name,
+      type: "adjustment", qty_change: -form.quantity, balance: newBal,
+      reference: `Allocated to agent ${a.name}`,
+    });
+    toast.success("Stock allocated"); setOpen(false); setForm({ agent_id: "", product_id: "", quantity: 1 }); load();
   };
 
   return (
