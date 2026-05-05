@@ -96,12 +96,19 @@ function Wallet() {
     } catch (e: any) { toast.error(e.message); }
   };
 
+  const [wdPin, setWdPin] = useState("");
   const withdraw = async () => {
     const amt = Number(amount);
     if (!amt || amt <= 0) return toast.error("Enter amount");
+    if (!wallet?.pin_hash) return toast.error("Set a wallet PIN first (Wallet Settings)");
+    if (!/^\d{4,6}$/.test(wdPin)) return toast.error("Enter your PIN");
+    const enc = new TextEncoder().encode(wdPin);
+    const buf = await crypto.subtle.digest("SHA-256", enc);
+    const hex = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+    if (hex !== wallet.pin_hash) return toast.error("Incorrect PIN");
     try {
       await requestWithdrawal({ data: { amount: amt } });
-      toast.success("Withdrawal requested"); setWdOpen(false); setAmount(""); load();
+      toast.success("Withdrawal requested"); setWdOpen(false); setAmount(""); setWdPin(""); load();
     } catch (e: any) { toast.error(e.message); }
   };
 
