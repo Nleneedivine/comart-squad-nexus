@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /Dashboard
+Disallow: /Settings
+Disallow: /admin
+
+Sitemap: https://comartplus.app/sitemap.xml
