@@ -1,0 +1,10 @@
+
+ALTER TABLE public.stores
+  ADD COLUMN IF NOT EXISTS logo_url TEXT,
+  ADD COLUMN IF NOT EXISTS description TEXT,
+  ADD COLUMN IF NOT EXISTS contact_email TEXT,
+  ADD COLUMN IF NOT EXISTS contact_phone TEXT,
+  ADD COLUMN IF NOT EXISTS address TEXT;
+
+ALTER TABLE public.profiles
+  ADD COLUMN IF NOT EXISTS theme_preference TEXT NOT NULL DEFAULT 'light';
