@@ -65,14 +65,16 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
 
   const logout = async () => { await supabase.auth.signOut(); nav({ to: "/auth" }); };
 
-  // Filter NAV by role
+  // Filter NAV by role. If no roles loaded yet (or user has none), show all
+  // items — matches ProtectedShell behavior and avoids an empty sidebar.
+  const noRoles = !roles || roles.length === 0;
   const filteredNav = NAV.flatMap(item => {
     if (item.children) {
-      const kids = item.children.filter(c => canAccess(roles, c.to));
+      const kids = noRoles ? item.children : item.children.filter(c => canAccess(roles, c.to));
       if (kids.length === 0) return [];
       return [{ ...item, children: kids }];
     }
-    return canAccess(roles, item.to!) ? [item] : [];
+    return noRoles || canAccess(roles, item.to!) ? [item] : [];
   });
 
   const sidebarContent = (
