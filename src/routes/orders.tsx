@@ -77,6 +77,21 @@ function Orders() {
     });
     await supabase.from("order_items").insert(itemsPayload);
     await supabase.from("order_status_history").insert({ order_id: ord.id, store_id: store.id, status: "pending", changed_by: user.id, note: "Order created" });
+    // Decrement stock and log movements
+    for (const it of validItems) {
+      const p = products.find(pp => pp.id === it.product_id)!;
+      const newBal = Math.max(0, (p.stock_qty || 0) - it.quantity);
+      await supabase.from("products").update({ stock_qty: newBal }).eq("id", p.id);
+      await supabase.from("stock_movements").insert({
+        store_id: store.id, product_id: p.id, product_name: p.name,
+        type: "sale", qty_change: -it.quantity, balance: newBal,
+        reference: `Order ${orderNumber}`,
+      });
+    }
+    await supabase.from("activity_log").insert({
+      store_id: store.id, user_id: user.id, type: "order",
+      activity: `Created order ${orderNumber} (${formatNaira(total)})`,
+    });
     toast.success("Order created");
     setOpen(false); setCustomerId(""); setItems([{ product_id: "", quantity: 1 }]); load();
   };
