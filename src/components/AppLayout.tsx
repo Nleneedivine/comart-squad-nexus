@@ -67,6 +67,20 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
 
   const logout = async () => { await supabase.auth.signOut(); nav({ to: "/auth" }); };
 
+  // Global realtime: new-order toast notification
+  const mountedAt = useRef<number>(Date.now());
+  useEffect(() => {
+    if (!store) return;
+    const ch = supabase.channel("notify-orders-" + store.id)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "orders", filter: `store_id=eq.${store.id}` }, (payload: any) => {
+        const o = payload.new || {};
+        if (new Date(o.created_at).getTime() < mountedAt.current - 2000) return;
+        toast.success(`New order from ${o.customer_name || "Customer"} — ${formatNaira(Number(o.amount || 0))}`);
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [store]);
+
   // Filter NAV by role. If no roles loaded yet (or user has none), show all
   // items — matches ProtectedShell behavior and avoids an empty sidebar.
   const noRoles = !roles || roles.length === 0;
