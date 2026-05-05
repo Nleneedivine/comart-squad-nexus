@@ -179,6 +179,7 @@ function Wallet() {
               <div className="space-y-3">
                 <p className="text-xs text-muted-foreground">To: {wallet?.bank_name} • {wallet?.bank_account_number}</p>
                 <div className="space-y-1.5"><Label>Amount (₦)</Label><Input type="number" value={amount} onChange={e => setAmount(e.target.value)} /></div>
+                <div className="space-y-1.5"><Label>Wallet PIN</Label><Input type="password" inputMode="numeric" maxLength={6} value={wdPin} onChange={e => setWdPin(e.target.value)} placeholder={wallet?.pin_hash ? "Enter PIN" : "Set a PIN first via Wallet Settings"} /></div>
                 <Button onClick={withdraw} className="w-full">Request Withdrawal</Button>
               </div>
             </DialogContent>
