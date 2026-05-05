@@ -62,6 +62,45 @@ export type Database = {
           },
         ]
       }
+      agents: {
+        Row: {
+          area: string | null
+          commission_pct: number
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          phone: string | null
+          status: string
+          store_id: string
+          updated_at: string
+        }
+        Insert: {
+          area?: string | null
+          commission_pct?: number
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          phone?: string | null
+          status?: string
+          store_id: string
+          updated_at?: string
+        }
+        Update: {
+          area?: string | null
+          commission_pct?: number
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          phone?: string | null
+          status?: string
+          store_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       attendance: {
         Row: {
           clock_in: string
@@ -244,6 +283,87 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      finance_records: {
+        Row: {
+          amount: number
+          category: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          record_date: string
+          source: string | null
+          store_id: string
+          type: Database["public"]["Enums"]["finance_type"]
+        }
+        Insert: {
+          amount?: number
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          record_date?: string
+          source?: string | null
+          store_id: string
+          type: Database["public"]["Enums"]["finance_type"]
+        }
+        Update: {
+          amount?: number
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          record_date?: string
+          source?: string | null
+          store_id?: string
+          type?: Database["public"]["Enums"]["finance_type"]
+        }
+        Relationships: []
+      }
+      form_submissions: {
+        Row: {
+          created_at: string
+          customer_address: string | null
+          customer_email: string | null
+          customer_name: string
+          customer_phone: string
+          form_id: string
+          id: string
+          items: Json
+          notes: string | null
+          store_id: string
+          total: number
+        }
+        Insert: {
+          created_at?: string
+          customer_address?: string | null
+          customer_email?: string | null
+          customer_name: string
+          customer_phone: string
+          form_id: string
+          id?: string
+          items?: Json
+          notes?: string | null
+          store_id: string
+          total?: number
+        }
+        Update: {
+          created_at?: string
+          customer_address?: string | null
+          customer_email?: string | null
+          customer_name?: string
+          customer_phone?: string
+          form_id?: string
+          id?: string
+          items?: Json
+          notes?: string | null
+          store_id?: string
+          total?: number
+        }
+        Relationships: []
       }
       order_items: {
         Row: {
@@ -584,6 +704,48 @@ export type Database = {
           },
         ]
       }
+      sales_forms: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          fields: Json
+          id: string
+          product_ids: string[]
+          slug: string
+          status: string
+          store_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          fields?: Json
+          id?: string
+          product_ids?: string[]
+          slug: string
+          status?: string
+          store_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          fields?: Json
+          id?: string
+          product_ids?: string[]
+          slug?: string
+          status?: string
+          store_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       staff_invites: {
         Row: {
           created_at: string
@@ -726,6 +888,84 @@ export type Database = {
           },
         ]
       }
+      wallet_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          kind: Database["public"]["Enums"]["wallet_tx_kind"]
+          paystack_reference: string | null
+          reference: string | null
+          status: Database["public"]["Enums"]["wallet_tx_status"]
+          store_id: string
+          wallet_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          kind: Database["public"]["Enums"]["wallet_tx_kind"]
+          paystack_reference?: string | null
+          reference?: string | null
+          status?: Database["public"]["Enums"]["wallet_tx_status"]
+          store_id: string
+          wallet_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          kind?: Database["public"]["Enums"]["wallet_tx_kind"]
+          paystack_reference?: string | null
+          reference?: string | null
+          status?: Database["public"]["Enums"]["wallet_tx_status"]
+          store_id?: string
+          wallet_id?: string
+        }
+        Relationships: []
+      }
+      wallets: {
+        Row: {
+          balance: number
+          bank_account_name: string | null
+          bank_account_number: string | null
+          bank_name: string | null
+          created_at: string
+          id: string
+          pin_hash: string | null
+          store_id: string
+          updated_at: string
+        }
+        Insert: {
+          balance?: number
+          bank_account_name?: string | null
+          bank_account_number?: string | null
+          bank_name?: string | null
+          created_at?: string
+          id?: string
+          pin_hash?: string | null
+          store_id: string
+          updated_at?: string
+        }
+        Update: {
+          balance?: number
+          bank_account_name?: string | null
+          bank_account_number?: string | null
+          bank_name?: string | null
+          created_at?: string
+          id?: string
+          pin_hash?: string | null
+          store_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       waybills: {
         Row: {
           created_at: string
@@ -815,12 +1055,15 @@ export type Database = {
         | "logistics_manager"
         | "accountant"
         | "head_of_operations"
+      finance_type: "income" | "expense"
       order_status:
         | "pending"
         | "processing"
         | "delivered"
         | "cancelled"
         | "shipped"
+      wallet_tx_kind: "sale" | "funding" | "withdrawal"
+      wallet_tx_status: "pending" | "success" | "failed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -962,6 +1205,7 @@ export const Constants = {
         "accountant",
         "head_of_operations",
       ],
+      finance_type: ["income", "expense"],
       order_status: [
         "pending",
         "processing",
@@ -969,6 +1213,8 @@ export const Constants = {
         "cancelled",
         "shipped",
       ],
+      wallet_tx_kind: ["sale", "funding", "withdrawal"],
+      wallet_tx_status: ["pending", "success", "failed"],
     },
   },
 } as const
