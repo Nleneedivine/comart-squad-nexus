@@ -39,7 +39,9 @@ const NAV: Item[] = [
     { label: "Waybill", to: "/inventory/waybill" },
   ]},
   { label: "Agents", to: "/agents", icon: Users },
-  { label: "Finance", to: "/finance", icon: Banknote },
+  { label: "Finance", icon: Banknote, children: [
+    { label: "Records", to: "/finance" },
+  ]},
   { label: "Staff Management", to: "/staff", icon: UserCog },
   { label: "Chat Room", to: "/chat", icon: MessageSquare },
   { label: "Reports", icon: BarChart3, children: [
