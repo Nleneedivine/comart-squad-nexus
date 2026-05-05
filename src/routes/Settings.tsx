@@ -42,16 +42,17 @@ function SettingsPage() {
     if (!user || !profile) return;
     if (isLocked) { toast.error(`Profile picture locked until ${format(lockedUntil!, "PP")}`); return; }
     const file = e.target.files?.[0]; if (!file) return;
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const dataUrl = reader.result as string;
-      const lock = new Date(); lock.setDate(lock.getDate() + 30);
-      const { error } = await supabase.from("profiles").update({ avatar_url: dataUrl, avatar_locked_until: lock.toISOString() }).eq("id", user.id);
-      if (error) return toast.error(error.message);
-      setProfile({ ...profile, avatar_url: dataUrl, avatar_locked_until: lock.toISOString() });
-      toast.success("Avatar updated. Locked for 30 days.");
-    };
-    reader.readAsDataURL(file);
+    if (file.size > 5 * 1024 * 1024) return toast.error("Image must be under 5MB");
+    const ext = file.name.split(".").pop() || "jpg";
+    const path = `${user.id}/avatar_${Date.now()}.${ext}`;
+    const { error: upErr } = await supabase.storage.from("avatars").upload(path, file, { upsert: true, cacheControl: "3600" });
+    if (upErr) return toast.error(upErr.message);
+    const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
+    const lock = new Date(); lock.setDate(lock.getDate() + 30);
+    const { error } = await supabase.from("profiles").update({ avatar_url: pub.publicUrl, avatar_locked_until: lock.toISOString() }).eq("id", user.id);
+    if (error) return toast.error(error.message);
+    setProfile({ ...profile, avatar_url: pub.publicUrl, avatar_locked_until: lock.toISOString() });
+    toast.success("Avatar updated. Locked for 30 days.");
   };
 
   if (!profile) return <div className="text-muted-foreground">Loading…</div>;
