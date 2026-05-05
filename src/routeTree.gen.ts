@@ -29,6 +29,7 @@ import { Route as StoreProductsRouteImport } from './routes/store.products'
 import { Route as StoreOrdersRouteImport } from './routes/store.orders'
 import { Route as ReportsExportRouteImport } from './routes/reports.export'
 import { Route as ReportsActivityRouteImport } from './routes/reports.activity'
+import { Route as OrdersIdRouteImport } from './routes/orders.$id'
 import { Route as MarketingSalesFormsRouteImport } from './routes/marketing.sales-forms'
 import { Route as InventoryWaybillRouteImport } from './routes/inventory.waybill'
 import { Route as InventoryStockRecordRouteImport } from './routes/inventory.stock-record'
@@ -36,6 +37,7 @@ import { Route as InventoryProductsRouteImport } from './routes/inventory.produc
 import { Route as InventoryFaultyRouteImport } from './routes/inventory.faulty'
 import { Route as InventoryBuyStockRouteImport } from './routes/inventory.buy-stock'
 import { Route as InventoryAgentStockRouteImport } from './routes/inventory.agent-stock'
+import { Route as CustomersIdRouteImport } from './routes/customers.$id'
 
 const WebhooksRoute = WebhooksRouteImport.update({
   id: '/webhooks',
@@ -137,6 +139,11 @@ const ReportsActivityRoute = ReportsActivityRouteImport.update({
   path: '/reports/activity',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OrdersIdRoute = OrdersIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => OrdersRoute,
+} as any)
 const MarketingSalesFormsRoute = MarketingSalesFormsRouteImport.update({
   id: '/marketing/sales-forms',
   path: '/marketing/sales-forms',
@@ -172,6 +179,11 @@ const InventoryAgentStockRoute = InventoryAgentStockRouteImport.update({
   path: '/inventory/agent-stock',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CustomersIdRoute = CustomersIdRouteImport.update({
+  id: '/customers/$id',
+  path: '/customers/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -185,11 +197,12 @@ export interface FileRoutesByFullPath {
   '/customer-service': typeof CustomerServiceRoute
   '/finance': typeof FinanceRoute
   '/integrations': typeof IntegrationsRoute
-  '/orders': typeof OrdersRoute
+  '/orders': typeof OrdersRouteWithChildren
   '/productivity': typeof ProductivityRoute
   '/staff': typeof StaffRoute
   '/wallet': typeof WalletRoute
   '/webhooks': typeof WebhooksRoute
+  '/customers/$id': typeof CustomersIdRoute
   '/inventory/agent-stock': typeof InventoryAgentStockRoute
   '/inventory/buy-stock': typeof InventoryBuyStockRoute
   '/inventory/faulty': typeof InventoryFaultyRoute
@@ -197,6 +210,7 @@ export interface FileRoutesByFullPath {
   '/inventory/stock-record': typeof InventoryStockRecordRoute
   '/inventory/waybill': typeof InventoryWaybillRoute
   '/marketing/sales-forms': typeof MarketingSalesFormsRoute
+  '/orders/$id': typeof OrdersIdRoute
   '/reports/activity': typeof ReportsActivityRoute
   '/reports/export': typeof ReportsExportRoute
   '/store/orders': typeof StoreOrdersRoute
@@ -214,11 +228,12 @@ export interface FileRoutesByTo {
   '/customer-service': typeof CustomerServiceRoute
   '/finance': typeof FinanceRoute
   '/integrations': typeof IntegrationsRoute
-  '/orders': typeof OrdersRoute
+  '/orders': typeof OrdersRouteWithChildren
   '/productivity': typeof ProductivityRoute
   '/staff': typeof StaffRoute
   '/wallet': typeof WalletRoute
   '/webhooks': typeof WebhooksRoute
+  '/customers/$id': typeof CustomersIdRoute
   '/inventory/agent-stock': typeof InventoryAgentStockRoute
   '/inventory/buy-stock': typeof InventoryBuyStockRoute
   '/inventory/faulty': typeof InventoryFaultyRoute
@@ -226,6 +241,7 @@ export interface FileRoutesByTo {
   '/inventory/stock-record': typeof InventoryStockRecordRoute
   '/inventory/waybill': typeof InventoryWaybillRoute
   '/marketing/sales-forms': typeof MarketingSalesFormsRoute
+  '/orders/$id': typeof OrdersIdRoute
   '/reports/activity': typeof ReportsActivityRoute
   '/reports/export': typeof ReportsExportRoute
   '/store/orders': typeof StoreOrdersRoute
@@ -244,11 +260,12 @@ export interface FileRoutesById {
   '/customer-service': typeof CustomerServiceRoute
   '/finance': typeof FinanceRoute
   '/integrations': typeof IntegrationsRoute
-  '/orders': typeof OrdersRoute
+  '/orders': typeof OrdersRouteWithChildren
   '/productivity': typeof ProductivityRoute
   '/staff': typeof StaffRoute
   '/wallet': typeof WalletRoute
   '/webhooks': typeof WebhooksRoute
+  '/customers/$id': typeof CustomersIdRoute
   '/inventory/agent-stock': typeof InventoryAgentStockRoute
   '/inventory/buy-stock': typeof InventoryBuyStockRoute
   '/inventory/faulty': typeof InventoryFaultyRoute
@@ -256,6 +273,7 @@ export interface FileRoutesById {
   '/inventory/stock-record': typeof InventoryStockRecordRoute
   '/inventory/waybill': typeof InventoryWaybillRoute
   '/marketing/sales-forms': typeof MarketingSalesFormsRoute
+  '/orders/$id': typeof OrdersIdRoute
   '/reports/activity': typeof ReportsActivityRoute
   '/reports/export': typeof ReportsExportRoute
   '/store/orders': typeof StoreOrdersRoute
@@ -280,6 +298,7 @@ export interface FileRouteTypes {
     | '/staff'
     | '/wallet'
     | '/webhooks'
+    | '/customers/$id'
     | '/inventory/agent-stock'
     | '/inventory/buy-stock'
     | '/inventory/faulty'
@@ -287,6 +306,7 @@ export interface FileRouteTypes {
     | '/inventory/stock-record'
     | '/inventory/waybill'
     | '/marketing/sales-forms'
+    | '/orders/$id'
     | '/reports/activity'
     | '/reports/export'
     | '/store/orders'
@@ -309,6 +329,7 @@ export interface FileRouteTypes {
     | '/staff'
     | '/wallet'
     | '/webhooks'
+    | '/customers/$id'
     | '/inventory/agent-stock'
     | '/inventory/buy-stock'
     | '/inventory/faulty'
@@ -316,6 +337,7 @@ export interface FileRouteTypes {
     | '/inventory/stock-record'
     | '/inventory/waybill'
     | '/marketing/sales-forms'
+    | '/orders/$id'
     | '/reports/activity'
     | '/reports/export'
     | '/store/orders'
@@ -338,6 +360,7 @@ export interface FileRouteTypes {
     | '/staff'
     | '/wallet'
     | '/webhooks'
+    | '/customers/$id'
     | '/inventory/agent-stock'
     | '/inventory/buy-stock'
     | '/inventory/faulty'
@@ -345,6 +368,7 @@ export interface FileRouteTypes {
     | '/inventory/stock-record'
     | '/inventory/waybill'
     | '/marketing/sales-forms'
+    | '/orders/$id'
     | '/reports/activity'
     | '/reports/export'
     | '/store/orders'
@@ -363,11 +387,12 @@ export interface RootRouteChildren {
   CustomerServiceRoute: typeof CustomerServiceRoute
   FinanceRoute: typeof FinanceRoute
   IntegrationsRoute: typeof IntegrationsRoute
-  OrdersRoute: typeof OrdersRoute
+  OrdersRoute: typeof OrdersRouteWithChildren
   ProductivityRoute: typeof ProductivityRoute
   StaffRoute: typeof StaffRoute
   WalletRoute: typeof WalletRoute
   WebhooksRoute: typeof WebhooksRoute
+  CustomersIdRoute: typeof CustomersIdRoute
   InventoryAgentStockRoute: typeof InventoryAgentStockRoute
   InventoryBuyStockRoute: typeof InventoryBuyStockRoute
   InventoryFaultyRoute: typeof InventoryFaultyRoute
@@ -523,6 +548,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReportsActivityRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/orders/$id': {
+      id: '/orders/$id'
+      path: '/$id'
+      fullPath: '/orders/$id'
+      preLoaderRoute: typeof OrdersIdRouteImport
+      parentRoute: typeof OrdersRoute
+    }
     '/marketing/sales-forms': {
       id: '/marketing/sales-forms'
       path: '/marketing/sales-forms'
@@ -572,8 +604,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InventoryAgentStockRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/customers/$id': {
+      id: '/customers/$id'
+      path: '/customers/$id'
+      fullPath: '/customers/$id'
+      preLoaderRoute: typeof CustomersIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
+
+interface OrdersRouteChildren {
+  OrdersIdRoute: typeof OrdersIdRoute
+}
+
+const OrdersRouteChildren: OrdersRouteChildren = {
+  OrdersIdRoute: OrdersIdRoute,
+}
+
+const OrdersRouteWithChildren =
+  OrdersRoute._addFileChildren(OrdersRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -587,11 +637,12 @@ const rootRouteChildren: RootRouteChildren = {
   CustomerServiceRoute: CustomerServiceRoute,
   FinanceRoute: FinanceRoute,
   IntegrationsRoute: IntegrationsRoute,
-  OrdersRoute: OrdersRoute,
+  OrdersRoute: OrdersRouteWithChildren,
   ProductivityRoute: ProductivityRoute,
   StaffRoute: StaffRoute,
   WalletRoute: WalletRoute,
   WebhooksRoute: WebhooksRoute,
+  CustomersIdRoute: CustomersIdRoute,
   InventoryAgentStockRoute: InventoryAgentStockRoute,
   InventoryBuyStockRoute: InventoryBuyStockRoute,
   InventoryFaultyRoute: InventoryFaultyRoute,
@@ -607,12 +658,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
