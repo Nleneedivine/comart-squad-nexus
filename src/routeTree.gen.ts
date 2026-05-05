@@ -37,6 +37,7 @@ import { Route as InventoryProductsRouteImport } from './routes/inventory.produc
 import { Route as InventoryFaultyRouteImport } from './routes/inventory.faulty'
 import { Route as InventoryBuyStockRouteImport } from './routes/inventory.buy-stock'
 import { Route as InventoryAgentStockRouteImport } from './routes/inventory.agent-stock'
+import { Route as FSlugRouteImport } from './routes/f.$slug'
 import { Route as CustomersIdRouteImport } from './routes/customers.$id'
 
 const WebhooksRoute = WebhooksRouteImport.update({
@@ -179,6 +180,11 @@ const InventoryAgentStockRoute = InventoryAgentStockRouteImport.update({
   path: '/inventory/agent-stock',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FSlugRoute = FSlugRouteImport.update({
+  id: '/f/$slug',
+  path: '/f/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CustomersIdRoute = CustomersIdRouteImport.update({
   id: '/customers/$id',
   path: '/customers/$id',
@@ -203,6 +209,7 @@ export interface FileRoutesByFullPath {
   '/wallet': typeof WalletRoute
   '/webhooks': typeof WebhooksRoute
   '/customers/$id': typeof CustomersIdRoute
+  '/f/$slug': typeof FSlugRoute
   '/inventory/agent-stock': typeof InventoryAgentStockRoute
   '/inventory/buy-stock': typeof InventoryBuyStockRoute
   '/inventory/faulty': typeof InventoryFaultyRoute
@@ -234,6 +241,7 @@ export interface FileRoutesByTo {
   '/wallet': typeof WalletRoute
   '/webhooks': typeof WebhooksRoute
   '/customers/$id': typeof CustomersIdRoute
+  '/f/$slug': typeof FSlugRoute
   '/inventory/agent-stock': typeof InventoryAgentStockRoute
   '/inventory/buy-stock': typeof InventoryBuyStockRoute
   '/inventory/faulty': typeof InventoryFaultyRoute
@@ -266,6 +274,7 @@ export interface FileRoutesById {
   '/wallet': typeof WalletRoute
   '/webhooks': typeof WebhooksRoute
   '/customers/$id': typeof CustomersIdRoute
+  '/f/$slug': typeof FSlugRoute
   '/inventory/agent-stock': typeof InventoryAgentStockRoute
   '/inventory/buy-stock': typeof InventoryBuyStockRoute
   '/inventory/faulty': typeof InventoryFaultyRoute
@@ -299,6 +308,7 @@ export interface FileRouteTypes {
     | '/wallet'
     | '/webhooks'
     | '/customers/$id'
+    | '/f/$slug'
     | '/inventory/agent-stock'
     | '/inventory/buy-stock'
     | '/inventory/faulty'
@@ -330,6 +340,7 @@ export interface FileRouteTypes {
     | '/wallet'
     | '/webhooks'
     | '/customers/$id'
+    | '/f/$slug'
     | '/inventory/agent-stock'
     | '/inventory/buy-stock'
     | '/inventory/faulty'
@@ -361,6 +372,7 @@ export interface FileRouteTypes {
     | '/wallet'
     | '/webhooks'
     | '/customers/$id'
+    | '/f/$slug'
     | '/inventory/agent-stock'
     | '/inventory/buy-stock'
     | '/inventory/faulty'
@@ -393,6 +405,7 @@ export interface RootRouteChildren {
   WalletRoute: typeof WalletRoute
   WebhooksRoute: typeof WebhooksRoute
   CustomersIdRoute: typeof CustomersIdRoute
+  FSlugRoute: typeof FSlugRoute
   InventoryAgentStockRoute: typeof InventoryAgentStockRoute
   InventoryBuyStockRoute: typeof InventoryBuyStockRoute
   InventoryFaultyRoute: typeof InventoryFaultyRoute
@@ -604,6 +617,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InventoryAgentStockRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/f/$slug': {
+      id: '/f/$slug'
+      path: '/f/$slug'
+      fullPath: '/f/$slug'
+      preLoaderRoute: typeof FSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/customers/$id': {
       id: '/customers/$id'
       path: '/customers/$id'
@@ -643,6 +663,7 @@ const rootRouteChildren: RootRouteChildren = {
   WalletRoute: WalletRoute,
   WebhooksRoute: WebhooksRoute,
   CustomersIdRoute: CustomersIdRoute,
+  FSlugRoute: FSlugRoute,
   InventoryAgentStockRoute: InventoryAgentStockRoute,
   InventoryBuyStockRoute: InventoryBuyStockRoute,
   InventoryFaultyRoute: InventoryFaultyRoute,
