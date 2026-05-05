@@ -169,6 +169,33 @@ export type Database = {
           },
         ]
       }
+      broadcasts: {
+        Row: {
+          audience: string
+          body: string
+          id: string
+          sent_at: string
+          sent_by: string | null
+          title: string
+        }
+        Insert: {
+          audience?: string
+          body: string
+          id?: string
+          sent_at?: string
+          sent_by?: string | null
+          title: string
+        }
+        Update: {
+          audience?: string
+          body?: string
+          id?: string
+          sent_at?: string
+          sent_by?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
       businesses: {
         Row: {
           address: string | null
@@ -349,6 +376,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      feature_flags: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          flag_key: string
+          id: string
+          store_id: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          flag_key: string
+          id?: string
+          store_id: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          flag_key?: string
+          id?: string
+          store_id?: string
+        }
+        Relationships: []
       }
       finance_records: {
         Row: {
@@ -635,6 +686,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      platform_audit_log: {
+        Row: {
+          action: string
+          actor_id: string
+          created_at: string
+          id: string
+          metadata: Json | null
+          target_id: string | null
+          target_type: string | null
+        }
+        Insert: {
+          action: string
+          actor_id: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          target_id?: string | null
+          target_type?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          target_id?: string | null
+          target_type?: string | null
+        }
+        Relationships: []
       }
       products: {
         Row: {
@@ -985,6 +1066,72 @@ export type Database = {
         }
         Relationships: []
       }
+      subscriptions: {
+        Row: {
+          amount: number
+          billing_cycle: string
+          created_at: string
+          current_period_end: string | null
+          id: string
+          paystack_customer_code: string | null
+          paystack_subscription_code: string | null
+          plan: string
+          status: string
+          store_id: string
+          trial_ends_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          billing_cycle?: string
+          created_at?: string
+          current_period_end?: string | null
+          id?: string
+          paystack_customer_code?: string | null
+          paystack_subscription_code?: string | null
+          plan?: string
+          status?: string
+          store_id: string
+          trial_ends_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          billing_cycle?: string
+          created_at?: string
+          current_period_end?: string | null
+          id?: string
+          paystack_customer_code?: string | null
+          paystack_subscription_code?: string | null
+          plan?: string
+          status?: string
+          store_id?: string
+          trial_ends_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      superadmins: {
+        Row: {
+          granted_at: string
+          granted_by: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          granted_at?: string
+          granted_by?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          granted_at?: string
+          granted_by?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       tasks: {
         Row: {
           assigned_by: string | null
@@ -1283,6 +1430,7 @@ export type Database = {
         Args: { _store_id: string; _user_id: string }
         Returns: boolean
       }
+      is_superadmin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       app_role:

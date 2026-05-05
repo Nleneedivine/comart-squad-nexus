@@ -24,10 +24,12 @@ import { Route as BusinessesRouteImport } from './routes/businesses'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AttendanceRouteImport } from './routes/attendance'
 import { Route as AgentsRouteImport } from './routes/agents'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as StoreManagementRouteImport } from './routes/StoreManagement'
 import { Route as SettingsRouteImport } from './routes/Settings'
 import { Route as DashboardRouteImport } from './routes/Dashboard'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as StoreProductsRouteImport } from './routes/store.products'
 import { Route as StoreOrdersRouteImport } from './routes/store.orders'
 import { Route as ReportsExportRouteImport } from './routes/reports.export'
@@ -43,6 +45,11 @@ import { Route as InventoryBuyStockRouteImport } from './routes/inventory.buy-st
 import { Route as InventoryAgentStockRouteImport } from './routes/inventory.agent-stock'
 import { Route as FSlugRouteImport } from './routes/f.$slug'
 import { Route as CustomersIdRouteImport } from './routes/customers.$id'
+import { Route as AdminTenantsRouteImport } from './routes/admin.tenants'
+import { Route as AdminSubscriptionsRouteImport } from './routes/admin.subscriptions'
+import { Route as AdminFlagsRouteImport } from './routes/admin.flags'
+import { Route as AdminBroadcastsRouteImport } from './routes/admin.broadcasts'
+import { Route as AdminAuditRouteImport } from './routes/admin.audit'
 import { Route as ApiPublicPaystackWebhookRouteImport } from './routes/api/public/paystack-webhook'
 
 const WebhooksRoute = WebhooksRouteImport.update({
@@ -120,6 +127,11 @@ const AgentsRoute = AgentsRouteImport.update({
   path: '/agents',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const StoreManagementRoute = StoreManagementRouteImport.update({
   id: '/StoreManagement',
   path: '/StoreManagement',
@@ -139,6 +151,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
 } as any)
 const StoreProductsRoute = StoreProductsRouteImport.update({
   id: '/store/products',
@@ -215,6 +232,31 @@ const CustomersIdRoute = CustomersIdRouteImport.update({
   path: '/customers/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminTenantsRoute = AdminTenantsRouteImport.update({
+  id: '/tenants',
+  path: '/tenants',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSubscriptionsRoute = AdminSubscriptionsRouteImport.update({
+  id: '/subscriptions',
+  path: '/subscriptions',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminFlagsRoute = AdminFlagsRouteImport.update({
+  id: '/flags',
+  path: '/flags',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminBroadcastsRoute = AdminBroadcastsRouteImport.update({
+  id: '/broadcasts',
+  path: '/broadcasts',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminAuditRoute = AdminAuditRouteImport.update({
+  id: '/audit',
+  path: '/audit',
+  getParentRoute: () => AdminRoute,
+} as any)
 const ApiPublicPaystackWebhookRoute =
   ApiPublicPaystackWebhookRouteImport.update({
     id: '/api/public/paystack-webhook',
@@ -227,6 +269,7 @@ export interface FileRoutesByFullPath {
   '/Dashboard': typeof DashboardRoute
   '/Settings': typeof SettingsRoute
   '/StoreManagement': typeof StoreManagementRoute
+  '/admin': typeof AdminRouteWithChildren
   '/agents': typeof AgentsRoute
   '/attendance': typeof AttendanceRoute
   '/auth': typeof AuthRoute
@@ -242,6 +285,11 @@ export interface FileRoutesByFullPath {
   '/staff': typeof StaffRoute
   '/wallet': typeof WalletRoute
   '/webhooks': typeof WebhooksRoute
+  '/admin/audit': typeof AdminAuditRoute
+  '/admin/broadcasts': typeof AdminBroadcastsRoute
+  '/admin/flags': typeof AdminFlagsRoute
+  '/admin/subscriptions': typeof AdminSubscriptionsRoute
+  '/admin/tenants': typeof AdminTenantsRoute
   '/customers/$id': typeof CustomersIdRoute
   '/f/$slug': typeof FSlugRoute
   '/inventory/agent-stock': typeof InventoryAgentStockRoute
@@ -257,6 +305,7 @@ export interface FileRoutesByFullPath {
   '/reports/export': typeof ReportsExportRoute
   '/store/orders': typeof StoreOrdersRoute
   '/store/products': typeof StoreProductsRoute
+  '/admin/': typeof AdminIndexRoute
   '/api/public/paystack-webhook': typeof ApiPublicPaystackWebhookRoute
 }
 export interface FileRoutesByTo {
@@ -279,6 +328,11 @@ export interface FileRoutesByTo {
   '/staff': typeof StaffRoute
   '/wallet': typeof WalletRoute
   '/webhooks': typeof WebhooksRoute
+  '/admin/audit': typeof AdminAuditRoute
+  '/admin/broadcasts': typeof AdminBroadcastsRoute
+  '/admin/flags': typeof AdminFlagsRoute
+  '/admin/subscriptions': typeof AdminSubscriptionsRoute
+  '/admin/tenants': typeof AdminTenantsRoute
   '/customers/$id': typeof CustomersIdRoute
   '/f/$slug': typeof FSlugRoute
   '/inventory/agent-stock': typeof InventoryAgentStockRoute
@@ -294,6 +348,7 @@ export interface FileRoutesByTo {
   '/reports/export': typeof ReportsExportRoute
   '/store/orders': typeof StoreOrdersRoute
   '/store/products': typeof StoreProductsRoute
+  '/admin': typeof AdminIndexRoute
   '/api/public/paystack-webhook': typeof ApiPublicPaystackWebhookRoute
 }
 export interface FileRoutesById {
@@ -302,6 +357,7 @@ export interface FileRoutesById {
   '/Dashboard': typeof DashboardRoute
   '/Settings': typeof SettingsRoute
   '/StoreManagement': typeof StoreManagementRoute
+  '/admin': typeof AdminRouteWithChildren
   '/agents': typeof AgentsRoute
   '/attendance': typeof AttendanceRoute
   '/auth': typeof AuthRoute
@@ -317,6 +373,11 @@ export interface FileRoutesById {
   '/staff': typeof StaffRoute
   '/wallet': typeof WalletRoute
   '/webhooks': typeof WebhooksRoute
+  '/admin/audit': typeof AdminAuditRoute
+  '/admin/broadcasts': typeof AdminBroadcastsRoute
+  '/admin/flags': typeof AdminFlagsRoute
+  '/admin/subscriptions': typeof AdminSubscriptionsRoute
+  '/admin/tenants': typeof AdminTenantsRoute
   '/customers/$id': typeof CustomersIdRoute
   '/f/$slug': typeof FSlugRoute
   '/inventory/agent-stock': typeof InventoryAgentStockRoute
@@ -332,6 +393,7 @@ export interface FileRoutesById {
   '/reports/export': typeof ReportsExportRoute
   '/store/orders': typeof StoreOrdersRoute
   '/store/products': typeof StoreProductsRoute
+  '/admin/': typeof AdminIndexRoute
   '/api/public/paystack-webhook': typeof ApiPublicPaystackWebhookRoute
 }
 export interface FileRouteTypes {
@@ -341,6 +403,7 @@ export interface FileRouteTypes {
     | '/Dashboard'
     | '/Settings'
     | '/StoreManagement'
+    | '/admin'
     | '/agents'
     | '/attendance'
     | '/auth'
@@ -356,6 +419,11 @@ export interface FileRouteTypes {
     | '/staff'
     | '/wallet'
     | '/webhooks'
+    | '/admin/audit'
+    | '/admin/broadcasts'
+    | '/admin/flags'
+    | '/admin/subscriptions'
+    | '/admin/tenants'
     | '/customers/$id'
     | '/f/$slug'
     | '/inventory/agent-stock'
@@ -371,6 +439,7 @@ export interface FileRouteTypes {
     | '/reports/export'
     | '/store/orders'
     | '/store/products'
+    | '/admin/'
     | '/api/public/paystack-webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -393,6 +462,11 @@ export interface FileRouteTypes {
     | '/staff'
     | '/wallet'
     | '/webhooks'
+    | '/admin/audit'
+    | '/admin/broadcasts'
+    | '/admin/flags'
+    | '/admin/subscriptions'
+    | '/admin/tenants'
     | '/customers/$id'
     | '/f/$slug'
     | '/inventory/agent-stock'
@@ -408,6 +482,7 @@ export interface FileRouteTypes {
     | '/reports/export'
     | '/store/orders'
     | '/store/products'
+    | '/admin'
     | '/api/public/paystack-webhook'
   id:
     | '__root__'
@@ -415,6 +490,7 @@ export interface FileRouteTypes {
     | '/Dashboard'
     | '/Settings'
     | '/StoreManagement'
+    | '/admin'
     | '/agents'
     | '/attendance'
     | '/auth'
@@ -430,6 +506,11 @@ export interface FileRouteTypes {
     | '/staff'
     | '/wallet'
     | '/webhooks'
+    | '/admin/audit'
+    | '/admin/broadcasts'
+    | '/admin/flags'
+    | '/admin/subscriptions'
+    | '/admin/tenants'
     | '/customers/$id'
     | '/f/$slug'
     | '/inventory/agent-stock'
@@ -445,6 +526,7 @@ export interface FileRouteTypes {
     | '/reports/export'
     | '/store/orders'
     | '/store/products'
+    | '/admin/'
     | '/api/public/paystack-webhook'
   fileRoutesById: FileRoutesById
 }
@@ -453,6 +535,7 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   SettingsRoute: typeof SettingsRoute
   StoreManagementRoute: typeof StoreManagementRoute
+  AdminRoute: typeof AdminRouteWithChildren
   AgentsRoute: typeof AgentsRoute
   AttendanceRoute: typeof AttendanceRoute
   AuthRoute: typeof AuthRoute
@@ -592,6 +675,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AgentsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/StoreManagement': {
       id: '/StoreManagement'
       path: '/StoreManagement'
@@ -619,6 +709,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/store/products': {
       id: '/store/products'
@@ -725,6 +822,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CustomersIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/tenants': {
+      id: '/admin/tenants'
+      path: '/tenants'
+      fullPath: '/admin/tenants'
+      preLoaderRoute: typeof AdminTenantsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/subscriptions': {
+      id: '/admin/subscriptions'
+      path: '/subscriptions'
+      fullPath: '/admin/subscriptions'
+      preLoaderRoute: typeof AdminSubscriptionsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/flags': {
+      id: '/admin/flags'
+      path: '/flags'
+      fullPath: '/admin/flags'
+      preLoaderRoute: typeof AdminFlagsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/broadcasts': {
+      id: '/admin/broadcasts'
+      path: '/broadcasts'
+      fullPath: '/admin/broadcasts'
+      preLoaderRoute: typeof AdminBroadcastsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/audit': {
+      id: '/admin/audit'
+      path: '/audit'
+      fullPath: '/admin/audit'
+      preLoaderRoute: typeof AdminAuditRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/api/public/paystack-webhook': {
       id: '/api/public/paystack-webhook'
       path: '/api/public/paystack-webhook'
@@ -734,6 +866,26 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface AdminRouteChildren {
+  AdminAuditRoute: typeof AdminAuditRoute
+  AdminBroadcastsRoute: typeof AdminBroadcastsRoute
+  AdminFlagsRoute: typeof AdminFlagsRoute
+  AdminSubscriptionsRoute: typeof AdminSubscriptionsRoute
+  AdminTenantsRoute: typeof AdminTenantsRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminAuditRoute: AdminAuditRoute,
+  AdminBroadcastsRoute: AdminBroadcastsRoute,
+  AdminFlagsRoute: AdminFlagsRoute,
+  AdminSubscriptionsRoute: AdminSubscriptionsRoute,
+  AdminTenantsRoute: AdminTenantsRoute,
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface OrdersRouteChildren {
   OrdersIdRoute: typeof OrdersIdRoute
@@ -751,6 +903,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   SettingsRoute: SettingsRoute,
   StoreManagementRoute: StoreManagementRoute,
+  AdminRoute: AdminRouteWithChildren,
   AgentsRoute: AgentsRoute,
   AttendanceRoute: AttendanceRoute,
   AuthRoute: AuthRoute,
