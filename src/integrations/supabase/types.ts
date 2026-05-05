@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_log: {
+        Row: {
+          activity: string
+          created_at: string
+          id: string
+          metadata: Json | null
+          store_id: string
+          type: string
+          user_id: string | null
+          user_name: string | null
+        }
+        Insert: {
+          activity: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          store_id: string
+          type?: string
+          user_id?: string | null
+          user_name?: string | null
+        }
+        Update: {
+          activity?: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          store_id?: string
+          type?: string
+          user_id?: string | null
+          user_name?: string | null
+        }
+        Relationships: []
+      }
       agent_stocks: {
         Row: {
           agent_id: string
@@ -182,6 +215,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      chat_messages: {
+        Row: {
+          body: string
+          channel: string
+          created_at: string
+          id: string
+          read_at: string | null
+          recipient_id: string | null
+          sender_id: string
+          store_id: string
+        }
+        Insert: {
+          body: string
+          channel?: string
+          created_at?: string
+          id?: string
+          read_at?: string | null
+          recipient_id?: string | null
+          sender_id: string
+          store_id: string
+        }
+        Update: {
+          body?: string
+          channel?: string
+          created_at?: string
+          id?: string
+          read_at?: string | null
+          recipient_id?: string | null
+          sender_id?: string
+          store_id?: string
+        }
+        Relationships: []
       }
       customers: {
         Row: {
@@ -362,6 +428,51 @@ export type Database = {
           notes?: string | null
           store_id?: string
           total?: number
+        }
+        Relationships: []
+      }
+      goals: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          current_value: number
+          deadline: string | null
+          description: string | null
+          id: string
+          status: string
+          store_id: string
+          target_value: number
+          title: string
+          unit: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          current_value?: number
+          deadline?: string | null
+          description?: string | null
+          id?: string
+          status?: string
+          store_id: string
+          target_value?: number
+          title: string
+          unit?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          current_value?: number
+          deadline?: string | null
+          description?: string | null
+          id?: string
+          status?: string
+          store_id?: string
+          target_value?: number
+          title?: string
+          unit?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -856,6 +967,87 @@ export type Database = {
         }
         Relationships: []
       }
+      tasks: {
+        Row: {
+          assigned_by: string | null
+          assigned_to: string | null
+          created_at: string
+          deadline: string | null
+          description: string | null
+          id: string
+          priority: string
+          status: string
+          store_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_by?: string | null
+          assigned_to?: string | null
+          created_at?: string
+          deadline?: string | null
+          description?: string | null
+          id?: string
+          priority?: string
+          status?: string
+          store_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_by?: string | null
+          assigned_to?: string | null
+          created_at?: string
+          deadline?: string | null
+          description?: string | null
+          id?: string
+          priority?: string
+          status?: string
+          store_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      todos: {
+        Row: {
+          completed: boolean
+          created_at: string
+          description: string | null
+          due_date: string | null
+          id: string
+          priority: string
+          store_id: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          priority?: string
+          store_id: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed?: boolean
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          priority?: string
+          store_id?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -1018,6 +1210,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      webhook_logs: {
+        Row: {
+          created_at: string
+          duration_ms: number | null
+          id: string
+          payload: Json | null
+          status: string
+          store_id: string
+          summary: string | null
+          topic: string
+        }
+        Insert: {
+          created_at?: string
+          duration_ms?: number | null
+          id?: string
+          payload?: Json | null
+          status?: string
+          store_id: string
+          summary?: string | null
+          topic: string
+        }
+        Update: {
+          created_at?: string
+          duration_ms?: number | null
+          id?: string
+          payload?: Json | null
+          status?: string
+          store_id?: string
+          summary?: string | null
+          topic?: string
+        }
+        Relationships: []
       }
     }
     Views: {

@@ -50,7 +50,7 @@ const NAV: Item[] = [
   ]},
   { label: "Productivity", to: "/productivity", icon: Zap },
   { label: "Integrations", to: "/integrations", icon: Plug },
-  { label: "Webhooks", to: "/webhooks", icon: Webhook },
+  { label: "Webhook Logs", to: "/webhooks", icon: Webhook },
   { label: "Settings", to: "/Settings", icon: Settings },
 ];
 
