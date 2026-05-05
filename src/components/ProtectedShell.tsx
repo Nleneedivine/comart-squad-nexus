@@ -5,6 +5,7 @@ import AppLayout from "./AppLayout";
 import { canAccess } from "@/lib/rbac";
 import EmptyState from "./EmptyState";
 import { Lock } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function ProtectedShell({ children }: { children?: ReactNode }) {
   const { user, loading, roles } = useAuth();
@@ -12,8 +13,12 @@ export default function ProtectedShell({ children }: { children?: ReactNode }) {
   const loc = useLocation();
 
   useEffect(() => {
-    if (!loading && !user) nav({ to: "/auth" });
-  }, [user, loading, nav]);
+    if (!loading && !user) { nav({ to: "/auth" }); return; }
+    if (user && loc.pathname !== "/onboarding") {
+      supabase.from("profiles").select("onboarding_completed").eq("id", user.id).maybeSingle()
+        .then(({ data }) => { if (data && data.onboarding_completed === false) nav({ to: "/onboarding" }); });
+    }
+  }, [user, loading, nav, loc.pathname]);
 
   if (loading || !user) {
     return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Loading...</div>;
