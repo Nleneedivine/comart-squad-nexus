@@ -7,7 +7,7 @@ import {
   Megaphone, Wallet, Boxes, Users, Banknote, UserCog, MessageSquare,
   BarChart3, Zap, Plug, Webhook, Settings, Search, ChevronDown,
   ChevronRight, Maximize2, LogOut, Sun, Moon, Calculator, BookOpen, LifeBuoy,
-  User as UserIcon, Menu, X,
+  User as UserIcon, Menu, X, CreditCard,
 } from "lucide-react";
 import { useAuth, ROLE_LABELS } from "@/hooks/useAuth";
 import { useTheme } from "@/hooks/useTheme";
@@ -189,6 +189,7 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => nav({ to: "/Settings" })}><Settings className="h-4 w-4 mr-2" />Settings</DropdownMenuItem>
               <DropdownMenuItem onClick={() => nav({ to: "/StoreManagement" })}><Store className="h-4 w-4 mr-2" />My Store</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => nav({ to: "/billing" })}><CreditCard className="h-4 w-4 mr-2" />Billing & Plan</DropdownMenuItem>
               <DropdownMenuItem><BookOpen className="h-4 w-4 mr-2" />Documentation</DropdownMenuItem>
               <DropdownMenuItem><Calculator className="h-4 w-4 mr-2" />Calculator</DropdownMenuItem>
               <DropdownMenuItem><LifeBuoy className="h-4 w-4 mr-2" />Support</DropdownMenuItem>
