@@ -527,6 +527,39 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_preferences: {
+        Row: {
+          created_at: string
+          email: boolean
+          id: string
+          in_app: boolean
+          notif_type: string
+          toast: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: boolean
+          id?: string
+          in_app?: boolean
+          notif_type: string
+          toast?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: boolean
+          id?: string
+          in_app?: boolean
+          notif_type?: string
+          toast?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           body: string | null
@@ -985,31 +1018,43 @@ export type Database = {
       }
       staff_invites: {
         Row: {
+          accepted_at: string | null
+          accepted_by: string | null
           created_at: string
           email: string
+          expires_at: string
           id: string
           invited_by: string
           role: Database["public"]["Enums"]["app_role"]
           status: string
           store_id: string
+          token: string
         }
         Insert: {
+          accepted_at?: string | null
+          accepted_by?: string | null
           created_at?: string
           email: string
+          expires_at?: string
           id?: string
           invited_by: string
           role: Database["public"]["Enums"]["app_role"]
           status?: string
           store_id: string
+          token?: string
         }
         Update: {
+          accepted_at?: string | null
+          accepted_by?: string | null
           created_at?: string
           email?: string
+          expires_at?: string
           id?: string
           invited_by?: string
           role?: Database["public"]["Enums"]["app_role"]
           status?: string
           store_id?: string
+          token?: string
         }
         Relationships: [
           {
@@ -1114,7 +1159,11 @@ export type Database = {
           billing_cycle: string
           created_at: string
           current_period_end: string | null
+          discount_note: string | null
+          discount_type: string
+          discount_value: number
           id: string
+          next_billing_at: string | null
           paystack_customer_code: string | null
           paystack_subscription_code: string | null
           plan: string
@@ -1128,7 +1177,11 @@ export type Database = {
           billing_cycle?: string
           created_at?: string
           current_period_end?: string | null
+          discount_note?: string | null
+          discount_type?: string
+          discount_value?: number
           id?: string
+          next_billing_at?: string | null
           paystack_customer_code?: string | null
           paystack_subscription_code?: string | null
           plan?: string
@@ -1142,7 +1195,11 @@ export type Database = {
           billing_cycle?: string
           created_at?: string
           current_period_end?: string | null
+          discount_note?: string | null
+          discount_type?: string
+          discount_value?: number
           id?: string
+          next_billing_at?: string | null
           paystack_customer_code?: string | null
           paystack_subscription_code?: string | null
           plan?: string
@@ -1456,6 +1513,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      compute_subscription_amount: {
+        Args: { _store_id: string }
+        Returns: number
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

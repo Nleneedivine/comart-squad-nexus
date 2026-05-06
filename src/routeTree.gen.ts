@@ -22,6 +22,7 @@ import { Route as FinanceRouteImport } from './routes/finance'
 import { Route as CustomerServiceRouteImport } from './routes/customer-service'
 import { Route as ChatRouteImport } from './routes/chat'
 import { Route as BusinessesRouteImport } from './routes/businesses'
+import { Route as BillingRouteImport } from './routes/billing'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AttendanceRouteImport } from './routes/attendance'
 import { Route as AgentsRouteImport } from './routes/agents'
@@ -38,6 +39,7 @@ import { Route as ReportsActivityRouteImport } from './routes/reports.activity'
 import { Route as OrdersIdRouteImport } from './routes/orders.$id'
 import { Route as OrderFormIdRouteImport } from './routes/order.$formId'
 import { Route as MarketingSalesFormsRouteImport } from './routes/marketing.sales-forms'
+import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as InventoryWaybillRouteImport } from './routes/inventory.waybill'
 import { Route as InventoryStockRecordRouteImport } from './routes/inventory.stock-record'
 import { Route as InventoryProductsRouteImport } from './routes/inventory.products'
@@ -52,6 +54,7 @@ import { Route as AdminFlagsRouteImport } from './routes/admin.flags'
 import { Route as AdminBroadcastsRouteImport } from './routes/admin.broadcasts'
 import { Route as AdminAuditRouteImport } from './routes/admin.audit'
 import { Route as ApiPublicPaystackWebhookRouteImport } from './routes/api/public/paystack-webhook'
+import { Route as ApiPublicBillingWebhookRouteImport } from './routes/api/public/billing-webhook'
 
 const WebhooksRoute = WebhooksRouteImport.update({
   id: '/webhooks',
@@ -116,6 +119,11 @@ const ChatRoute = ChatRouteImport.update({
 const BusinessesRoute = BusinessesRouteImport.update({
   id: '/businesses',
   path: '/businesses',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BillingRoute = BillingRouteImport.update({
+  id: '/billing',
+  path: '/billing',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -198,6 +206,11 @@ const MarketingSalesFormsRoute = MarketingSalesFormsRouteImport.update({
   path: '/marketing/sales-forms',
   getParentRoute: () => rootRouteImport,
 } as any)
+const InviteTokenRoute = InviteTokenRouteImport.update({
+  id: '/invite/$token',
+  path: '/invite/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const InventoryWaybillRoute = InventoryWaybillRouteImport.update({
   id: '/inventory/waybill',
   path: '/inventory/waybill',
@@ -269,6 +282,11 @@ const ApiPublicPaystackWebhookRoute =
     path: '/api/public/paystack-webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicBillingWebhookRoute = ApiPublicBillingWebhookRouteImport.update({
+  id: '/api/public/billing-webhook',
+  path: '/api/public/billing-webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -279,6 +297,7 @@ export interface FileRoutesByFullPath {
   '/agents': typeof AgentsRoute
   '/attendance': typeof AttendanceRoute
   '/auth': typeof AuthRoute
+  '/billing': typeof BillingRoute
   '/businesses': typeof BusinessesRoute
   '/chat': typeof ChatRoute
   '/customer-service': typeof CustomerServiceRoute
@@ -305,6 +324,7 @@ export interface FileRoutesByFullPath {
   '/inventory/products': typeof InventoryProductsRoute
   '/inventory/stock-record': typeof InventoryStockRecordRoute
   '/inventory/waybill': typeof InventoryWaybillRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/marketing/sales-forms': typeof MarketingSalesFormsRoute
   '/order/$formId': typeof OrderFormIdRoute
   '/orders/$id': typeof OrdersIdRoute
@@ -313,6 +333,7 @@ export interface FileRoutesByFullPath {
   '/store/orders': typeof StoreOrdersRoute
   '/store/products': typeof StoreProductsRoute
   '/admin/': typeof AdminIndexRoute
+  '/api/public/billing-webhook': typeof ApiPublicBillingWebhookRoute
   '/api/public/paystack-webhook': typeof ApiPublicPaystackWebhookRoute
 }
 export interface FileRoutesByTo {
@@ -323,6 +344,7 @@ export interface FileRoutesByTo {
   '/agents': typeof AgentsRoute
   '/attendance': typeof AttendanceRoute
   '/auth': typeof AuthRoute
+  '/billing': typeof BillingRoute
   '/businesses': typeof BusinessesRoute
   '/chat': typeof ChatRoute
   '/customer-service': typeof CustomerServiceRoute
@@ -349,6 +371,7 @@ export interface FileRoutesByTo {
   '/inventory/products': typeof InventoryProductsRoute
   '/inventory/stock-record': typeof InventoryStockRecordRoute
   '/inventory/waybill': typeof InventoryWaybillRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/marketing/sales-forms': typeof MarketingSalesFormsRoute
   '/order/$formId': typeof OrderFormIdRoute
   '/orders/$id': typeof OrdersIdRoute
@@ -357,6 +380,7 @@ export interface FileRoutesByTo {
   '/store/orders': typeof StoreOrdersRoute
   '/store/products': typeof StoreProductsRoute
   '/admin': typeof AdminIndexRoute
+  '/api/public/billing-webhook': typeof ApiPublicBillingWebhookRoute
   '/api/public/paystack-webhook': typeof ApiPublicPaystackWebhookRoute
 }
 export interface FileRoutesById {
@@ -369,6 +393,7 @@ export interface FileRoutesById {
   '/agents': typeof AgentsRoute
   '/attendance': typeof AttendanceRoute
   '/auth': typeof AuthRoute
+  '/billing': typeof BillingRoute
   '/businesses': typeof BusinessesRoute
   '/chat': typeof ChatRoute
   '/customer-service': typeof CustomerServiceRoute
@@ -395,6 +420,7 @@ export interface FileRoutesById {
   '/inventory/products': typeof InventoryProductsRoute
   '/inventory/stock-record': typeof InventoryStockRecordRoute
   '/inventory/waybill': typeof InventoryWaybillRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/marketing/sales-forms': typeof MarketingSalesFormsRoute
   '/order/$formId': typeof OrderFormIdRoute
   '/orders/$id': typeof OrdersIdRoute
@@ -403,6 +429,7 @@ export interface FileRoutesById {
   '/store/orders': typeof StoreOrdersRoute
   '/store/products': typeof StoreProductsRoute
   '/admin/': typeof AdminIndexRoute
+  '/api/public/billing-webhook': typeof ApiPublicBillingWebhookRoute
   '/api/public/paystack-webhook': typeof ApiPublicPaystackWebhookRoute
 }
 export interface FileRouteTypes {
@@ -416,6 +443,7 @@ export interface FileRouteTypes {
     | '/agents'
     | '/attendance'
     | '/auth'
+    | '/billing'
     | '/businesses'
     | '/chat'
     | '/customer-service'
@@ -442,6 +470,7 @@ export interface FileRouteTypes {
     | '/inventory/products'
     | '/inventory/stock-record'
     | '/inventory/waybill'
+    | '/invite/$token'
     | '/marketing/sales-forms'
     | '/order/$formId'
     | '/orders/$id'
@@ -450,6 +479,7 @@ export interface FileRouteTypes {
     | '/store/orders'
     | '/store/products'
     | '/admin/'
+    | '/api/public/billing-webhook'
     | '/api/public/paystack-webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -460,6 +490,7 @@ export interface FileRouteTypes {
     | '/agents'
     | '/attendance'
     | '/auth'
+    | '/billing'
     | '/businesses'
     | '/chat'
     | '/customer-service'
@@ -486,6 +517,7 @@ export interface FileRouteTypes {
     | '/inventory/products'
     | '/inventory/stock-record'
     | '/inventory/waybill'
+    | '/invite/$token'
     | '/marketing/sales-forms'
     | '/order/$formId'
     | '/orders/$id'
@@ -494,6 +526,7 @@ export interface FileRouteTypes {
     | '/store/orders'
     | '/store/products'
     | '/admin'
+    | '/api/public/billing-webhook'
     | '/api/public/paystack-webhook'
   id:
     | '__root__'
@@ -505,6 +538,7 @@ export interface FileRouteTypes {
     | '/agents'
     | '/attendance'
     | '/auth'
+    | '/billing'
     | '/businesses'
     | '/chat'
     | '/customer-service'
@@ -531,6 +565,7 @@ export interface FileRouteTypes {
     | '/inventory/products'
     | '/inventory/stock-record'
     | '/inventory/waybill'
+    | '/invite/$token'
     | '/marketing/sales-forms'
     | '/order/$formId'
     | '/orders/$id'
@@ -539,6 +574,7 @@ export interface FileRouteTypes {
     | '/store/orders'
     | '/store/products'
     | '/admin/'
+    | '/api/public/billing-webhook'
     | '/api/public/paystack-webhook'
   fileRoutesById: FileRoutesById
 }
@@ -551,6 +587,7 @@ export interface RootRouteChildren {
   AgentsRoute: typeof AgentsRoute
   AttendanceRoute: typeof AttendanceRoute
   AuthRoute: typeof AuthRoute
+  BillingRoute: typeof BillingRoute
   BusinessesRoute: typeof BusinessesRoute
   ChatRoute: typeof ChatRoute
   CustomerServiceRoute: typeof CustomerServiceRoute
@@ -572,12 +609,14 @@ export interface RootRouteChildren {
   InventoryProductsRoute: typeof InventoryProductsRoute
   InventoryStockRecordRoute: typeof InventoryStockRecordRoute
   InventoryWaybillRoute: typeof InventoryWaybillRoute
+  InviteTokenRoute: typeof InviteTokenRoute
   MarketingSalesFormsRoute: typeof MarketingSalesFormsRoute
   OrderFormIdRoute: typeof OrderFormIdRoute
   ReportsActivityRoute: typeof ReportsActivityRoute
   ReportsExportRoute: typeof ReportsExportRoute
   StoreOrdersRoute: typeof StoreOrdersRoute
   StoreProductsRoute: typeof StoreProductsRoute
+  ApiPublicBillingWebhookRoute: typeof ApiPublicBillingWebhookRoute
   ApiPublicPaystackWebhookRoute: typeof ApiPublicPaystackWebhookRoute
 }
 
@@ -672,6 +711,13 @@ declare module '@tanstack/react-router' {
       path: '/businesses'
       fullPath: '/businesses'
       preLoaderRoute: typeof BusinessesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/billing': {
+      id: '/billing'
+      path: '/billing'
+      fullPath: '/billing'
+      preLoaderRoute: typeof BillingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -786,6 +832,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MarketingSalesFormsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/invite/$token': {
+      id: '/invite/$token'
+      path: '/invite/$token'
+      fullPath: '/invite/$token'
+      preLoaderRoute: typeof InviteTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/inventory/waybill': {
       id: '/inventory/waybill'
       path: '/inventory/waybill'
@@ -884,6 +937,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPaystackWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/billing-webhook': {
+      id: '/api/public/billing-webhook'
+      path: '/api/public/billing-webhook'
+      fullPath: '/api/public/billing-webhook'
+      preLoaderRoute: typeof ApiPublicBillingWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -927,6 +987,7 @@ const rootRouteChildren: RootRouteChildren = {
   AgentsRoute: AgentsRoute,
   AttendanceRoute: AttendanceRoute,
   AuthRoute: AuthRoute,
+  BillingRoute: BillingRoute,
   BusinessesRoute: BusinessesRoute,
   ChatRoute: ChatRoute,
   CustomerServiceRoute: CustomerServiceRoute,
@@ -948,12 +1009,14 @@ const rootRouteChildren: RootRouteChildren = {
   InventoryProductsRoute: InventoryProductsRoute,
   InventoryStockRecordRoute: InventoryStockRecordRoute,
   InventoryWaybillRoute: InventoryWaybillRoute,
+  InviteTokenRoute: InviteTokenRoute,
   MarketingSalesFormsRoute: MarketingSalesFormsRoute,
   OrderFormIdRoute: OrderFormIdRoute,
   ReportsActivityRoute: ReportsActivityRoute,
   ReportsExportRoute: ReportsExportRoute,
   StoreOrdersRoute: StoreOrdersRoute,
   StoreProductsRoute: StoreProductsRoute,
+  ApiPublicBillingWebhookRoute: ApiPublicBillingWebhookRoute,
   ApiPublicPaystackWebhookRoute: ApiPublicPaystackWebhookRoute,
 }
 export const routeTree = rootRouteImport

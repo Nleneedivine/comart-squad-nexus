@@ -6,11 +6,13 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
-type Notif = { id: string; title: string; body: string | null; link: string | null; read_at: string | null; created_at: string };
+type Notif = { id: string; title: string; body: string | null; link: string | null; read_at: string | null; created_at: string; kind?: string };
+type Pref = { in_app: boolean; toast: boolean };
 
 export default function NotificationBell() {
   const { user } = useAuth();
   const [items, setItems] = useState<Notif[]>([]);
+  const [prefs, setPrefs] = useState<Record<string, Pref>>({});
 
   const load = async () => {
     if (!user) return;
@@ -21,13 +23,22 @@ export default function NotificationBell() {
   useEffect(() => {
     if (!user) return;
     load();
+    supabase.from("notification_preferences").select("notif_type,in_app,toast").eq("user_id", user.id).then(({ data }) => {
+      const m: Record<string, Pref> = {};
+      (data ?? []).forEach((r: any) => { m[r.notif_type] = { in_app: r.in_app, toast: r.toast }; });
+      setPrefs(m);
+    });
     const ch = supabase.channel("notif-" + user.id)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` }, (payload: any) => {
-        setItems((prev) => [payload.new, ...prev].slice(0, 20));
-        toast(payload.new.title, { description: payload.new.body ?? undefined });
+        const n = payload.new;
+        const kind = n.kind || "info";
+        const pref = prefs[kind] ?? { in_app: true, toast: true };
+        if (pref.in_app) setItems((prev) => [n, ...prev].slice(0, 20));
+        if (pref.toast) toast(n.title, { description: n.body ?? undefined });
       })
       .subscribe();
     return () => { supabase.removeChannel(ch); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const unread = items.filter((i) => !i.read_at).length;

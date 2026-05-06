@@ -7,7 +7,7 @@ import {
   Megaphone, Wallet, Boxes, Users, Banknote, UserCog, MessageSquare,
   BarChart3, Zap, Plug, Webhook, Settings, Search, ChevronDown,
   ChevronRight, Maximize2, LogOut, Sun, Moon, Calculator, BookOpen, LifeBuoy,
-  User as UserIcon, Menu, X,
+  User as UserIcon, Menu, X, CreditCard,
 } from "lucide-react";
 import { useAuth, ROLE_LABELS } from "@/hooks/useAuth";
 import { useTheme } from "@/hooks/useTheme";
@@ -68,19 +68,26 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
 
   const logout = async () => { await supabase.auth.signOut(); nav({ to: "/auth" }); };
 
-  // Global realtime: new-order toast notification
+  // Global realtime: new-order toast notification (respects user preference)
   const mountedAt = useRef<number>(Date.now());
+  const [orderToastEnabled, setOrderToastEnabled] = useState(true);
+  useEffect(() => {
+    if (!user) return;
+    supabase.from("notification_preferences").select("toast").eq("user_id", user.id).eq("notif_type", "order").maybeSingle()
+      .then(({ data }) => { if (data && data.toast === false) setOrderToastEnabled(false); });
+  }, [user]);
   useEffect(() => {
     if (!store) return;
     const ch = supabase.channel("notify-orders-" + store.id)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "orders", filter: `store_id=eq.${store.id}` }, (payload: any) => {
         const o = payload.new || {};
         if (new Date(o.created_at).getTime() < mountedAt.current - 2000) return;
+        if (!orderToastEnabled) return;
         toast.success(`New order from ${o.customer_name || "Customer"} — ${formatNaira(Number(o.amount || 0))}`);
       })
       .subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, [store]);
+  }, [store, orderToastEnabled]);
 
   // Filter NAV by role. If no roles loaded yet (or user has none), show all
   // items — matches ProtectedShell behavior and avoids an empty sidebar.
@@ -189,6 +196,7 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => nav({ to: "/Settings" })}><Settings className="h-4 w-4 mr-2" />Settings</DropdownMenuItem>
               <DropdownMenuItem onClick={() => nav({ to: "/StoreManagement" })}><Store className="h-4 w-4 mr-2" />My Store</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => nav({ to: "/billing" })}><CreditCard className="h-4 w-4 mr-2" />Billing & Plan</DropdownMenuItem>
               <DropdownMenuItem><BookOpen className="h-4 w-4 mr-2" />Documentation</DropdownMenuItem>
               <DropdownMenuItem><Calculator className="h-4 w-4 mr-2" />Calculator</DropdownMenuItem>
               <DropdownMenuItem><LifeBuoy className="h-4 w-4 mr-2" />Support</DropdownMenuItem>
