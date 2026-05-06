@@ -11,6 +11,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format, isAfter } from "date-fns";
+import NotificationPreferences from "@/components/NotificationPreferences";
 
 export const Route = createFileRoute("/Settings")({
   head: () => ({ meta: [{ title: "Settings — Comart+" }, { name: "description", content: "Manage your Comart+ profile and account settings." }] }),
@@ -66,8 +67,12 @@ function SettingsPage() {
       <Tabs defaultValue="profile">
         <TabsList>
           <TabsTrigger value="profile">My Profile</TabsTrigger>
+          <TabsTrigger value="notifications">Notifications</TabsTrigger>
           <TabsTrigger value="general">General Settings</TabsTrigger>
         </TabsList>
+        <TabsContent value="notifications">
+          <NotificationPreferences />
+        </TabsContent>
         <TabsContent value="profile">
           <Card className="p-6 space-y-6">
             <div className="flex items-center gap-4">
