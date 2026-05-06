@@ -28,6 +28,14 @@ export default function ProtectedShell({ children }: { children?: ReactNode }) {
     const run = async (attempt: number) => {
       setCheck("checking");
       try {
+        // Superadmins skip onboarding and go to /admin
+        const { data: sa } = await supabase.from("superadmins").select("id").eq("user_id", user.id).maybeSingle();
+        if (cancelled) return;
+        if (sa && !loc.pathname.startsWith("/admin")) {
+          setCheck("redirect");
+          nav({ to: "/admin" });
+          return;
+        }
         const { data, error } = await supabase
           .from("profiles")
           .select("onboarding_completed,onboarding_step")
