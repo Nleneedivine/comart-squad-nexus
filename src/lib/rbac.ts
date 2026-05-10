@@ -7,7 +7,7 @@ export type Role =
   | "order_manager" | "customer_care" | "logistics_manager" | "accountant";
 
 // Routes each role may access (in addition to baseline routes).
-const BASELINE = ["/Dashboard", "/Settings", "/attendance", "/chat"];
+const BASELINE = ["/Dashboard", "/Settings", "/attendance", "/chat", "/tasks"];
 
 const ROLE_ROUTES: Record<string, string[]> = {
   owner: ["*"],
