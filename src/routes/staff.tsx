@@ -45,18 +45,27 @@ function Staff() {
 
   const load = async () => {
     if (!store) return;
-    const { data: roleRows } = await supabase.from("user_roles").select("user_id, role, profiles(full_name, email)").eq("store_id", store.id);
-    const grouped: Record<string, { name: string; email: string; roles: string[] }> = {};
+    const { data: roleRows } = await supabase.from("user_roles").select("id, user_id, role, is_suspended, profiles(full_name, email)").eq("store_id", store.id);
+    const grouped: Record<string, { user_id: string; name: string; email: string; roles: string[]; is_suspended: boolean; role_ids: string[] }> = {};
     (roleRows || []).forEach((r: any) => {
       const k = r.user_id;
-      if (!grouped[k]) grouped[k] = { name: r.profiles?.full_name || "—", email: r.profiles?.email || "—", roles: [] };
+      if (!grouped[k]) grouped[k] = { user_id: k, name: r.profiles?.full_name || "—", email: r.profiles?.email || "—", roles: [], is_suspended: !!r.is_suspended, role_ids: [] };
       grouped[k].roles.push(r.role);
+      grouped[k].role_ids.push(r.id);
+      if (r.is_suspended) grouped[k].is_suspended = true;
     });
     setMembers(Object.values(grouped));
     const { data: inv } = await supabase.from("staff_invites").select("*").eq("store_id", store.id).order("created_at", { ascending: false });
     setInvites(inv || []);
   };
   useEffect(() => { load(); }, [store]);
+
+  const toggleSuspend = async (m: any, suspend: boolean) => {
+    const { error } = await supabase.from("user_roles").update({ is_suspended: suspend }).in("id", m.role_ids);
+    if (error) return toast.error(error.message);
+    toast.success(suspend ? "Member suspended" : "Member reactivated");
+    load();
+  };
 
   const invite = async () => {
     if (!store || !user) return;
