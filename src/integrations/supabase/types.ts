@@ -702,11 +702,15 @@ export type Database = {
       orders: {
         Row: {
           amount: number
+          assigned_at: string | null
+          assigned_to: string | null
           created_at: string
           created_by: string | null
           customer_id: string | null
           customer_name: string | null
+          expire_pending: boolean
           id: string
+          is_archived: boolean
           notes: string | null
           order_number: string | null
           status: Database["public"]["Enums"]["order_status"]
@@ -715,11 +719,15 @@ export type Database = {
         }
         Insert: {
           amount?: number
+          assigned_at?: string | null
+          assigned_to?: string | null
           created_at?: string
           created_by?: string | null
           customer_id?: string | null
           customer_name?: string | null
+          expire_pending?: boolean
           id?: string
+          is_archived?: boolean
           notes?: string | null
           order_number?: string | null
           status?: Database["public"]["Enums"]["order_status"]
@@ -728,11 +736,15 @@ export type Database = {
         }
         Update: {
           amount?: number
+          assigned_at?: string | null
+          assigned_to?: string | null
           created_at?: string
           created_by?: string | null
           customer_id?: string | null
           customer_name?: string | null
+          expire_pending?: boolean
           id?: string
+          is_archived?: boolean
           notes?: string | null
           order_number?: string | null
           status?: Database["public"]["Enums"]["order_status"]
@@ -1066,6 +1078,45 @@ export type Database = {
           },
         ]
       }
+      staff_workload_stats: {
+        Row: {
+          assigned_count: number
+          cancelled_count: number
+          completed_count: number
+          delivered_count: number
+          expired_count: number
+          id: string
+          period_start: string
+          staff_id: string
+          store_id: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_count?: number
+          cancelled_count?: number
+          completed_count?: number
+          delivered_count?: number
+          expired_count?: number
+          id?: string
+          period_start: string
+          staff_id: string
+          store_id: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_count?: number
+          cancelled_count?: number
+          completed_count?: number
+          delivered_count?: number
+          expired_count?: number
+          id?: string
+          period_start?: string
+          staff_id?: string
+          store_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       stock_movements: {
         Row: {
           balance: number
@@ -1316,6 +1367,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          is_suspended: boolean
           role: Database["public"]["Enums"]["app_role"]
           store_id: string
           user_id: string
@@ -1323,6 +1375,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          is_suspended?: boolean
           role: Database["public"]["Enums"]["app_role"]
           store_id: string
           user_id: string
@@ -1330,6 +1383,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          is_suspended?: boolean
           role?: Database["public"]["Enums"]["app_role"]
           store_id?: string
           user_id?: string
@@ -1523,6 +1577,10 @@ export type Database = {
           _store_id: string
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_member_active: {
+        Args: { _store_id: string; _user_id: string }
         Returns: boolean
       }
       is_store_admin: {

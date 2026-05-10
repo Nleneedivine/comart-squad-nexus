@@ -12,6 +12,8 @@ import { useAuth, ROLE_LABELS } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Copy, Trash2 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import StaffPerformanceCard from "@/components/StaffPerformanceCard";
 
 export const Route = createFileRoute("/staff")({
   head: () => ({ meta: [{ title: "Staff Management — Comart+" }, { name: "description", content: "Invite and manage staff members for your Comart+ store." }] }),
@@ -43,18 +45,27 @@ function Staff() {
 
   const load = async () => {
     if (!store) return;
-    const { data: roleRows } = await supabase.from("user_roles").select("user_id, role, profiles(full_name, email)").eq("store_id", store.id);
-    const grouped: Record<string, { name: string; email: string; roles: string[] }> = {};
+    const { data: roleRows } = await supabase.from("user_roles").select("id, user_id, role, is_suspended, profiles(full_name, email)").eq("store_id", store.id);
+    const grouped: Record<string, { user_id: string; name: string; email: string; roles: string[]; is_suspended: boolean; role_ids: string[] }> = {};
     (roleRows || []).forEach((r: any) => {
       const k = r.user_id;
-      if (!grouped[k]) grouped[k] = { name: r.profiles?.full_name || "—", email: r.profiles?.email || "—", roles: [] };
+      if (!grouped[k]) grouped[k] = { user_id: k, name: r.profiles?.full_name || "—", email: r.profiles?.email || "—", roles: [], is_suspended: !!r.is_suspended, role_ids: [] };
       grouped[k].roles.push(r.role);
+      grouped[k].role_ids.push(r.id);
+      if (r.is_suspended) grouped[k].is_suspended = true;
     });
     setMembers(Object.values(grouped));
     const { data: inv } = await supabase.from("staff_invites").select("*").eq("store_id", store.id).order("created_at", { ascending: false });
     setInvites(inv || []);
   };
   useEffect(() => { load(); }, [store]);
+
+  const toggleSuspend = async (m: any, suspend: boolean) => {
+    const { error } = await supabase.from("user_roles").update({ is_suspended: suspend }).in("id", m.role_ids);
+    if (error) return toast.error(error.message);
+    toast.success(suspend ? "Member suspended" : "Member reactivated");
+    load();
+  };
 
   const invite = async () => {
     if (!store || !user) return;
@@ -135,19 +146,23 @@ function Staff() {
         <h2 className="font-semibold mb-4">Team members</h2>
         {members.length === 0 ? <p className="text-sm text-muted-foreground">No members yet.</p> : (
           <table className="w-full text-sm">
-            <thead className="text-left text-muted-foreground"><tr><th className="py-2">Name</th><th>Email</th><th>Roles</th></tr></thead>
+            <thead className="text-left text-muted-foreground"><tr><th className="py-2">Name</th><th>Email</th><th>Roles</th><th>Status</th><th className="text-right">Active</th></tr></thead>
             <tbody>
-              {members.map((m, i) => (
-                <tr key={i} className="border-t">
+              {members.map((m: any) => (
+                <tr key={m.user_id} className="border-t">
                   <td className="py-3">{m.name}</td>
                   <td>{m.email}</td>
-                  <td className="flex gap-1 flex-wrap py-3">{m.roles.map((r: string) => <Badge key={r} variant="secondary">{ROLE_LABELS[r] || r}</Badge>)}</td>
+                  <td className="py-3"><div className="flex gap-1 flex-wrap">{m.roles.map((r: string) => <Badge key={r} variant="secondary">{ROLE_LABELS[r] || r}</Badge>)}</div></td>
+                  <td>{m.is_suspended ? <Badge variant="destructive">Suspended</Badge> : <Badge variant="outline">Active</Badge>}</td>
+                  <td className="text-right"><Switch checked={!m.is_suspended} onCheckedChange={(v) => toggleSuspend(m, !v)} /></td>
                 </tr>
               ))}
             </tbody>
           </table>
         )}
       </Card>
+
+      <StaffPerformanceCard />
 
       <Card className="p-6">
         <h2 className="font-semibold mb-4">Invitations</h2>

@@ -8,6 +8,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatNaira } from "@/lib/format";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from "recharts";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import MyPerformanceCard from "@/components/MyPerformanceCard";
+import StaffPerformanceCard from "@/components/StaffPerformanceCard";
 
 export const Route = createFileRoute("/Dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — Comart+" }, { name: "description", content: "Comart+ store dashboard: revenue, orders and performance in ₦." }] }),
@@ -17,7 +19,9 @@ export const Route = createFileRoute("/Dashboard")({
 const RANGES = ["Today", "Week", "Month", "Year"] as const;
 
 function Dashboard() {
-  const { store } = useAuth();
+  const { store, roles } = useAuth();
+  const isAdmin = roles.some(r => ["owner","admin","manager","head_of_operations"].includes(r));
+  const isStaff = roles.length > 0 && !isAdmin;
   const [range, setRange] = useState<typeof RANGES[number]>("Month");
   const [orders, setOrders] = useState<any[]>([]);
   const [stockUnits, setStockUnits] = useState(0);
@@ -159,16 +163,17 @@ function Dashboard() {
         </div>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
-        <Card className="p-6">
-          <h3 className="font-semibold">Top 3 Best Performing Staff</h3>
-          <div className="mt-6 text-center text-sm text-muted-foreground">No staff performance data yet</div>
-        </Card>
-        <Card className="p-6">
-          <h3 className="font-semibold">Top 3 Best Performing Agents</h3>
-          <div className="mt-6 text-center text-sm text-muted-foreground">No agent performance data yet</div>
-        </Card>
-      </div>
+      {isStaff && <MyPerformanceCard />}
+
+      {isAdmin && (
+        <div className="grid md:grid-cols-2 gap-6">
+          <StaffPerformanceCard />
+          <Card className="p-6">
+            <h3 className="font-semibold">Top 3 Best Performing Agents</h3>
+            <div className="mt-6 text-center text-sm text-muted-foreground">No agent performance data yet</div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
