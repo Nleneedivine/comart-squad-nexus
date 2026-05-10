@@ -7,7 +7,7 @@ import {
   Megaphone, Wallet, Boxes, Users, Banknote, UserCog, MessageSquare,
   BarChart3, Zap, Plug, Webhook, Settings, Search, ChevronDown,
   ChevronRight, Maximize2, LogOut, Sun, Moon, Calculator, BookOpen, LifeBuoy,
-  User as UserIcon, Menu, X, CreditCard,
+  User as UserIcon, Menu, X, CreditCard, ListTodo,
 } from "lucide-react";
 import { useAuth, ROLE_LABELS } from "@/hooks/useAuth";
 import { useTheme } from "@/hooks/useTheme";
@@ -46,6 +46,7 @@ const NAV: Item[] = [
     { label: "Records", to: "/finance" },
   ]},
   { label: "Staff Management", to: "/staff", icon: UserCog },
+  { label: "Tasks", to: "/tasks", icon: ListTodo },
   { label: "Chat Room", to: "/chat", icon: MessageSquare },
   { label: "Reports", icon: BarChart3, children: [
     { label: "Data Export", to: "/reports/export" },
