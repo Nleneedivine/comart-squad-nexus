@@ -39,6 +39,7 @@ import { Route as ReportsExportRouteImport } from './routes/reports.export'
 import { Route as ReportsActivityRouteImport } from './routes/reports.activity'
 import { Route as OrdersIdRouteImport } from './routes/orders.$id'
 import { Route as OrderFormIdRouteImport } from './routes/order.$formId'
+import { Route as MarketingTemplatesRouteImport } from './routes/marketing.templates'
 import { Route as MarketingSalesFormsRouteImport } from './routes/marketing.sales-forms'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as InventoryWaybillRouteImport } from './routes/inventory.waybill'
@@ -207,6 +208,11 @@ const OrderFormIdRoute = OrderFormIdRouteImport.update({
   path: '/order/$formId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MarketingTemplatesRoute = MarketingTemplatesRouteImport.update({
+  id: '/marketing/templates',
+  path: '/marketing/templates',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MarketingSalesFormsRoute = MarketingSalesFormsRouteImport.update({
   id: '/marketing/sales-forms',
   path: '/marketing/sales-forms',
@@ -333,6 +339,7 @@ export interface FileRoutesByFullPath {
   '/inventory/waybill': typeof InventoryWaybillRoute
   '/invite/$token': typeof InviteTokenRoute
   '/marketing/sales-forms': typeof MarketingSalesFormsRoute
+  '/marketing/templates': typeof MarketingTemplatesRoute
   '/order/$formId': typeof OrderFormIdRoute
   '/orders/$id': typeof OrdersIdRoute
   '/reports/activity': typeof ReportsActivityRoute
@@ -381,6 +388,7 @@ export interface FileRoutesByTo {
   '/inventory/waybill': typeof InventoryWaybillRoute
   '/invite/$token': typeof InviteTokenRoute
   '/marketing/sales-forms': typeof MarketingSalesFormsRoute
+  '/marketing/templates': typeof MarketingTemplatesRoute
   '/order/$formId': typeof OrderFormIdRoute
   '/orders/$id': typeof OrdersIdRoute
   '/reports/activity': typeof ReportsActivityRoute
@@ -431,6 +439,7 @@ export interface FileRoutesById {
   '/inventory/waybill': typeof InventoryWaybillRoute
   '/invite/$token': typeof InviteTokenRoute
   '/marketing/sales-forms': typeof MarketingSalesFormsRoute
+  '/marketing/templates': typeof MarketingTemplatesRoute
   '/order/$formId': typeof OrderFormIdRoute
   '/orders/$id': typeof OrdersIdRoute
   '/reports/activity': typeof ReportsActivityRoute
@@ -482,6 +491,7 @@ export interface FileRouteTypes {
     | '/inventory/waybill'
     | '/invite/$token'
     | '/marketing/sales-forms'
+    | '/marketing/templates'
     | '/order/$formId'
     | '/orders/$id'
     | '/reports/activity'
@@ -530,6 +540,7 @@ export interface FileRouteTypes {
     | '/inventory/waybill'
     | '/invite/$token'
     | '/marketing/sales-forms'
+    | '/marketing/templates'
     | '/order/$formId'
     | '/orders/$id'
     | '/reports/activity'
@@ -579,6 +590,7 @@ export interface FileRouteTypes {
     | '/inventory/waybill'
     | '/invite/$token'
     | '/marketing/sales-forms'
+    | '/marketing/templates'
     | '/order/$formId'
     | '/orders/$id'
     | '/reports/activity'
@@ -624,6 +636,7 @@ export interface RootRouteChildren {
   InventoryWaybillRoute: typeof InventoryWaybillRoute
   InviteTokenRoute: typeof InviteTokenRoute
   MarketingSalesFormsRoute: typeof MarketingSalesFormsRoute
+  MarketingTemplatesRoute: typeof MarketingTemplatesRoute
   OrderFormIdRoute: typeof OrderFormIdRoute
   ReportsActivityRoute: typeof ReportsActivityRoute
   ReportsExportRoute: typeof ReportsExportRoute
@@ -845,6 +858,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrderFormIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/marketing/templates': {
+      id: '/marketing/templates'
+      path: '/marketing/templates'
+      fullPath: '/marketing/templates'
+      preLoaderRoute: typeof MarketingTemplatesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/marketing/sales-forms': {
       id: '/marketing/sales-forms'
       path: '/marketing/sales-forms'
@@ -1032,6 +1052,7 @@ const rootRouteChildren: RootRouteChildren = {
   InventoryWaybillRoute: InventoryWaybillRoute,
   InviteTokenRoute: InviteTokenRoute,
   MarketingSalesFormsRoute: MarketingSalesFormsRoute,
+  MarketingTemplatesRoute: MarketingTemplatesRoute,
   OrderFormIdRoute: OrderFormIdRoute,
   ReportsActivityRoute: ReportsActivityRoute,
   ReportsExportRoute: ReportsExportRoute,

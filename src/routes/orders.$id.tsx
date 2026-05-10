@@ -6,11 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { formatNaira } from "@/lib/format";
 import { toast } from "sonner";
-import { ArrowLeft, Circle } from "lucide-react";
+import { ArrowLeft, Circle, MessageSquare } from "lucide-react";
 
 export const Route = createFileRoute("/orders/$id")({
   head: () => ({ meta: [{ title: "Order Detail — Comart+" }, { name: "description", content: "View order details and status timeline." }] }),
@@ -57,7 +60,8 @@ function OrderDetail() {
             <p className="text-sm text-muted-foreground">{new Date(order.created_at).toLocaleString()}</p>
             <p className="text-sm mt-2">Customer: <span className="font-medium">{order.customers?.name || order.customer_name || "—"}</span></p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <WhatsAppSendDialog order={order} />
             <Select value={newStatus} onValueChange={setNewStatus}>
               <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
               <SelectContent>{STATUSES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
@@ -107,5 +111,67 @@ function OrderDetail() {
         </Card>
       </div>
     </div>
+  );
+}
+
+function fillTemplate(body: string, order: any, storeName: string) {
+  return body
+    .replaceAll("{customer_name}", order.customers?.name || order.customer_name || "")
+    .replaceAll("{order_number}", order.order_number || order.id?.slice(0, 8) || "")
+    .replaceAll("{amount}", new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN" }).format(Number(order.amount || 0)))
+    .replaceAll("{store_name}", storeName || "")
+    .replaceAll("{status}", order.status || "");
+}
+
+function WhatsAppSendDialog({ order }: { order: any }) {
+  const { store } = useAuth();
+  const [open, setOpen] = useState(false);
+  const [templates, setTemplates] = useState<any[]>([]);
+  const [selectedId, setSelectedId] = useState<string>("");
+  const [message, setMessage] = useState("");
+  const phone = order.customers?.phone || "";
+
+  useEffect(() => {
+    if (!open || !store) return;
+    supabase.from("message_templates").select("*").eq("store_id", store.id).eq("channel", "whatsapp").then(({ data }) => setTemplates(data || []));
+  }, [open, store]);
+
+  const onPick = (id: string) => {
+    setSelectedId(id);
+    const t = templates.find(x => x.id === id);
+    if (t) setMessage(fillTemplate(t.body, order, store?.name || ""));
+  };
+
+  const send = () => {
+    if (!phone) return toast.error("Customer phone missing");
+    if (!message.trim()) return toast.error("Message empty");
+    const cleaned = phone.replace(/[^\d]/g, "");
+    window.open(`https://wa.me/${cleaned}?text=${encodeURIComponent(message)}`, "_blank");
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm"><MessageSquare className="h-4 w-4 mr-1" />WhatsApp</Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader><DialogTitle>Send WhatsApp message</DialogTitle></DialogHeader>
+        <div className="space-y-3">
+          <div>
+            <Label>Template</Label>
+            <Select value={selectedId} onValueChange={onPick}>
+              <SelectTrigger><SelectValue placeholder={templates.length ? "Pick a template" : "No templates yet"} /></SelectTrigger>
+              <SelectContent>{templates.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Message</Label>
+            <Textarea rows={6} value={message} onChange={e => setMessage(e.target.value)} placeholder="Type or pick a template" />
+          </div>
+          <p className="text-xs text-muted-foreground">To: {phone || "(no phone on customer)"}</p>
+          <Button onClick={send} className="w-full" disabled={!phone}>Open WhatsApp</Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

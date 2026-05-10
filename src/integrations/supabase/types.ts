@@ -527,6 +527,39 @@ export type Database = {
         }
         Relationships: []
       }
+      message_templates: {
+        Row: {
+          body: string
+          channel: string
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          store_id: string
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          channel?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          store_id: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          channel?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          store_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       notification_preferences: {
         Row: {
           created_at: string
@@ -1571,6 +1604,7 @@ export type Database = {
         Args: { _store_id: string }
         Returns: number
       }
+      expire_stale_orders: { Args: never; Returns: undefined }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
