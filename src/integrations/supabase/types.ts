@@ -838,6 +838,7 @@ export type Database = {
           created_at: string
           id: string
           name: string
+          reorder_point: number
           selling_price: number
           sku: string | null
           status: string
@@ -851,6 +852,7 @@ export type Database = {
           created_at?: string
           id?: string
           name: string
+          reorder_point?: number
           selling_price?: number
           sku?: string | null
           status?: string
@@ -864,6 +866,7 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
+          reorder_point?: number
           selling_price?: number
           sku?: string | null
           status?: string
