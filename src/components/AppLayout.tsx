@@ -31,6 +31,7 @@ const NAV: Item[] = [
   { label: "Customers", to: "/customer-service", icon: Headphones },
   { label: "Marketing", icon: Megaphone, children: [
     { label: "Sales Forms", to: "/marketing/sales-forms" },
+    { label: "Message Templates", to: "/marketing/templates" },
   ]},
   { label: "Wallet", to: "/wallet", icon: Wallet },
   { label: "Inventory", icon: Boxes, children: [
