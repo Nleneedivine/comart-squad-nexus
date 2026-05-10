@@ -10,6 +10,17 @@ import { supabase } from "@/integrations/supabase/client";
 
 type CheckState = "idle" | "checking" | "ok" | "redirect" | "error";
 
+const ROLE_LANDING: Record<string, string> = {
+  sales_rep: "/orders",
+  inventory_manager: "/inventory/products",
+  marketer: "/marketing/sales-forms",
+  order_manager: "/orders",
+  customer_care: "/customer-service",
+  logistics_manager: "/inventory/waybill",
+  accountant: "/finance",
+  hr: "/staff",
+};
+
 export default function ProtectedShell({ children }: { children?: ReactNode }) {
   const { user, loading, roles } = useAuth();
   const nav = useNavigate();
@@ -20,6 +31,18 @@ export default function ProtectedShell({ children }: { children?: ReactNode }) {
   useEffect(() => {
     if (!loading && !user) { nav({ to: "/auth" }); return; }
   }, [user, loading, nav]);
+
+  // One-time role-based landing: if a non-admin lands on /Dashboard, send to their natural page
+  useEffect(() => {
+    if (!user || roles.length === 0) return;
+    const isAdmin = roles.some(r => ["owner","admin","manager","head_of_operations"].includes(r));
+    if (isAdmin) return;
+    if (loc.pathname !== "/Dashboard") return;
+    const sessionKey = `landed-${user.id}`;
+    if (sessionStorage.getItem(sessionKey)) return;
+    const landing = roles.map(r => ROLE_LANDING[r]).find(Boolean);
+    if (landing) { sessionStorage.setItem(sessionKey, "1"); nav({ to: landing }); }
+  }, [user, roles, loc.pathname, nav]);
 
   useEffect(() => {
     if (!user || loc.pathname === "/onboarding") { setCheck("ok"); return; }
