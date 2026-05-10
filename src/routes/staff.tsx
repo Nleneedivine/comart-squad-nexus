@@ -12,6 +12,8 @@ import { useAuth, ROLE_LABELS } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Copy, Trash2 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import StaffPerformanceCard from "@/components/StaffPerformanceCard";
 
 export const Route = createFileRoute("/staff")({
   head: () => ({ meta: [{ title: "Staff Management — Comart+" }, { name: "description", content: "Invite and manage staff members for your Comart+ store." }] }),
