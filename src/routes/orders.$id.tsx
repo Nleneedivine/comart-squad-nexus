@@ -60,7 +60,8 @@ function OrderDetail() {
             <p className="text-sm text-muted-foreground">{new Date(order.created_at).toLocaleString()}</p>
             <p className="text-sm mt-2">Customer: <span className="font-medium">{order.customers?.name || order.customer_name || "—"}</span></p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <WhatsAppSendDialog order={order} />
             <Select value={newStatus} onValueChange={setNewStatus}>
               <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
               <SelectContent>{STATUSES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
