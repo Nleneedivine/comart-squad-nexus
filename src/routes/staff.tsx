@@ -146,19 +146,23 @@ function Staff() {
         <h2 className="font-semibold mb-4">Team members</h2>
         {members.length === 0 ? <p className="text-sm text-muted-foreground">No members yet.</p> : (
           <table className="w-full text-sm">
-            <thead className="text-left text-muted-foreground"><tr><th className="py-2">Name</th><th>Email</th><th>Roles</th></tr></thead>
+            <thead className="text-left text-muted-foreground"><tr><th className="py-2">Name</th><th>Email</th><th>Roles</th><th>Status</th><th className="text-right">Active</th></tr></thead>
             <tbody>
-              {members.map((m, i) => (
-                <tr key={i} className="border-t">
+              {members.map((m: any) => (
+                <tr key={m.user_id} className="border-t">
                   <td className="py-3">{m.name}</td>
                   <td>{m.email}</td>
-                  <td className="flex gap-1 flex-wrap py-3">{m.roles.map((r: string) => <Badge key={r} variant="secondary">{ROLE_LABELS[r] || r}</Badge>)}</td>
+                  <td className="py-3"><div className="flex gap-1 flex-wrap">{m.roles.map((r: string) => <Badge key={r} variant="secondary">{ROLE_LABELS[r] || r}</Badge>)}</div></td>
+                  <td>{m.is_suspended ? <Badge variant="destructive">Suspended</Badge> : <Badge variant="outline">Active</Badge>}</td>
+                  <td className="text-right"><Switch checked={!m.is_suspended} onCheckedChange={(v) => toggleSuspend(m, !v)} /></td>
                 </tr>
               ))}
             </tbody>
           </table>
         )}
       </Card>
+
+      <StaffPerformanceCard />
 
       <Card className="p-6">
         <h2 className="font-semibold mb-4">Invitations</h2>
