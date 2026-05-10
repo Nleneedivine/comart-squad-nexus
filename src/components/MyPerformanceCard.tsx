@@ -44,7 +44,7 @@ export default function MyPerformanceCard() {
       const { start, end } = rangeDates(range);
       const [{ data: stats }, { data: active }] = await Promise.all([
         supabase.from("staff_workload_stats").select("*").eq("store_id", store.id).eq("staff_id", user.id).gte("period_start", start).lte("period_start", end),
-        supabase.from("orders").select("id").eq("store_id", store.id).eq("assigned_to", user.id).eq("is_archived", false).in("status", ["pending","processing","assigned"]),
+        supabase.from("orders").select("id").eq("store_id", store.id).eq("assigned_to", user.id).eq("is_archived", false).in("status", ["pending","processing","shipped"]),
       ]);
       const acc = { assigned:0, completed:0, delivered:0, cancelled:0, expired:0, active: active?.length || 0, rate:0, deliveryRate:0 };
       (stats || []).forEach((w: any) => { acc.assigned += w.assigned_count; acc.completed += w.completed_count; acc.delivered += w.delivered_count; acc.cancelled += w.cancelled_count; acc.expired += w.expired_count; });

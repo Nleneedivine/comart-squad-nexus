@@ -60,7 +60,7 @@ export default function StaffPerformanceCard() {
       const [{ data: members }, { data: stats }, { data: active }] = await Promise.all([
         supabase.from("user_roles").select("user_id, is_suspended, profiles(full_name, email)").eq("store_id", store.id),
         supabase.from("staff_workload_stats").select("*").eq("store_id", store.id).gte("period_start", start).lte("period_start", end),
-        supabase.from("orders").select("assigned_to").eq("store_id", store.id).eq("is_archived", false).in("status", ["pending","processing","assigned"]),
+        supabase.from("orders").select("assigned_to").eq("store_id", store.id).eq("is_archived", false).in("status", ["pending","processing","shipped"]),
       ]);
       const map: Record<string, Row> = {};
       (members || []).forEach((m: any) => {
