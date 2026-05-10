@@ -77,6 +77,14 @@ export default function ProtectedShell({ children }: { children?: ReactNode }) {
           nav({ to: "/onboarding" });
           return;
         }
+        // Suspended members across all stores → forced sign-out
+        const { data: rolesRows } = await supabase.from("user_roles").select("is_suspended").eq("user_id", user.id);
+        if (cancelled) return;
+        if (rolesRows && rolesRows.length > 0 && rolesRows.every((r: any) => r.is_suspended)) {
+          await supabase.auth.signOut();
+          nav({ to: "/auth" });
+          return;
+        }
         setCheck("ok");
       } catch (e) {
         if (cancelled) return;
