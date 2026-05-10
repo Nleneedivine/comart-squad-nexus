@@ -32,6 +32,9 @@ function CustomerDetail() {
 
   const total = orders.reduce((a, o) => a + Number(o.amount || 0), 0);
   const segment = orders.length >= 5 ? "VIP" : orders.length >= 2 ? "Regular" : "New";
+  const avg = orders.length ? total / orders.length : 0;
+  const delivered = orders.filter(o => ["delivered", "completed", "fulfilled"].includes(String(o.status))).length;
+  const lastOrder = orders[0]?.created_at;
 
   return (
     <div className="space-y-6">
@@ -48,10 +51,12 @@ function CustomerDetail() {
               </div>
               <Badge className="text-sm" variant={segment === "VIP" ? "default" : "secondary"}>{segment}</Badge>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-6 pt-6 border-t">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-6 pt-6 border-t">
               <div><div className="text-xs text-muted-foreground">Total Orders</div><div className="text-xl font-bold">{orders.length}</div></div>
-              <div><div className="text-xs text-muted-foreground">Total Spent</div><div className="text-xl font-bold">{formatNaira(total)}</div></div>
-              <div><div className="text-xs text-muted-foreground">Customer Since</div><div className="text-xl font-bold">{new Date(customer.created_at).toLocaleDateString()}</div></div>
+              <div><div className="text-xs text-muted-foreground">Lifetime Value</div><div className="text-xl font-bold">{formatNaira(total)}</div></div>
+              <div><div className="text-xs text-muted-foreground">Avg. Order</div><div className="text-xl font-bold">{formatNaira(avg)}</div></div>
+              <div><div className="text-xs text-muted-foreground">Delivered</div><div className="text-xl font-bold">{delivered}</div></div>
+              <div><div className="text-xs text-muted-foreground">Last Order</div><div className="text-xl font-bold">{lastOrder ? new Date(lastOrder).toLocaleDateString() : "—"}</div></div>
             </div>
             {customer.notes && <p className="text-sm mt-4 p-3 rounded bg-muted">{customer.notes}</p>}
           </Card>
