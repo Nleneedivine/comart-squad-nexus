@@ -1,323 +1,82 @@
-# Comart+ — Full Site Audit
+# Features to port from Comart Order Hub + recommended per-store features
 
-This is a review-only report. Nothing has been changed. Below is what works, what is broken or only half-built, what is missing, and where to improve — organized by area. After your approval I can start fixing in priority order.
+## A. What Comart Order Hub has that we should adopt
 
----
+The reference project is a single-tenant order-fulfilment dashboard. The pieces worth lifting (and adapting to our multi-tenant `store_id` model + existing `staff_invites` flow) are:
 
-## 1. Sidebar / global navigation (`AppLayout.tsx`)
+### 1. Staff Performance & Workload (HIGH value)
 
-Works: 25 links, collapsible desktop sidebar, mobile drawer, role-based filtering, theme toggle, profile menu, store name in header.
+- `**staff_workload_stats**` rollup table (per staff_id × period) with: assigned_count, completed_count, cancelled_count, expired_count.
+- **Staff Performance leaderboard** card (admin view): completion rate, active vs done vs cancelled vs expired, ranked, CSV export, period filter (week / month / last month / year), rating badges (Excellent / Good / Average / Needs Improvement).
+- **My Performance card** (staff view): same metrics scoped to the logged-in user, with delivery rate.
+- **Workload-aware assignment**: when bulk-assigning, sort staff by current open-order count so work is distributed fairly.
 
-Issues:
-- **Top-bar search input does nothing** (no handler, no results). Either wire it to a global search or remove.
-- **Bell / notifications** has a red dot but no dropdown / data source.
-- **Maximize button** (`Maximize2`) has no `onClick` — dead button.
-- **Calculator / Documentation / Support** items in profile dropdown have no `onClick` handlers.
-- "Marketing" group only contains "Sales Forms" — collapsing it adds a click for no reason. Either flatten or add the missing items (Campaigns, Email blast etc. mentioned in earlier briefs).
-- "Finance" group contains only "Records" — same issue.
-- No active-route highlight for parent group (only leaf).
-- Sidebar shows ALL items when `roles=[]` (loading state) — fine, but a brief flash happens after roles arrive and items disappear. Should render a skeleton until roles loaded.
+### 2. Order Assignment & Lifecycle
 
----
+- `assigned_to` + `assigned_at` on orders, with statuses `New → Assigned → In Progress → Delivered / Cancelled / Expired`.
+- **Auto-expire** stale assignments (e.g. 48h with no progress) via pg_cron → status = `Expired`, frees workload. (Admin. to approve before it is tagged expired)
+- **Order Actions dropdown** (reassign, mark delivered, cancel with reason, archive).
+- **Archived Orders** view with restore.
+- **Bulk Order Actions**: multi-select → assign / status change / archive.
 
-## 2. Auth (`/auth`, `ProtectedShell`)
+### 3. Bulk Order Import
 
-Works: email/password sign-in & sign-up, redirect to `/Dashboard`, route guard.
+- Paste raw text **or** upload `.xlsx/.csv`; AI-assisted parsing (use Lovable AI Gateway, no extra key needed) into structured rows; preview + edit before commit; staff workload preview; progress bar; success/failure summary.
 
-Issues / missing:
-- **No Google OAuth button** even though earlier brief required it.
-- **No "Forgot password" / reset flow.**
-- **No email-verification gate** — users can sign in immediately (auto-confirm seems on). Confirm with you whether that's intentional.
-- **Staff invites table exists but invite acceptance flow is missing** — invites are inserted (`staff_invites`) but nothing converts an invite into a `user_roles` row when the invitee signs up.
-- New sign-up doesn't create a `stores` row or assign `owner` role automatically (need a DB trigger on `auth.users` insert, or app-side onboarding).
+### 4. WhatsApp / Message Templates
 
----
+- Per-store template library with placeholders (`{customer_name}`, `{phone_number}`, `{total_price}`, `{order_id}`, `{status}`, …).
+- "Send WhatsApp" button on each order opens `wa.me/<phone>?text=<rendered template>`.
 
-## 3. Dashboard (`/Dashboard`)
+### 5. Public Order Form
 
-Works: 6 KPIs computed from orders, latest orders list, delivery rate badge.
+- We already have `/order/$formId` and `/f/$slug` — adopt their cleaner price-tier preview UX (live total as quantity changes, success state).
 
-Issues:
-- **"Orders and Revenue Trends" chart is hard-coded to zeros** — the `chartData` array has `Revenue:0, Orders:0` for every day. Should bucket `orders` by day from the actual data and respect the `range` selector (Today/Week/Month/Year currently does nothing).
-- **"Total Stock Unit" KPI is hard-coded "0"** — should sum `products.stock_qty`.
-- **"Top 3 Best Performing Staff" / "Agents"** panels are empty placeholders — need real aggregation.
-- KPIs ignore the `range` filter entirely; selecting "Year" changes nothing.
-- No currency localization fallback if `formatNaira` receives NaN.
+### 6. Staff suspension
+
+- `is_suspended` flag (in addition to revoke). Suspended staff keep history but can't sign in or be assigned new work.
 
 ---
 
-## 4. Orders (`/orders`, `/orders/$id`)
+## B. Additional per-store features I recommend (not in either project yet)
 
-Works: list, status/customer/date filters, create order modal with line items, totals, status history insert, link to detail.
+Based on the schema you already have (orders, products, customers, agents, finance_records, wallets, waybills, tasks, goals, todos), these round out a "real" store ops platform:
 
-Issues / missing:
-- **Stock is not decremented** when an order is created — `stock_qty` should drop and a `stock_movements` row of type `sale` inserted.
-- **No payment status** field (paid/unpaid/partial) — only delivery status.
-- **Cannot edit an order** after creation; only status can change.
-- **No bulk actions** (mark shipped, export selected).
-- **No print invoice / receipt** action on detail page.
-- Search field for customer/order number not in filters — only dropdown selects.
-- Order detail page is minimal (only status update). Should show line items, customer block, totals, status timeline.
-
----
-
-## 5. Customers (`/customer-service`, `/customers/$id`)
-
-Works: KPIs, search, add/edit modal, all 36 states present.
-
-Issues:
-- **No customer-detail order history** shown by default? (Need to check `customers.$id.tsx` — it's only 80 lines, likely barebones.)
-- **Cannot delete or merge** duplicate customers.
-- **Phone validation**: free-text — should validate Nigerian format (`08012345678` or `+234…`).
-- **Import CSV** missing.
+1. **Role-based default landing pages & dashboard widgets** — Sales Rep → Orders + personal stats; Inventory Manager → Products + low-stock; Accountant → Finance; Customer Care → Customers + Chat; HR → Staff + Attendance.
+2. **Task assignment hub** — `tasks` table is already there; add a "My Tasks" page for staff and an "Assign Task" flow for admins (priority, deadline, status updates, comments).
+3. **Commissions** — auto-compute per sales_rep / agent from delivered orders × `commission_pct`; payable summary on the Finance page; one-click record as wallet payout.
+4. **Low-stock alerts & reorder points** — `reorder_level` on products, daily check, in-app + email notification (respecting the new notification preferences), low-stock dashboard widget.
+5. **Customer order history & lifetime value** — on `/customers/$id`, show all past orders, total spend, last order date, "VIP" badge above a threshold.
+6. **Daily / shift reports** — auto-generated end-of-day summary per store: orders created, delivered, cancelled, revenue, top staff, pushed to chat + activity log.
+7. **Goals tracking** — `goals` table is already there; surface progress bars on the dashboard and rank staff against shared targets.
+8. **Audit log per store** — extend existing `activity_log` with structured "who changed what" entries on sensitive actions (price edits, role changes, refunds, stock adjustments).
+9. **Refunds & returns** — return-reason workflow tied to `faulty_stocks` and a finance debit entry.
+10. **Delivery / waybill tracking** — status timeline on `waybills` (dispatched → in transit → delivered), shareable tracking link for the customer.
+11. **Customer feedback / NPS** — one-tap rating link sent after delivery; results feed into staff performance.
+12. **Saved exports & scheduled reports** — re-run the same Reports/Export config on a schedule, email PDF/CSV to owner.
+13. **Two-factor auth for owner/admin** and **session/device list** in Settings.
+14. **Per-store branding on public pages** — logo, primary color, custom domain hint on `/f/$slug` and `/order/$formId`.
 
 ---
 
-## 6. Inventory
+## Suggested build order (after you confirm)
 
-### `/inventory/products`
-Works: list/add (assumed). Should verify: low-stock badge, edit, delete.
-Likely missing: **bulk import**, **product images**, **categories/variants**, **barcode**.
-
-### `/inventory/buy-stock`
-Works: multi-line purchase entry.
-Issues: **does it create `stock_movements` and increment `stock_qty`?** Need to confirm the insert side-effects. Also **no link to a Business/Supplier** — supplier dropdown not visible in shown code.
-
-### `/inventory/stock-record`
-Works: read-only movement log.
-Issue: **no filters** (product, type, date) — for a real ledger this is required. No CSV export.
-
-### `/inventory/faulty`
-Works: log faulty items.
-Issue: **does it deduct stock?** Confirm. Also no photo evidence upload.
-
-### `/inventory/agent-stock`
-Works: allocate stock to agents.
-**Bug:** "agents" list is built from `user_roles` (staff), NOT from the `agents` table. Allocations to non-staff agents (the field reps stored in `/agents`) are impossible. Should pull from `agents` table.
-Also: **does not deduct main `stock_qty`** when allocating.
-
-### `/inventory/waybill`
-Works: create + list.
-Missing: **print view** is mentioned ("Printer" icon imported) but printable layout/PDF not visible. Need a `/waybill/$id/print` printable template.
-
----
-
-## 7. Businesses (`/businesses`)
-Need to verify CRUD completeness, but generally:
-- Should integrate with Buy-Stock (supplier dropdown).
-- No "transactions with this supplier" view.
-
----
-
-## 8. Marketing — Sales Forms (`/marketing/sales-forms`) + public `/f/$slug`
-
-Works: form list, public form fetches active form, submits to `form_submissions`.
-
-Issues / missing:
-- **No "Build New Form" UX visible** — need to confirm. Brief required builder.
-- **Form submission does NOT create an Order or Customer** — it goes into `form_submissions` and dies there. Should auto-create a customer and order, push to `/orders`.
-- Public form has **no store branding** (logo, store name, colors).
-- **No success page customization** (thank-you message, redirect URL).
-- **No payment** on the public form (Paystack inline checkout) — submissions are unpaid.
-- **No share-link UI** (copy button, QR code).
-- Stats KPIs: "Total / Active / Inactive" — confirm they're shown.
-
----
-
-## 9. Wallet (`/wallet`)
-
-Works: balance, fund via Paystack server function, withdraw request, bank account, PIN (SHA-256), transactions table, Paystack callback verification.
-
-Issues:
-- **PIN is never required** before withdraw — defeats its purpose. Should prompt for PIN on `withdraw()`.
-- **PIN stored as plain SHA-256** (no salt) — weak. Use bcrypt/argon via edge function or add per-user salt.
-- **Withdrawal is not actually paid out** — it's just a DB row. Need Paystack Transfer API call from the server function (`requestWithdrawal` likely just inserts).
-- **No balance reconciliation** with Paystack on app load.
-- **No transaction detail / receipt**.
-- **No webhook endpoint** for Paystack `charge.success` / `transfer.success` (auto-credit/finalize) — need `/api/public/paystack-webhook` route with HMAC verification.
-- "show/hide balance" persists per session only.
-
----
-
-## 10. Finance (`/finance`)
-
-Works: KPIs, filters (date + type), add record, CSV export.
-
-Issues:
-- **No edit / delete** of records.
-- **Income/expense are manual** — no auto-record on order delivery or wallet funding.
-- "Source/Reference" is free text — should link to actual entities (order id, supplier id).
-- No category management (categories hard-coded list).
-
----
-
-## 11. Agents (`/agents`)
-
-Works: list, add agent.
-
-Issues:
-- **Performance computed wrong**: it counts `agent_stocks` rows as "orders" and sums `quantity` as "revenue". These aren't sales — that's allocations. Real performance should query orders attributed to the agent.
-- No edit / delete / deactivate.
-- No commission payout view.
-
----
-
-## 12. Staff (`/staff`)
-
-Works: list members + roles, send invite (DB row).
-
-Issues:
-- **Invitation email is never sent.** `staff_invites` row is created but no email goes out → invitee can't act on it.
-- **No accept-invite flow** (no `/invite/$token` page).
-- **Cannot remove a member** or change a role from the table.
-- Pending invites cannot be revoked or resent.
-
----
-
-## 13. Chat (`/chat`)
-
-Works: realtime via Supabase channel, channels + DMs, mark-as-read.
-
-Issues:
-- **No unread badge** in sidebar / on contacts.
-- **No file/image attachments**.
-- **No typing indicator / online presence**.
-- "General" channel + DMs only — earlier brief mentioned "Message Store Owner" shortcut; confirm it exists.
-- Search filters contacts but not message history.
-
----
-
-## 14. Productivity (`/productivity`)
-
-Tabs: Todos / Tasks / Goals.
-
-Likely OK as a scaffold; verify:
-- Tasks assignment to staff actually filters by store.
-- Goals progress bar updates.
-- No reminders/notifications.
-
----
-
-## 15. Reports
-
-### `/reports/export`
-Works: CSV / Excel / PDF buttons for 5 datasets.
-Verify: **Excel** truly exports XLSX (not CSV with .xls), **PDF** uses a real renderer (not just a print dialog). Likely placeholder behavior.
-
-### `/reports/activity`
-Works: searchable log table.
-Issue: **nothing actually writes to `activity_log`** consistently across modules — most user actions are silent. Need to add inserts on key actions (order created, stock adjusted, staff invited, withdrawal requested, etc.).
-
----
-
-## 16. Integrations (`/integrations`)
-Pure marketing UI — every card shows "Upgrade to Activate" toast. None actually connect. Acceptable as v1 if you intend to gate behind a paid plan, but mark them clearly as "Coming soon" rather than implying they exist.
-
-Issues:
-- "Search integrations" works against the static list but no category filter.
-- Horizontal scrolling banner mentioned in brief — confirm it's there.
-
----
-
-## 17. Webhook Logs (`/webhooks`)
-Works: list, search, refresh, "Test Webhook" inserts a fake row.
-
-Issues:
-- **No real outbound webhooks are ever sent** anywhere in the app — the table is decorative. Either wire real webhook delivery (e.g. for new orders) or remove.
-- No retry button per row, no payload viewer.
-
----
-
-## 18. My Store (`/StoreManagement`)
-Works: products tab, orders tab, profile editor, KPIs.
-
-Issues:
-- **Logo is a URL field** — should be an upload to Supabase Storage with preview.
-- **Store profile cannot be deleted / transferred.**
-- **No "view public storefront"** link (since there is no public storefront yet — see #20).
-
----
-
-## 19. Settings (`/Settings`)
-Works: profile edit, avatar upload (with 30-day lock).
-
-Issues:
-- **Avatar is stored as a base64 data URL in the DB** — bloats the row hugely. Should upload to Storage and store the URL.
-- "General Settings" tab is literally empty ("General settings will appear here.").
-- No password change, no 2FA, no email change, no danger-zone (delete account).
-- No notification preferences.
-
----
-
-## 20. Missing user-facing surfaces
-
-- **Public storefront** (`/s/$slug` or similar) — customers have no way to browse a store's catalogue. Only the single-form flow exists.
-- **Customer order tracking page** — customers receive no link to follow their order.
-- **Email/SMS notifications** — order created, status changed, withdrawal processed.
-- **Receipts/invoices PDF** for orders.
-- **Landing page** — `/` redirects to `/Dashboard`; there's no marketing/home page.
-- **Onboarding wizard** for new owners (create store, add first product, invite staff).
-
----
-
-## 21. Cross-cutting issues
-
-- **Loading states** are inconsistent — some pages use `Skeleton`, most just render an empty table.
-- **Empty states**: `EmptyState` exists but isn't used everywhere (Stock Record, Agent Stock just show "No movements yet" inside table).
-- **Error handling**: most queries don't show errors; on Supabase failure the user sees an empty table.
-- **No pagination** on any list — `.limit(500)` everywhere. Will break when data grows.
-- **No optimistic updates** — every action requires a refetch.
-- **Accessibility**: many icon-only buttons lack `aria-label` (header bell/maximize, table action icons).
-- **Form validation** is minimal — phone/email format not checked outside of HTML `type=email`.
-- **No tests** in `package.json` (assumed).
-- **TanStack route metadata**: most routes set `head()` ✓, but several are missing `og:title` / `og:image`.
-
----
-
-## 22. Suggested priority order for fixes
-
-```text
-P0 — broken / data-integrity
-  1. Stock not decremented on order create / agent allocation
-  2. Agents list in Agent-Stock pulls wrong table
-  3. Wallet PIN never enforced; withdrawals never paid out
-  4. Staff invites don't send email or grant access on signup
-  5. Owner role not assigned automatically on first signup
-  6. Dashboard chart hard-coded zeros; range filter inert
-
-P1 — major UX gaps
-  7. Sales-form submission must auto-create customer + order
-  8. Webhook endpoint for Paystack (charge/transfer)
-  9. Activity log writes from real actions
- 10. Order detail page (line items, timeline, print)
- 11. Avatar/logo upload to Storage instead of base64
- 12. Forgot-password + Google OAuth
- 13. Real export (XLSX/PDF) in Reports
- 14. Pagination on long tables
-
-P2 — polish / nice-to-have
- 15. Top-bar search, notifications dropdown, calculator/support
- 16. Public storefront + customer order-tracking page
- 17. Onboarding wizard
- 18. Email/SMS notifications
- 19. 2FA, password change, account deletion
- 20. Chat: unread badges, file uploads, presence
- 21. Bulk import (products, customers)
- 22. Per-supplier and per-agent transaction views
-```
+1. **Phase 1 — Staff Ops core** (highest leverage, directly unlocks "what staff see"):
+  - `staff_workload_stats` + triggers, Staff Performance card (admin), My Performance card (staff), role-based landing pages, Tasks hub, suspend toggle.
+2. **Phase 2 — Order workflow polish**: assigned_to/assigned_at, bulk actions, archived orders, auto-expire cron, WhatsApp templates.
+3. **Phase 3 — Bulk import + customer 360**: AI-parsed bulk import (Lovable AI), customer detail page with order history & LTV, low-stock alerts.
+4. **Phase 4 — Finance & reporting depth**: commissions, daily report job, scheduled exports, refunds.
 
 ---
 
 ## Technical notes
 
-- Several stub buttons (`Maximize2`, bell, calculator) are easy wins — either wire or delete.
-- The `webhook_logs` and `integrations` tables are currently decorative; decide whether to invest or hide.
-- `wallet_transactions.kind` filter assumes `'sale' | 'funding' | 'withdrawal'` — confirm enum matches inserts from Paystack callback path.
-- Add a Supabase trigger `on auth.users insert → create profile + (optional) create personal store + assign owner role`.
-- Add `/api/public/paystack-webhook.ts` route with HMAC SHA-512 signature check (Paystack uses `x-paystack-signature`).
+- All new tables get `store_id` + RLS using existing `is_store_member` / `is_store_admin` helpers; superadmins read-all via `is_superadmin`.
+- `staff_workload_stats` populated by an `AFTER UPDATE` trigger on `orders` (status change) + a daily pg_cron rollup, so the performance cards stay cheap to query.
+- AI bulk-parse uses `google/gemini-2.5-flash` via Lovable AI Gateway — no user-supplied key.
+- WhatsApp links are pure client-side (`wa.me/...`) — no Twilio / Meta API needed for v1.
+- Reuse `staff_invites` for staff onboarding; add `is_suspended` to `user_roles` (or a `staff_status` table) so we don't lose history on revoke.
 
 ---
 
-## What would you like me to tackle first?
-
-If you approve, I'll start with the **P0 list** (data integrity + auth onboarding + dashboard) and check in before moving to P1. Tell me if any P2 item is actually higher priority for you (e.g. public storefront), or if any items in this list should be dropped.
+**Do you want me to start with Phase 1 (Staff Ops core), or should I re-shuffle the order? Also, should AI bulk-parse and WhatsApp templates be in Phase 1 too, or pushed to Phase 2/3 as listed?**
