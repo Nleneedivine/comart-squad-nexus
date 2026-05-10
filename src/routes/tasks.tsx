@@ -36,13 +36,16 @@ function Tasks() {
     if (!store || !user) return;
     const [{ data: m }, { data: a }, { data: mem }] = await Promise.all([
       supabase.from("tasks").select("*").eq("store_id", store.id).eq("assigned_to", user.id).order("created_at", { ascending: false }),
-      isAdmin ? supabase.from("tasks").select("*, profiles!tasks_assigned_to_fkey(full_name,email)").eq("store_id", store.id).order("created_at", { ascending: false }) : Promise.resolve({ data: [] as any[] }),
+      isAdmin ? supabase.from("tasks").select("*").eq("store_id", store.id).order("created_at", { ascending: false }) : Promise.resolve({ data: [] as any[] }),
       supabase.from("user_roles").select("user_id, profiles(full_name,email)").eq("store_id", store.id).eq("is_suspended", false),
     ]);
     setMine(m || []);
-    setAll(a || []);
     const seen = new Set<string>();
-    setMembers((mem || []).filter((r: any) => { if (seen.has(r.user_id)) return false; seen.add(r.user_id); return true; }));
+    const memList = (mem || []).filter((r: any) => { if (seen.has(r.user_id)) return false; seen.add(r.user_id); return true; });
+    setMembers(memList);
+    const profMap: Record<string, any> = {};
+    memList.forEach((r: any) => { profMap[r.user_id] = r.profiles; });
+    setAll((a || []).map((t: any) => ({ ...t, profiles: t.assigned_to ? profMap[t.assigned_to] : null })));
   };
   useEffect(() => { load(); }, [store, user, isAdmin]);
 
