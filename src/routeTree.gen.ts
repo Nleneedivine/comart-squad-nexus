@@ -37,6 +37,7 @@ import { Route as StoreProductsRouteImport } from './routes/store.products'
 import { Route as StoreOrdersRouteImport } from './routes/store.orders'
 import { Route as ReportsExportRouteImport } from './routes/reports.export'
 import { Route as ReportsActivityRouteImport } from './routes/reports.activity'
+import { Route as OrdersImportRouteImport } from './routes/orders.import'
 import { Route as OrdersIdRouteImport } from './routes/orders.$id'
 import { Route as OrderFormIdRouteImport } from './routes/order.$formId'
 import { Route as MarketingTemplatesRouteImport } from './routes/marketing.templates'
@@ -198,6 +199,11 @@ const ReportsActivityRoute = ReportsActivityRouteImport.update({
   path: '/reports/activity',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OrdersImportRoute = OrdersImportRouteImport.update({
+  id: '/import',
+  path: '/import',
+  getParentRoute: () => OrdersRoute,
+} as any)
 const OrdersIdRoute = OrdersIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -342,6 +348,7 @@ export interface FileRoutesByFullPath {
   '/marketing/templates': typeof MarketingTemplatesRoute
   '/order/$formId': typeof OrderFormIdRoute
   '/orders/$id': typeof OrdersIdRoute
+  '/orders/import': typeof OrdersImportRoute
   '/reports/activity': typeof ReportsActivityRoute
   '/reports/export': typeof ReportsExportRoute
   '/store/orders': typeof StoreOrdersRoute
@@ -391,6 +398,7 @@ export interface FileRoutesByTo {
   '/marketing/templates': typeof MarketingTemplatesRoute
   '/order/$formId': typeof OrderFormIdRoute
   '/orders/$id': typeof OrdersIdRoute
+  '/orders/import': typeof OrdersImportRoute
   '/reports/activity': typeof ReportsActivityRoute
   '/reports/export': typeof ReportsExportRoute
   '/store/orders': typeof StoreOrdersRoute
@@ -442,6 +450,7 @@ export interface FileRoutesById {
   '/marketing/templates': typeof MarketingTemplatesRoute
   '/order/$formId': typeof OrderFormIdRoute
   '/orders/$id': typeof OrdersIdRoute
+  '/orders/import': typeof OrdersImportRoute
   '/reports/activity': typeof ReportsActivityRoute
   '/reports/export': typeof ReportsExportRoute
   '/store/orders': typeof StoreOrdersRoute
@@ -494,6 +503,7 @@ export interface FileRouteTypes {
     | '/marketing/templates'
     | '/order/$formId'
     | '/orders/$id'
+    | '/orders/import'
     | '/reports/activity'
     | '/reports/export'
     | '/store/orders'
@@ -543,6 +553,7 @@ export interface FileRouteTypes {
     | '/marketing/templates'
     | '/order/$formId'
     | '/orders/$id'
+    | '/orders/import'
     | '/reports/activity'
     | '/reports/export'
     | '/store/orders'
@@ -593,6 +604,7 @@ export interface FileRouteTypes {
     | '/marketing/templates'
     | '/order/$formId'
     | '/orders/$id'
+    | '/orders/import'
     | '/reports/activity'
     | '/reports/export'
     | '/store/orders'
@@ -844,6 +856,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReportsActivityRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/orders/import': {
+      id: '/orders/import'
+      path: '/import'
+      fullPath: '/orders/import'
+      preLoaderRoute: typeof OrdersImportRouteImport
+      parentRoute: typeof OrdersRoute
+    }
     '/orders/$id': {
       id: '/orders/$id'
       path: '/$id'
@@ -1009,10 +1028,12 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface OrdersRouteChildren {
   OrdersIdRoute: typeof OrdersIdRoute
+  OrdersImportRoute: typeof OrdersImportRoute
 }
 
 const OrdersRouteChildren: OrdersRouteChildren = {
   OrdersIdRoute: OrdersIdRoute,
+  OrdersImportRoute: OrdersImportRoute,
 }
 
 const OrdersRouteWithChildren =

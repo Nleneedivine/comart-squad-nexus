@@ -10,6 +10,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianG
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import MyPerformanceCard from "@/components/MyPerformanceCard";
 import StaffPerformanceCard from "@/components/StaffPerformanceCard";
+import LowStockCard from "@/components/LowStockCard";
 
 export const Route = createFileRoute("/Dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — Comart+" }, { name: "description", content: "Comart+ store dashboard: revenue, orders and performance in ₦." }] }),
@@ -164,6 +165,8 @@ function Dashboard() {
       </div>
 
       {isStaff && <MyPerformanceCard />}
+
+      <LowStockCard />
 
       {isAdmin && (
         <div className="grid md:grid-cols-2 gap-6">

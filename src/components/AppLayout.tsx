@@ -26,7 +26,10 @@ const NAV: Item[] = [
   { label: "Dashboard", to: "/Dashboard", icon: LayoutDashboard },
   { label: "My Attendance", to: "/attendance", icon: Clock },
   { label: "My Store", to: "/StoreManagement", icon: Store },
-  { label: "Orders", to: "/orders", icon: ShoppingCart },
+  { label: "Orders", icon: ShoppingCart, children: [
+    { label: "All Orders", to: "/orders" },
+    { label: "Bulk Import (AI)", to: "/orders/import" },
+  ]},
   { label: "Businesses", to: "/businesses", icon: Building2 },
   { label: "Customers", to: "/customer-service", icon: Headphones },
   { label: "Marketing", icon: Megaphone, children: [
