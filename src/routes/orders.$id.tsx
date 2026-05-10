@@ -113,3 +113,65 @@ function OrderDetail() {
     </div>
   );
 }
+
+function fillTemplate(body: string, order: any, storeName: string) {
+  return body
+    .replaceAll("{customer_name}", order.customers?.name || order.customer_name || "")
+    .replaceAll("{order_number}", order.order_number || order.id?.slice(0, 8) || "")
+    .replaceAll("{amount}", new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN" }).format(Number(order.amount || 0)))
+    .replaceAll("{store_name}", storeName || "")
+    .replaceAll("{status}", order.status || "");
+}
+
+function WhatsAppSendDialog({ order }: { order: any }) {
+  const { store } = useAuth();
+  const [open, setOpen] = useState(false);
+  const [templates, setTemplates] = useState<any[]>([]);
+  const [selectedId, setSelectedId] = useState<string>("");
+  const [message, setMessage] = useState("");
+  const phone = order.customers?.phone || "";
+
+  useEffect(() => {
+    if (!open || !store) return;
+    supabase.from("message_templates").select("*").eq("store_id", store.id).eq("channel", "whatsapp").then(({ data }) => setTemplates(data || []));
+  }, [open, store]);
+
+  const onPick = (id: string) => {
+    setSelectedId(id);
+    const t = templates.find(x => x.id === id);
+    if (t) setMessage(fillTemplate(t.body, order, store?.name || ""));
+  };
+
+  const send = () => {
+    if (!phone) return toast.error("Customer phone missing");
+    if (!message.trim()) return toast.error("Message empty");
+    const cleaned = phone.replace(/[^\d]/g, "");
+    window.open(`https://wa.me/${cleaned}?text=${encodeURIComponent(message)}`, "_blank");
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm"><MessageSquare className="h-4 w-4 mr-1" />WhatsApp</Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader><DialogTitle>Send WhatsApp message</DialogTitle></DialogHeader>
+        <div className="space-y-3">
+          <div>
+            <Label>Template</Label>
+            <Select value={selectedId} onValueChange={onPick}>
+              <SelectTrigger><SelectValue placeholder={templates.length ? "Pick a template" : "No templates yet"} /></SelectTrigger>
+              <SelectContent>{templates.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Message</Label>
+            <Textarea rows={6} value={message} onChange={e => setMessage(e.target.value)} placeholder="Type or pick a template" />
+          </div>
+          <p className="text-xs text-muted-foreground">To: {phone || "(no phone on customer)"}</p>
+          <Button onClick={send} className="w-full" disabled={!phone}>Open WhatsApp</Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
