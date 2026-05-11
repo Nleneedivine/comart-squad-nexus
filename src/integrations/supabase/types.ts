@@ -276,6 +276,51 @@ export type Database = {
         }
         Relationships: []
       }
+      commissions: {
+        Row: {
+          agent_id: string
+          amount: number
+          base_amount: number
+          created_at: string
+          id: string
+          order_id: string
+          paid_at: string | null
+          paid_by: string | null
+          percent: number
+          status: string
+          store_id: string
+          updated_at: string
+        }
+        Insert: {
+          agent_id: string
+          amount?: number
+          base_amount?: number
+          created_at?: string
+          id?: string
+          order_id: string
+          paid_at?: string | null
+          paid_by?: string | null
+          percent?: number
+          status?: string
+          store_id: string
+          updated_at?: string
+        }
+        Update: {
+          agent_id?: string
+          amount?: number
+          base_amount?: number
+          created_at?: string
+          id?: string
+          order_id?: string
+          paid_at?: string | null
+          paid_by?: string | null
+          percent?: number
+          status?: string
+          store_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           address: string | null
@@ -328,6 +373,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      daily_report_snapshots: {
+        Row: {
+          cancelled_count: number
+          created_at: string
+          delivered_count: number
+          id: string
+          orders_count: number
+          report_date: string
+          revenue: number
+          store_id: string
+          top_product: string | null
+        }
+        Insert: {
+          cancelled_count?: number
+          created_at?: string
+          delivered_count?: number
+          id?: string
+          orders_count?: number
+          report_date: string
+          revenue?: number
+          store_id: string
+          top_product?: string | null
+        }
+        Update: {
+          cancelled_count?: number
+          created_at?: string
+          delivered_count?: number
+          id?: string
+          orders_count?: number
+          report_date?: string
+          revenue?: number
+          store_id?: string
+          top_product?: string | null
+        }
+        Relationships: []
       }
       faulty_stocks: {
         Row: {
@@ -1022,6 +1103,48 @@ export type Database = {
           },
         ]
       }
+      refunds: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          order_id: string
+          processed_at: string | null
+          processed_by: string | null
+          reason: string | null
+          requested_by: string | null
+          status: string
+          store_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          id?: string
+          order_id: string
+          processed_at?: string | null
+          processed_by?: string | null
+          reason?: string | null
+          requested_by?: string | null
+          status?: string
+          store_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          order_id?: string
+          processed_at?: string | null
+          processed_by?: string | null
+          reason?: string | null
+          requested_by?: string | null
+          status?: string
+          store_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       sales_forms: {
         Row: {
           created_at: string
@@ -1608,6 +1731,7 @@ export type Database = {
         Returns: number
       }
       expire_stale_orders: { Args: never; Returns: undefined }
+      generate_daily_reports: { Args: never; Returns: undefined }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

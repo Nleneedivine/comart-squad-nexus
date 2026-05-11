@@ -48,11 +48,14 @@ const NAV: Item[] = [
   { label: "Agents", to: "/agents", icon: Users },
   { label: "Finance", icon: Banknote, children: [
     { label: "Records", to: "/finance" },
+    { label: "Commissions", to: "/finance/commissions" },
+    { label: "Refunds", to: "/finance/refunds" },
   ]},
   { label: "Staff Management", to: "/staff", icon: UserCog },
   { label: "Tasks", to: "/tasks", icon: ListTodo },
   { label: "Chat Room", to: "/chat", icon: MessageSquare },
   { label: "Reports", icon: BarChart3, children: [
+    { label: "Daily Reports", to: "/reports/daily" },
     { label: "Data Export", to: "/reports/export" },
     { label: "Store Activity Log", to: "/reports/activity" },
   ]},
