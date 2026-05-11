@@ -151,6 +151,7 @@ export default function StaffPerformanceCard() {
           })}
         </div>
       }
+      <StaffDetailDrawer staffId={selected?.staff_id || null} staffName={selected?.name} open={!!selected} onOpenChange={(v) => !v && setSelected(null)} />
     </Card>
   );
 }
