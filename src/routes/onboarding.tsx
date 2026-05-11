@@ -100,9 +100,12 @@ function OnboardingWizard() {
       if (!fullName.trim()) return "Full name is required";
       if (phone && !/^[0-9+()\-\s]{6,20}$/.test(phone)) return "Phone number looks invalid";
     }
-    if (step === 3 && pName.trim()) {
-      if (Number(pPrice) < 0) return "Price cannot be negative";
-      if (Number(pStock) < 0) return "Stock cannot be negative";
+    if (step === 3) {
+      const valid = pRows.filter(r => r.name.trim());
+      for (const r of valid) {
+        if (Number(r.price) < 0) return "Price cannot be negative";
+        if (Number(r.stock) < 0) return "Stock cannot be negative";
+      }
     }
     return null;
   };
