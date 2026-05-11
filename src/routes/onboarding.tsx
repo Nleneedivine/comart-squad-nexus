@@ -44,9 +44,7 @@ function OnboardingWizard() {
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
 
-  const [pName, setPName] = useState("");
-  const [pPrice, setPPrice] = useState("");
-  const [pStock, setPStock] = useState("");
+  const [pRows, setPRows] = useState<{ name: string; price: string; stock: string }[]>([{ name: "", price: "", stock: "" }]);
 
   const boot = async () => {
     if (!user) return;
@@ -102,9 +100,12 @@ function OnboardingWizard() {
       if (!fullName.trim()) return "Full name is required";
       if (phone && !/^[0-9+()\-\s]{6,20}$/.test(phone)) return "Phone number looks invalid";
     }
-    if (step === 3 && pName.trim()) {
-      if (Number(pPrice) < 0) return "Price cannot be negative";
-      if (Number(pStock) < 0) return "Stock cannot be negative";
+    if (step === 3) {
+      const valid = pRows.filter(r => r.name.trim());
+      for (const r of valid) {
+        if (Number(r.price) < 0) return "Price cannot be negative";
+        if (Number(r.stock) < 0) return "Stock cannot be negative";
+      }
     }
     return null;
   };
@@ -131,15 +132,18 @@ function OnboardingWizard() {
           if (error) throw error;
         });
       }
-      if (step === 3 && store && pName.trim()) {
-        await withRetry(async () => {
-          const { error } = await supabase.from("products").insert({
-            store_id: store.id, name: pName.trim(),
-            selling_price: Number(pPrice) || 0,
-            stock_qty: Number(pStock) || 0,
+      if (step === 3 && store) {
+        const valid = pRows.filter(r => r.name.trim());
+        if (valid.length > 0) {
+          await withRetry(async () => {
+            const { error } = await supabase.from("products").insert(valid.map(r => ({
+              store_id: store.id, name: r.name.trim(),
+              selling_price: Number(r.price) || 0,
+              stock_qty: Number(r.stock) || 0,
+            })));
+            if (error) throw error;
           });
-          if (error) throw error;
-        });
+        }
       }
       const ns = step + 1;
       setStep(ns);
@@ -225,12 +229,25 @@ function OnboardingWizard() {
 
         {step === 3 && (
           <div className="space-y-4">
-            <h2 className="text-xl font-bold">Add your first product</h2>
-            <p className="text-sm text-muted-foreground">Optional — leave blank to skip.</p>
-            <div><Label>Product name</Label><Input value={pName} onChange={(e) => setPName(e.target.value)} placeholder="e.g. Hair cream" /></div>
-            <div className="grid grid-cols-2 gap-3">
-              <div><Label>Selling price (₦)</Label><Input type="number" min="0" value={pPrice} onChange={(e) => setPPrice(e.target.value)} /></div>
-              <div><Label>Stock quantity</Label><Input type="number" min="0" value={pStock} onChange={(e) => setPStock(e.target.value)} /></div>
+            <h2 className="text-xl font-bold">Add your products</h2>
+            <p className="text-sm text-muted-foreground">Optional — add as many as you like, or skip and add them later.</p>
+            <div className="space-y-3">
+              {pRows.map((r, i) => (
+                <div key={i} className="rounded-md border p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Product {i + 1}</span>
+                    {pRows.length > 1 && (
+                      <Button variant="ghost" size="sm" onClick={() => setPRows(pRows.filter((_, idx) => idx !== i))}>Remove</Button>
+                    )}
+                  </div>
+                  <div><Label className="text-xs">Name</Label><Input value={r.name} onChange={(e) => setPRows(pRows.map((x, idx) => idx === i ? { ...x, name: e.target.value } : x))} placeholder="e.g. Hair cream" /></div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><Label className="text-xs">Selling price (₦)</Label><Input type="number" min="0" value={r.price} onChange={(e) => setPRows(pRows.map((x, idx) => idx === i ? { ...x, price: e.target.value } : x))} /></div>
+                    <div><Label className="text-xs">Stock</Label><Input type="number" min="0" value={r.stock} onChange={(e) => setPRows(pRows.map((x, idx) => idx === i ? { ...x, stock: e.target.value } : x))} /></div>
+                  </div>
+                </div>
+              ))}
+              <Button variant="outline" size="sm" onClick={() => setPRows([...pRows, { name: "", price: "", stock: "" }])}>+ Add another product</Button>
             </div>
           </div>
         )}

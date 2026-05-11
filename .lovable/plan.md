@@ -1,82 +1,90 @@
-# Features to port from Comart Order Hub + recommended per-store features
+# Phase 5 — Store Owner Workflow Polish
 
-## A. What Comart Order Hub has that we should adopt
+## 1. Fix Bulk Import routing
 
-The reference project is a single-tenant order-fulfilment dashboard. The pieces worth lifting (and adapting to our multi-tenant `store_id` model + existing `staff_invites` flow) are:
+**Problem:** `/orders` and `/orders/import` render the same screen because `orders.tsx` has no `<Outlet />`, so the child route can't mount.
 
-### 1. Staff Performance & Workload (HIGH value)
+**Fix:** Convert `orders.tsx` into a pathless wrapper that renders an `<Outlet />` plus the existing list at the index, and split the list into `orders.index.tsx`. `orders.import.tsx` already exists with the correct AI paste-text → review → commit flow — it will start showing once routing works.
 
-- `**staff_workload_stats**` rollup table (per staff_id × period) with: assigned_count, completed_count, cancelled_count, expired_count.
-- **Staff Performance leaderboard** card (admin view): completion rate, active vs done vs cancelled vs expired, ranked, CSV export, period filter (week / month / last month / year), rating badges (Excellent / Good / Average / Needs Improvement).
-- **My Performance card** (staff view): same metrics scoped to the logged-in user, with delivery rate.
-- **Workload-aware assignment**: when bulk-assigning, sort staff by current open-order count so work is distributed fairly.
+## 2. Create Order — customer picker
 
-### 2. Order Assignment & Lifecycle
+On the New Order dialog (currently in `orders.tsx` / `orders.$id.tsx`):
 
-- `assigned_to` + `assigned_at` on orders, with statuses `New → Assigned → In Progress → Delivered / Cancelled / Expired`.
-- **Auto-expire** stale assignments (e.g. 48h with no progress) via pg_cron → status = `Expired`, frees workload. (Admin. to approve before it is tagged expired)
-- **Order Actions dropdown** (reassign, mark delivered, cancel with reason, archive).
-- **Archived Orders** view with restore.
-- **Bulk Order Actions**: multi-select → assign / status change / archive.
+- Add a combobox "Customer" field that searches existing `customers` by name/phone.
+- Toggle "+ New customer" to expose name / phone / address inputs.
+- On submit: reuse existing customer (link `customer_id`) or insert a new row, then attach to the order. This automatically fulfils "orders save to customers section."
 
-### 3. Bulk Order Import
+## 3. Products at registration + Store > Products add
 
-- Paste raw text **or** upload `.xlsx/.csv`; AI-assisted parsing (use Lovable AI Gateway, no extra key needed) into structured rows; preview + edit before commit; staff workload preview; progress bar; success/failure summary.
+- `inventory.products.tsx`: add an "Add product" dialog (name, SKU, price, stock, reorder point) for store owners — already partially present, will be polished and surfaced under My Store > Products.
+- `onboarding.tsx`: add a "Starter products" step where the owner can add 1–N products in a repeatable mini-form before finishing onboarding. Skippable.
 
-### 4. WhatsApp / Message Templates
+## 4. Round-robin assignment on bulk import
 
-- Per-store template library with placeholders (`{customer_name}`, `{phone_number}`, `{total_price}`, `{order_id}`, `{status}`, …).
-- "Send WhatsApp" button on each order opens `wa.me/<phone>?text=<rendered template>`.
+- During the commit step in `orders.import.tsx`, fetch active sales reps (`user_roles` with role `sales_rep`/`agent`, not suspended) for the store.
+- Compute current open-order count per rep from `orders` (status in pending/processing/shipped, not archived).
+- Assign each new order to the rep with the lowest open count, then increment locally to keep distribution even within the batch.
+- Manual `assigned_to` value entered in the review grid always wins (never overridden).
+- Reps see assigned orders on `/tasks` (already wired to `assigned_to = auth.uid()`).
+- Owner reassignment from order detail page already works and continues to override.
 
-### 5. Public Order Form
+## 5. Staff Management deep view
 
-- We already have `/order/$formId` and `/f/$slug` — adopt their cleaner price-tier preview UX (live total as quantity changes, success state).
+Extend `/staff` with a per-staff drawer (click row → opens panel) showing:
 
-### 6. Staff suspension
+- Profile + role + suspended state (existing).
+- KPIs from `staff_workload_stats` aggregated all-time + this month: assigned, completed, delivered, cancelled, expired, completion rate, delivery rate.
+- Calls log from `activity_log` (filter `type = 'call'`) — count + last 20 entries.
+- Active workload (open orders), recent commissions earned (`commissions` table), tasks completed (`tasks` table).
+- Mini sparkline of last 30 days completion rate.
+- CSV export per staff.
 
-- `is_suspended` flag (in addition to revoke). Suspended staff keep history but can't sign in or be assigned new work.
+## 6. Group chat (subscription-gated)
 
----
+- Migration: add `chat_groups` (id, store_id, name, created_by, created_at) and `chat_group_members` (group_id, user_id). Add `group_id` column to `chat_messages` (nullable, coexists with current `channel`/`recipient_id`).
+- RLS: members of a group can read/post; group creator + store admin can manage members.
+- Plan gating: read `subscriptions.plan` — enable group creation only when plan is `pro` or `business`. Super admin override via existing `feature_flags` (`chat_groups` flag) wins both ways.
+- UI in `chat.tsx`: "Create Group" button (disabled with upsell tooltip when locked), group list in sidebar, member picker dialog.
 
-## B. Additional per-store features I recommend (not in either project yet)
+## 7. Auto to-do suggestions (AI-assisted)
 
-Based on the schema you already have (orders, products, customers, agents, finance_records, wallets, waybills, tasks, goals, todos), these round out a "real" store ops platform:
+- New server fn `suggestTodos` calling Lovable AI Gateway (`google/gemini-2.5-flash`) with the user's open tasks + assigned orders + active goals.
+- Returns 5–8 suggested to-do items with priority + suggested time of day.
+- `productivity.tsx` (To-do section): add "✨ Suggest my day" button → preview drawer with checkboxes:
+  - "Use all" inserts every suggestion into `todos`.
+  - Per-item edit before insert.
+  - "Dismiss" keeps the user's current list.
+- Tasks and goals remain pre-assignable by admins; users can append their own (already supported by current RLS).
 
-1. **Role-based default landing pages & dashboard widgets** — Sales Rep → Orders + personal stats; Inventory Manager → Products + low-stock; Accountant → Finance; Customer Care → Customers + Chat; HR → Staff + Attendance.
-2. **Task assignment hub** — `tasks` table is already there; add a "My Tasks" page for staff and an "Assign Task" flow for admins (priority, deadline, status updates, comments).
-3. **Commissions** — auto-compute per sales_rep / agent from delivered orders × `commission_pct`; payable summary on the Finance page; one-click record as wallet payout.
-4. **Low-stock alerts & reorder points** — `reorder_level` on products, daily check, in-app + email notification (respecting the new notification preferences), low-stock dashboard widget.
-5. **Customer order history & lifetime value** — on `/customers/$id`, show all past orders, total spend, last order date, "VIP" badge above a threshold.
-6. **Daily / shift reports** — auto-generated end-of-day summary per store: orders created, delivered, cancelled, revenue, top staff, pushed to chat + activity log.
-7. **Goals tracking** — `goals` table is already there; surface progress bars on the dashboard and rank staff against shared targets.
-8. **Audit log per store** — extend existing `activity_log` with structured "who changed what" entries on sensitive actions (price edits, role changes, refunds, stock adjustments).
-9. **Refunds & returns** — return-reason workflow tied to `faulty_stocks` and a finance debit entry.
-10. **Delivery / waybill tracking** — status timeline on `waybills` (dispatched → in transit → delivered), shareable tracking link for the customer.
-11. **Customer feedback / NPS** — one-tap rating link sent after delivery; results feed into staff performance.
-12. **Saved exports & scheduled reports** — re-run the same Reports/Export config on a schedule, email PDF/CSV to owner.
-13. **Two-factor auth for owner/admin** and **session/device list** in Settings.
-14. **Per-store branding on public pages** — logo, primary color, custom domain hint on `/f/$slug` and `/order/$formId`.
+## 8. Integration payments (Hybrid model)
 
----
+**Control model (per your answer):** Lovable ships the integration code. You (super admin) set the price and approve activations. Store owners pay via Paystack and the system auto-enables the feature flag.
 
-## Suggested build order (after you confirm)
+Implementation:
 
-1. **Phase 1 — Staff Ops core** (highest leverage, directly unlocks "what staff see"):
-  - `staff_workload_stats` + triggers, Staff Performance card (admin), My Performance card (staff), role-based landing pages, Tasks hub, suspend toggle.
-2. **Phase 2 — Order workflow polish**: assigned_to/assigned_at, bulk actions, archived orders, auto-expire cron, WhatsApp templates.
-3. **Phase 3 — Bulk import + customer 360**: AI-parsed bulk import (Lovable AI), customer detail page with order history & LTV, low-stock alerts.
-4. **Phase 4 — Finance & reporting depth**: commissions, daily report job, scheduled exports, refunds.
+- Migration: `integration_catalog` (key, name, description, monthly_price, is_active) — seeded by you in `/admin`. `store_integrations` (store_id, integration_key, status enum: locked/pending/active, activated_at, paystack_reference).
+- `/admin/integrations` (new): super admin manages catalog + sees activation requests, can manually toggle.
+- `integrations.tsx`: "Upgrade to Activate" → opens checkout dialog showing price → calls existing Paystack server fn → on webhook success, `store_integrations.status = active` and notification fires.
+- Existing `/api/public/paystack-webhook` route gets a new branch for `integration_purchase` metadata.
 
----
+## 9. WP Forms webhook + general inbound
+
+- New public route `src/routes/api/public/wp-forms-webhook.ts`. Accepts WP Forms JSON; verifies a per-store HMAC secret stored on `stores.webhook_secret` (new column).
+- Maps fields → creates `customers` row + `orders` + `order_items`, runs the round-robin assigner.
+- New page `/webhooks/setup` shows each store its endpoint URL, secret, sample payload, and recent deliveries (`webhook_deliveries` table). keep the weebhook secrets in webhook section of owners page.
+- Same endpoint pattern documented for generic JSON, Zapier, Make.
 
 ## Technical notes
 
-- All new tables get `store_id` + RLS using existing `is_store_member` / `is_store_admin` helpers; superadmins read-all via `is_superadmin`.
-- `staff_workload_stats` populated by an `AFTER UPDATE` trigger on `orders` (status change) + a daily pg_cron rollup, so the performance cards stay cheap to query.
-- AI bulk-parse uses `google/gemini-2.5-flash` via Lovable AI Gateway — no user-supplied key.
-- WhatsApp links are pure client-side (`wa.me/...`) — no Twilio / Meta API needed for v1.
-- Reuse `staff_invites` for staff onboarding; add `is_suspended` to `user_roles` (or a `staff_status` table) so we don't lose history on revoke.
+- Migrations: 4 new files (group chat, integration catalog/store_integrations, webhook deliveries + store secret, plus index for round-robin workload).
+- New routes: `orders.index.tsx`, `admin.integrations.tsx`, `webhooks.setup.tsx`, `api/public/wp-forms-webhook.ts`.
+- New server fns: `suggest-todos.functions.ts`, `assign-round-robin.functions.ts`, `activate-integration.functions.ts`.
+- Touched: `orders.tsx`, `orders.import.tsx`, `orders.$id.tsx` (customer picker), `inventory.products.tsx`, `onboarding.tsx`, `staff.tsx`, `chat.tsx`, `productivity.tsx`, `integrations.tsx`, `AppLayout.tsx`, `api/public/paystack-webhook.ts`.
 
----
+## Out of scope (flag if you want them)
 
-**Do you want me to start with Phase 1 (Staff Ops core), or should I re-shuffle the order? Also, should AI bulk-parse and WhatsApp templates be in Phase 1 too, or pushed to Phase 2/3 as listed?**
+- Real WhatsApp/SMS sending (currently uses `wa.me` deep links). 
+- Migrating away from `pg_cron` for scheduled jobs.
+- Replacing existing `agents` table with `user_roles`-only model.
+
+Approve to implement, or tell me what to adjust.

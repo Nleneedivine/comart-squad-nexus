@@ -243,11 +243,71 @@ export type Database = {
           },
         ]
       }
+      chat_group_members: {
+        Row: {
+          added_at: string
+          group_id: string
+          id: string
+          store_id: string
+          user_id: string
+        }
+        Insert: {
+          added_at?: string
+          group_id: string
+          id?: string
+          store_id: string
+          user_id: string
+        }
+        Update: {
+          added_at?: string
+          group_id?: string
+          id?: string
+          store_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "chat_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_groups: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          name: string
+          store_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          name: string
+          store_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          name?: string
+          store_id?: string
+        }
+        Relationships: []
+      }
       chat_messages: {
         Row: {
           body: string
           channel: string
           created_at: string
+          group_id: string | null
           id: string
           read_at: string | null
           recipient_id: string | null
@@ -258,6 +318,7 @@ export type Database = {
           body: string
           channel?: string
           created_at?: string
+          group_id?: string | null
           id?: string
           read_at?: string | null
           recipient_id?: string | null
@@ -268,13 +329,22 @@ export type Database = {
           body?: string
           channel?: string
           created_at?: string
+          group_id?: string | null
           id?: string
           read_at?: string | null
           recipient_id?: string | null
           sender_id?: string
           store_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "chat_groups"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       commissions: {
         Row: {
@@ -604,6 +674,39 @@ export type Database = {
           target_value?: number
           title?: string
           unit?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      integration_catalog: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          key: string
+          monthly_price: number
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          key: string
+          monthly_price?: number
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          key?: string
+          monthly_price?: number
+          name?: string
           updated_at?: string
         }
         Relationships: []
@@ -1327,6 +1430,42 @@ export type Database = {
           },
         ]
       }
+      store_integrations: {
+        Row: {
+          activated_at: string | null
+          created_at: string
+          expires_at: string | null
+          id: string
+          integration_key: string
+          paystack_reference: string | null
+          status: string
+          store_id: string
+          updated_at: string
+        }
+        Insert: {
+          activated_at?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          integration_key: string
+          paystack_reference?: string | null
+          status?: string
+          store_id: string
+          updated_at?: string
+        }
+        Update: {
+          activated_at?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          integration_key?: string
+          paystack_reference?: string | null
+          status?: string
+          store_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       stores: {
         Row: {
           address: string | null
@@ -1338,6 +1477,7 @@ export type Database = {
           logo_url: string | null
           name: string
           owner_id: string
+          webhook_secret: string | null
         }
         Insert: {
           address?: string | null
@@ -1349,6 +1489,7 @@ export type Database = {
           logo_url?: string | null
           name: string
           owner_id: string
+          webhook_secret?: string | null
         }
         Update: {
           address?: string | null
@@ -1360,6 +1501,7 @@ export type Database = {
           logo_url?: string | null
           name?: string
           owner_id?: string
+          webhook_secret?: string | null
         }
         Relationships: []
       }
@@ -1688,6 +1830,39 @@ export type Database = {
           },
         ]
       }
+      webhook_deliveries: {
+        Row: {
+          created_at: string
+          error: string | null
+          id: string
+          payload: Json
+          result: Json | null
+          source: string
+          status: string
+          store_id: string
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          payload?: Json
+          result?: Json | null
+          source?: string
+          status?: string
+          store_id: string
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          payload?: Json
+          result?: Json | null
+          source?: string
+          status?: string
+          store_id?: string
+        }
+        Relationships: []
+      }
       webhook_logs: {
         Row: {
           created_at: string
@@ -1738,6 +1913,10 @@ export type Database = {
           _store_id: string
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_group_member: {
+        Args: { _group_id: string; _user_id: string }
         Returns: boolean
       }
       is_member_active: {
