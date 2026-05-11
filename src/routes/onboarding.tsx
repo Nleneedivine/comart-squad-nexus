@@ -132,15 +132,18 @@ function OnboardingWizard() {
           if (error) throw error;
         });
       }
-      if (step === 3 && store && pName.trim()) {
-        await withRetry(async () => {
-          const { error } = await supabase.from("products").insert({
-            store_id: store.id, name: pName.trim(),
-            selling_price: Number(pPrice) || 0,
-            stock_qty: Number(pStock) || 0,
+      if (step === 3 && store) {
+        const valid = pRows.filter(r => r.name.trim());
+        if (valid.length > 0) {
+          await withRetry(async () => {
+            const { error } = await supabase.from("products").insert(valid.map(r => ({
+              store_id: store.id, name: r.name.trim(),
+              selling_price: Number(r.price) || 0,
+              stock_qty: Number(r.stock) || 0,
+            })));
+            if (error) throw error;
           });
-          if (error) throw error;
-        });
+        }
       }
       const ns = step + 1;
       setStep(ns);
