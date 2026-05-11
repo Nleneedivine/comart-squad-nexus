@@ -34,6 +34,7 @@ import { Route as DashboardRouteImport } from './routes/Dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as OrdersIndexRouteImport } from './routes/orders.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as WebhooksSetupRouteImport } from './routes/webhooks.setup'
 import { Route as StoreProductsRouteImport } from './routes/store.products'
 import { Route as StoreOrdersRouteImport } from './routes/store.orders'
 import { Route as ReportsExportRouteImport } from './routes/reports.export'
@@ -57,9 +58,11 @@ import { Route as FSlugRouteImport } from './routes/f.$slug'
 import { Route as CustomersIdRouteImport } from './routes/customers.$id'
 import { Route as AdminTenantsRouteImport } from './routes/admin.tenants'
 import { Route as AdminSubscriptionsRouteImport } from './routes/admin.subscriptions'
+import { Route as AdminIntegrationsRouteImport } from './routes/admin.integrations'
 import { Route as AdminFlagsRouteImport } from './routes/admin.flags'
 import { Route as AdminBroadcastsRouteImport } from './routes/admin.broadcasts'
 import { Route as AdminAuditRouteImport } from './routes/admin.audit'
+import { Route as ApiPublicWpFormsWebhookRouteImport } from './routes/api/public/wp-forms-webhook'
 import { Route as ApiPublicPaystackWebhookRouteImport } from './routes/api/public/paystack-webhook'
 import { Route as ApiPublicBillingWebhookRouteImport } from './routes/api/public/billing-webhook'
 
@@ -188,6 +191,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminRoute,
 } as any)
+const WebhooksSetupRoute = WebhooksSetupRouteImport.update({
+  id: '/setup',
+  path: '/setup',
+  getParentRoute: () => WebhooksRoute,
+} as any)
 const StoreProductsRoute = StoreProductsRouteImport.update({
   id: '/store/products',
   path: '/store/products',
@@ -303,6 +311,11 @@ const AdminSubscriptionsRoute = AdminSubscriptionsRouteImport.update({
   path: '/subscriptions',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminIntegrationsRoute = AdminIntegrationsRouteImport.update({
+  id: '/integrations',
+  path: '/integrations',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminFlagsRoute = AdminFlagsRouteImport.update({
   id: '/flags',
   path: '/flags',
@@ -317,6 +330,11 @@ const AdminAuditRoute = AdminAuditRouteImport.update({
   id: '/audit',
   path: '/audit',
   getParentRoute: () => AdminRoute,
+} as any)
+const ApiPublicWpFormsWebhookRoute = ApiPublicWpFormsWebhookRouteImport.update({
+  id: '/api/public/wp-forms-webhook',
+  path: '/api/public/wp-forms-webhook',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicPaystackWebhookRoute =
   ApiPublicPaystackWebhookRouteImport.update({
@@ -353,10 +371,11 @@ export interface FileRoutesByFullPath {
   '/staff': typeof StaffRoute
   '/tasks': typeof TasksRoute
   '/wallet': typeof WalletRoute
-  '/webhooks': typeof WebhooksRoute
+  '/webhooks': typeof WebhooksRouteWithChildren
   '/admin/audit': typeof AdminAuditRoute
   '/admin/broadcasts': typeof AdminBroadcastsRoute
   '/admin/flags': typeof AdminFlagsRoute
+  '/admin/integrations': typeof AdminIntegrationsRoute
   '/admin/subscriptions': typeof AdminSubscriptionsRoute
   '/admin/tenants': typeof AdminTenantsRoute
   '/customers/$id': typeof CustomersIdRoute
@@ -380,10 +399,12 @@ export interface FileRoutesByFullPath {
   '/reports/export': typeof ReportsExportRoute
   '/store/orders': typeof StoreOrdersRoute
   '/store/products': typeof StoreProductsRoute
+  '/webhooks/setup': typeof WebhooksSetupRoute
   '/admin/': typeof AdminIndexRoute
   '/orders/': typeof OrdersIndexRoute
   '/api/public/billing-webhook': typeof ApiPublicBillingWebhookRoute
   '/api/public/paystack-webhook': typeof ApiPublicPaystackWebhookRoute
+  '/api/public/wp-forms-webhook': typeof ApiPublicWpFormsWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -406,10 +427,11 @@ export interface FileRoutesByTo {
   '/staff': typeof StaffRoute
   '/tasks': typeof TasksRoute
   '/wallet': typeof WalletRoute
-  '/webhooks': typeof WebhooksRoute
+  '/webhooks': typeof WebhooksRouteWithChildren
   '/admin/audit': typeof AdminAuditRoute
   '/admin/broadcasts': typeof AdminBroadcastsRoute
   '/admin/flags': typeof AdminFlagsRoute
+  '/admin/integrations': typeof AdminIntegrationsRoute
   '/admin/subscriptions': typeof AdminSubscriptionsRoute
   '/admin/tenants': typeof AdminTenantsRoute
   '/customers/$id': typeof CustomersIdRoute
@@ -433,10 +455,12 @@ export interface FileRoutesByTo {
   '/reports/export': typeof ReportsExportRoute
   '/store/orders': typeof StoreOrdersRoute
   '/store/products': typeof StoreProductsRoute
+  '/webhooks/setup': typeof WebhooksSetupRoute
   '/admin': typeof AdminIndexRoute
   '/orders': typeof OrdersIndexRoute
   '/api/public/billing-webhook': typeof ApiPublicBillingWebhookRoute
   '/api/public/paystack-webhook': typeof ApiPublicPaystackWebhookRoute
+  '/api/public/wp-forms-webhook': typeof ApiPublicWpFormsWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -462,10 +486,11 @@ export interface FileRoutesById {
   '/staff': typeof StaffRoute
   '/tasks': typeof TasksRoute
   '/wallet': typeof WalletRoute
-  '/webhooks': typeof WebhooksRoute
+  '/webhooks': typeof WebhooksRouteWithChildren
   '/admin/audit': typeof AdminAuditRoute
   '/admin/broadcasts': typeof AdminBroadcastsRoute
   '/admin/flags': typeof AdminFlagsRoute
+  '/admin/integrations': typeof AdminIntegrationsRoute
   '/admin/subscriptions': typeof AdminSubscriptionsRoute
   '/admin/tenants': typeof AdminTenantsRoute
   '/customers/$id': typeof CustomersIdRoute
@@ -489,10 +514,12 @@ export interface FileRoutesById {
   '/reports/export': typeof ReportsExportRoute
   '/store/orders': typeof StoreOrdersRoute
   '/store/products': typeof StoreProductsRoute
+  '/webhooks/setup': typeof WebhooksSetupRoute
   '/admin/': typeof AdminIndexRoute
   '/orders/': typeof OrdersIndexRoute
   '/api/public/billing-webhook': typeof ApiPublicBillingWebhookRoute
   '/api/public/paystack-webhook': typeof ApiPublicPaystackWebhookRoute
+  '/api/public/wp-forms-webhook': typeof ApiPublicWpFormsWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -523,6 +550,7 @@ export interface FileRouteTypes {
     | '/admin/audit'
     | '/admin/broadcasts'
     | '/admin/flags'
+    | '/admin/integrations'
     | '/admin/subscriptions'
     | '/admin/tenants'
     | '/customers/$id'
@@ -546,10 +574,12 @@ export interface FileRouteTypes {
     | '/reports/export'
     | '/store/orders'
     | '/store/products'
+    | '/webhooks/setup'
     | '/admin/'
     | '/orders/'
     | '/api/public/billing-webhook'
     | '/api/public/paystack-webhook'
+    | '/api/public/wp-forms-webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -576,6 +606,7 @@ export interface FileRouteTypes {
     | '/admin/audit'
     | '/admin/broadcasts'
     | '/admin/flags'
+    | '/admin/integrations'
     | '/admin/subscriptions'
     | '/admin/tenants'
     | '/customers/$id'
@@ -599,10 +630,12 @@ export interface FileRouteTypes {
     | '/reports/export'
     | '/store/orders'
     | '/store/products'
+    | '/webhooks/setup'
     | '/admin'
     | '/orders'
     | '/api/public/billing-webhook'
     | '/api/public/paystack-webhook'
+    | '/api/public/wp-forms-webhook'
   id:
     | '__root__'
     | '/'
@@ -631,6 +664,7 @@ export interface FileRouteTypes {
     | '/admin/audit'
     | '/admin/broadcasts'
     | '/admin/flags'
+    | '/admin/integrations'
     | '/admin/subscriptions'
     | '/admin/tenants'
     | '/customers/$id'
@@ -654,10 +688,12 @@ export interface FileRouteTypes {
     | '/reports/export'
     | '/store/orders'
     | '/store/products'
+    | '/webhooks/setup'
     | '/admin/'
     | '/orders/'
     | '/api/public/billing-webhook'
     | '/api/public/paystack-webhook'
+    | '/api/public/wp-forms-webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -683,7 +719,7 @@ export interface RootRouteChildren {
   StaffRoute: typeof StaffRoute
   TasksRoute: typeof TasksRoute
   WalletRoute: typeof WalletRoute
-  WebhooksRoute: typeof WebhooksRoute
+  WebhooksRoute: typeof WebhooksRouteWithChildren
   CustomersIdRoute: typeof CustomersIdRoute
   FSlugRoute: typeof FSlugRoute
   InventoryAgentStockRoute: typeof InventoryAgentStockRoute
@@ -703,6 +739,7 @@ export interface RootRouteChildren {
   StoreProductsRoute: typeof StoreProductsRoute
   ApiPublicBillingWebhookRoute: typeof ApiPublicBillingWebhookRoute
   ApiPublicPaystackWebhookRoute: typeof ApiPublicPaystackWebhookRoute
+  ApiPublicWpFormsWebhookRoute: typeof ApiPublicWpFormsWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -882,6 +919,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/webhooks/setup': {
+      id: '/webhooks/setup'
+      path: '/setup'
+      fullPath: '/webhooks/setup'
+      preLoaderRoute: typeof WebhooksSetupRouteImport
+      parentRoute: typeof WebhooksRoute
+    }
     '/store/products': {
       id: '/store/products'
       path: '/store/products'
@@ -1043,6 +1087,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminSubscriptionsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/integrations': {
+      id: '/admin/integrations'
+      path: '/integrations'
+      fullPath: '/admin/integrations'
+      preLoaderRoute: typeof AdminIntegrationsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/flags': {
       id: '/admin/flags'
       path: '/flags'
@@ -1063,6 +1114,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/audit'
       preLoaderRoute: typeof AdminAuditRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/api/public/wp-forms-webhook': {
+      id: '/api/public/wp-forms-webhook'
+      path: '/api/public/wp-forms-webhook'
+      fullPath: '/api/public/wp-forms-webhook'
+      preLoaderRoute: typeof ApiPublicWpFormsWebhookRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/public/paystack-webhook': {
       id: '/api/public/paystack-webhook'
@@ -1085,6 +1143,7 @@ interface AdminRouteChildren {
   AdminAuditRoute: typeof AdminAuditRoute
   AdminBroadcastsRoute: typeof AdminBroadcastsRoute
   AdminFlagsRoute: typeof AdminFlagsRoute
+  AdminIntegrationsRoute: typeof AdminIntegrationsRoute
   AdminSubscriptionsRoute: typeof AdminSubscriptionsRoute
   AdminTenantsRoute: typeof AdminTenantsRoute
   AdminIndexRoute: typeof AdminIndexRoute
@@ -1094,6 +1153,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminAuditRoute: AdminAuditRoute,
   AdminBroadcastsRoute: AdminBroadcastsRoute,
   AdminFlagsRoute: AdminFlagsRoute,
+  AdminIntegrationsRoute: AdminIntegrationsRoute,
   AdminSubscriptionsRoute: AdminSubscriptionsRoute,
   AdminTenantsRoute: AdminTenantsRoute,
   AdminIndexRoute: AdminIndexRoute,
@@ -1129,6 +1189,18 @@ const OrdersRouteChildren: OrdersRouteChildren = {
 const OrdersRouteWithChildren =
   OrdersRoute._addFileChildren(OrdersRouteChildren)
 
+interface WebhooksRouteChildren {
+  WebhooksSetupRoute: typeof WebhooksSetupRoute
+}
+
+const WebhooksRouteChildren: WebhooksRouteChildren = {
+  WebhooksSetupRoute: WebhooksSetupRoute,
+}
+
+const WebhooksRouteWithChildren = WebhooksRoute._addFileChildren(
+  WebhooksRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRoute,
@@ -1152,7 +1224,7 @@ const rootRouteChildren: RootRouteChildren = {
   StaffRoute: StaffRoute,
   TasksRoute: TasksRoute,
   WalletRoute: WalletRoute,
-  WebhooksRoute: WebhooksRoute,
+  WebhooksRoute: WebhooksRouteWithChildren,
   CustomersIdRoute: CustomersIdRoute,
   FSlugRoute: FSlugRoute,
   InventoryAgentStockRoute: InventoryAgentStockRoute,
@@ -1172,6 +1244,7 @@ const rootRouteChildren: RootRouteChildren = {
   StoreProductsRoute: StoreProductsRoute,
   ApiPublicBillingWebhookRoute: ApiPublicBillingWebhookRoute,
   ApiPublicPaystackWebhookRoute: ApiPublicPaystackWebhookRoute,
+  ApiPublicWpFormsWebhookRoute: ApiPublicWpFormsWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
