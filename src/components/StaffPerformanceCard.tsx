@@ -52,6 +52,7 @@ export default function StaffPerformanceCard() {
   const [range, setRange] = useState<Range>("this_month");
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState<Row | null>(null);
 
   useEffect(() => {
     if (!store) return;
