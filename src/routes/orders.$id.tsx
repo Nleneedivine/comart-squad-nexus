@@ -8,12 +8,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { DialogFooter } from "@/components/ui/dialog";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { formatNaira } from "@/lib/format";
 import { toast } from "sonner";
-import { ArrowLeft, Circle, MessageSquare } from "lucide-react";
+import { ArrowLeft, Circle, MessageSquare, Undo2 } from "lucide-react";
 
 export const Route = createFileRoute("/orders/$id")({
   head: () => ({ meta: [{ title: "Order Detail — Comart+" }, { name: "description", content: "View order details and status timeline." }] }),
@@ -62,6 +64,7 @@ function OrderDetail() {
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <WhatsAppSendDialog order={order} />
+            <RefundDialog order={order} />
             <Select value={newStatus} onValueChange={setNewStatus}>
               <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
               <SelectContent>{STATUSES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>

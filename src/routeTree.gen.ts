@@ -36,6 +36,7 @@ import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as StoreProductsRouteImport } from './routes/store.products'
 import { Route as StoreOrdersRouteImport } from './routes/store.orders'
 import { Route as ReportsExportRouteImport } from './routes/reports.export'
+import { Route as ReportsDailyRouteImport } from './routes/reports.daily'
 import { Route as ReportsActivityRouteImport } from './routes/reports.activity'
 import { Route as OrdersImportRouteImport } from './routes/orders.import'
 import { Route as OrdersIdRouteImport } from './routes/orders.$id'
@@ -49,6 +50,8 @@ import { Route as InventoryProductsRouteImport } from './routes/inventory.produc
 import { Route as InventoryFaultyRouteImport } from './routes/inventory.faulty'
 import { Route as InventoryBuyStockRouteImport } from './routes/inventory.buy-stock'
 import { Route as InventoryAgentStockRouteImport } from './routes/inventory.agent-stock'
+import { Route as FinanceRefundsRouteImport } from './routes/finance.refunds'
+import { Route as FinanceCommissionsRouteImport } from './routes/finance.commissions'
 import { Route as FSlugRouteImport } from './routes/f.$slug'
 import { Route as CustomersIdRouteImport } from './routes/customers.$id'
 import { Route as AdminTenantsRouteImport } from './routes/admin.tenants'
@@ -194,6 +197,11 @@ const ReportsExportRoute = ReportsExportRouteImport.update({
   path: '/reports/export',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ReportsDailyRoute = ReportsDailyRouteImport.update({
+  id: '/reports/daily',
+  path: '/reports/daily',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ReportsActivityRoute = ReportsActivityRouteImport.update({
   id: '/reports/activity',
   path: '/reports/activity',
@@ -259,6 +267,16 @@ const InventoryAgentStockRoute = InventoryAgentStockRouteImport.update({
   path: '/inventory/agent-stock',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FinanceRefundsRoute = FinanceRefundsRouteImport.update({
+  id: '/refunds',
+  path: '/refunds',
+  getParentRoute: () => FinanceRoute,
+} as any)
+const FinanceCommissionsRoute = FinanceCommissionsRouteImport.update({
+  id: '/commissions',
+  path: '/commissions',
+  getParentRoute: () => FinanceRoute,
+} as any)
 const FSlugRoute = FSlugRouteImport.update({
   id: '/f/$slug',
   path: '/f/$slug',
@@ -319,7 +337,7 @@ export interface FileRoutesByFullPath {
   '/businesses': typeof BusinessesRoute
   '/chat': typeof ChatRoute
   '/customer-service': typeof CustomerServiceRoute
-  '/finance': typeof FinanceRoute
+  '/finance': typeof FinanceRouteWithChildren
   '/health': typeof HealthRoute
   '/integrations': typeof IntegrationsRoute
   '/onboarding': typeof OnboardingRoute
@@ -337,6 +355,8 @@ export interface FileRoutesByFullPath {
   '/admin/tenants': typeof AdminTenantsRoute
   '/customers/$id': typeof CustomersIdRoute
   '/f/$slug': typeof FSlugRoute
+  '/finance/commissions': typeof FinanceCommissionsRoute
+  '/finance/refunds': typeof FinanceRefundsRoute
   '/inventory/agent-stock': typeof InventoryAgentStockRoute
   '/inventory/buy-stock': typeof InventoryBuyStockRoute
   '/inventory/faulty': typeof InventoryFaultyRoute
@@ -350,6 +370,7 @@ export interface FileRoutesByFullPath {
   '/orders/$id': typeof OrdersIdRoute
   '/orders/import': typeof OrdersImportRoute
   '/reports/activity': typeof ReportsActivityRoute
+  '/reports/daily': typeof ReportsDailyRoute
   '/reports/export': typeof ReportsExportRoute
   '/store/orders': typeof StoreOrdersRoute
   '/store/products': typeof StoreProductsRoute
@@ -369,7 +390,7 @@ export interface FileRoutesByTo {
   '/businesses': typeof BusinessesRoute
   '/chat': typeof ChatRoute
   '/customer-service': typeof CustomerServiceRoute
-  '/finance': typeof FinanceRoute
+  '/finance': typeof FinanceRouteWithChildren
   '/health': typeof HealthRoute
   '/integrations': typeof IntegrationsRoute
   '/onboarding': typeof OnboardingRoute
@@ -387,6 +408,8 @@ export interface FileRoutesByTo {
   '/admin/tenants': typeof AdminTenantsRoute
   '/customers/$id': typeof CustomersIdRoute
   '/f/$slug': typeof FSlugRoute
+  '/finance/commissions': typeof FinanceCommissionsRoute
+  '/finance/refunds': typeof FinanceRefundsRoute
   '/inventory/agent-stock': typeof InventoryAgentStockRoute
   '/inventory/buy-stock': typeof InventoryBuyStockRoute
   '/inventory/faulty': typeof InventoryFaultyRoute
@@ -400,6 +423,7 @@ export interface FileRoutesByTo {
   '/orders/$id': typeof OrdersIdRoute
   '/orders/import': typeof OrdersImportRoute
   '/reports/activity': typeof ReportsActivityRoute
+  '/reports/daily': typeof ReportsDailyRoute
   '/reports/export': typeof ReportsExportRoute
   '/store/orders': typeof StoreOrdersRoute
   '/store/products': typeof StoreProductsRoute
@@ -421,7 +445,7 @@ export interface FileRoutesById {
   '/businesses': typeof BusinessesRoute
   '/chat': typeof ChatRoute
   '/customer-service': typeof CustomerServiceRoute
-  '/finance': typeof FinanceRoute
+  '/finance': typeof FinanceRouteWithChildren
   '/health': typeof HealthRoute
   '/integrations': typeof IntegrationsRoute
   '/onboarding': typeof OnboardingRoute
@@ -439,6 +463,8 @@ export interface FileRoutesById {
   '/admin/tenants': typeof AdminTenantsRoute
   '/customers/$id': typeof CustomersIdRoute
   '/f/$slug': typeof FSlugRoute
+  '/finance/commissions': typeof FinanceCommissionsRoute
+  '/finance/refunds': typeof FinanceRefundsRoute
   '/inventory/agent-stock': typeof InventoryAgentStockRoute
   '/inventory/buy-stock': typeof InventoryBuyStockRoute
   '/inventory/faulty': typeof InventoryFaultyRoute
@@ -452,6 +478,7 @@ export interface FileRoutesById {
   '/orders/$id': typeof OrdersIdRoute
   '/orders/import': typeof OrdersImportRoute
   '/reports/activity': typeof ReportsActivityRoute
+  '/reports/daily': typeof ReportsDailyRoute
   '/reports/export': typeof ReportsExportRoute
   '/store/orders': typeof StoreOrdersRoute
   '/store/products': typeof StoreProductsRoute
@@ -492,6 +519,8 @@ export interface FileRouteTypes {
     | '/admin/tenants'
     | '/customers/$id'
     | '/f/$slug'
+    | '/finance/commissions'
+    | '/finance/refunds'
     | '/inventory/agent-stock'
     | '/inventory/buy-stock'
     | '/inventory/faulty'
@@ -505,6 +534,7 @@ export interface FileRouteTypes {
     | '/orders/$id'
     | '/orders/import'
     | '/reports/activity'
+    | '/reports/daily'
     | '/reports/export'
     | '/store/orders'
     | '/store/products'
@@ -542,6 +572,8 @@ export interface FileRouteTypes {
     | '/admin/tenants'
     | '/customers/$id'
     | '/f/$slug'
+    | '/finance/commissions'
+    | '/finance/refunds'
     | '/inventory/agent-stock'
     | '/inventory/buy-stock'
     | '/inventory/faulty'
@@ -555,6 +587,7 @@ export interface FileRouteTypes {
     | '/orders/$id'
     | '/orders/import'
     | '/reports/activity'
+    | '/reports/daily'
     | '/reports/export'
     | '/store/orders'
     | '/store/products'
@@ -593,6 +626,8 @@ export interface FileRouteTypes {
     | '/admin/tenants'
     | '/customers/$id'
     | '/f/$slug'
+    | '/finance/commissions'
+    | '/finance/refunds'
     | '/inventory/agent-stock'
     | '/inventory/buy-stock'
     | '/inventory/faulty'
@@ -606,6 +641,7 @@ export interface FileRouteTypes {
     | '/orders/$id'
     | '/orders/import'
     | '/reports/activity'
+    | '/reports/daily'
     | '/reports/export'
     | '/store/orders'
     | '/store/products'
@@ -627,7 +663,7 @@ export interface RootRouteChildren {
   BusinessesRoute: typeof BusinessesRoute
   ChatRoute: typeof ChatRoute
   CustomerServiceRoute: typeof CustomerServiceRoute
-  FinanceRoute: typeof FinanceRoute
+  FinanceRoute: typeof FinanceRouteWithChildren
   HealthRoute: typeof HealthRoute
   IntegrationsRoute: typeof IntegrationsRoute
   OnboardingRoute: typeof OnboardingRoute
@@ -651,6 +687,7 @@ export interface RootRouteChildren {
   MarketingTemplatesRoute: typeof MarketingTemplatesRoute
   OrderFormIdRoute: typeof OrderFormIdRoute
   ReportsActivityRoute: typeof ReportsActivityRoute
+  ReportsDailyRoute: typeof ReportsDailyRoute
   ReportsExportRoute: typeof ReportsExportRoute
   StoreOrdersRoute: typeof StoreOrdersRoute
   StoreProductsRoute: typeof StoreProductsRoute
@@ -849,6 +886,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReportsExportRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/reports/daily': {
+      id: '/reports/daily'
+      path: '/reports/daily'
+      fullPath: '/reports/daily'
+      preLoaderRoute: typeof ReportsDailyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/reports/activity': {
       id: '/reports/activity'
       path: '/reports/activity'
@@ -940,6 +984,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InventoryAgentStockRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/finance/refunds': {
+      id: '/finance/refunds'
+      path: '/refunds'
+      fullPath: '/finance/refunds'
+      preLoaderRoute: typeof FinanceRefundsRouteImport
+      parentRoute: typeof FinanceRoute
+    }
+    '/finance/commissions': {
+      id: '/finance/commissions'
+      path: '/commissions'
+      fullPath: '/finance/commissions'
+      preLoaderRoute: typeof FinanceCommissionsRouteImport
+      parentRoute: typeof FinanceRoute
+    }
     '/f/$slug': {
       id: '/f/$slug'
       path: '/f/$slug'
@@ -1026,6 +1084,19 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface FinanceRouteChildren {
+  FinanceCommissionsRoute: typeof FinanceCommissionsRoute
+  FinanceRefundsRoute: typeof FinanceRefundsRoute
+}
+
+const FinanceRouteChildren: FinanceRouteChildren = {
+  FinanceCommissionsRoute: FinanceCommissionsRoute,
+  FinanceRefundsRoute: FinanceRefundsRoute,
+}
+
+const FinanceRouteWithChildren =
+  FinanceRoute._addFileChildren(FinanceRouteChildren)
+
 interface OrdersRouteChildren {
   OrdersIdRoute: typeof OrdersIdRoute
   OrdersImportRoute: typeof OrdersImportRoute
@@ -1052,7 +1123,7 @@ const rootRouteChildren: RootRouteChildren = {
   BusinessesRoute: BusinessesRoute,
   ChatRoute: ChatRoute,
   CustomerServiceRoute: CustomerServiceRoute,
-  FinanceRoute: FinanceRoute,
+  FinanceRoute: FinanceRouteWithChildren,
   HealthRoute: HealthRoute,
   IntegrationsRoute: IntegrationsRoute,
   OnboardingRoute: OnboardingRoute,
@@ -1076,6 +1147,7 @@ const rootRouteChildren: RootRouteChildren = {
   MarketingTemplatesRoute: MarketingTemplatesRoute,
   OrderFormIdRoute: OrderFormIdRoute,
   ReportsActivityRoute: ReportsActivityRoute,
+  ReportsDailyRoute: ReportsDailyRoute,
   ReportsExportRoute: ReportsExportRoute,
   StoreOrdersRoute: StoreOrdersRoute,
   StoreProductsRoute: StoreProductsRoute,
