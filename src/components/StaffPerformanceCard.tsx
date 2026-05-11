@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Award, CheckCircle2, Clock, Download, Target, TrendingDown, TrendingUp, XCircle } from "lucide-react";
+import StaffDetailDrawer from "./StaffDetailDrawer";
 
 type Range = "this_week" | "this_month" | "last_month" | "this_year";
 
@@ -51,6 +52,7 @@ export default function StaffPerformanceCard() {
   const [range, setRange] = useState<Range>("this_month");
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState<Row | null>(null);
 
   useEffect(() => {
     if (!store) return;
@@ -123,7 +125,7 @@ export default function StaffPerformanceCard() {
           {rows.map((r, i) => {
             const rt = rating(r.rate); const Icon = rt.icon;
             return (
-              <div key={r.staff_id} className="rounded-lg bg-muted/40 p-3 space-y-2">
+              <div key={r.staff_id} className="rounded-lg bg-muted/40 p-3 space-y-2 cursor-pointer hover:bg-muted/60 transition" onClick={() => setSelected(r)}>
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 min-w-0">
                     <div className="flex-shrink-0 h-7 w-7 rounded-full bg-primary/10 text-primary text-xs font-semibold flex items-center justify-center">#{i+1}</div>
@@ -149,6 +151,7 @@ export default function StaffPerformanceCard() {
           })}
         </div>
       }
+      <StaffDetailDrawer staffId={selected?.staff_id || null} staffName={selected?.name} open={!!selected} onOpenChange={(v) => !v && setSelected(null)} />
     </Card>
   );
 }
