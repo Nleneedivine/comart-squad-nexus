@@ -44,9 +44,7 @@ function OnboardingWizard() {
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
 
-  const [pName, setPName] = useState("");
-  const [pPrice, setPPrice] = useState("");
-  const [pStock, setPStock] = useState("");
+  const [pRows, setPRows] = useState<{ name: string; price: string; stock: string }[]>([{ name: "", price: "", stock: "" }]);
 
   const boot = async () => {
     if (!user) return;
