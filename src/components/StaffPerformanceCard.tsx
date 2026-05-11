@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Award, CheckCircle2, Clock, Download, Target, TrendingDown, TrendingUp, XCircle } from "lucide-react";
+import StaffDetailDrawer from "./StaffDetailDrawer";
 
 type Range = "this_week" | "this_month" | "last_month" | "this_year";
 
