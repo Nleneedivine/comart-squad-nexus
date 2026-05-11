@@ -2,7 +2,7 @@ import { createFileRoute, Link, Outlet, useNavigate, useLocation } from "@tansta
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { LayoutDashboard, Building2, CreditCard, Megaphone, ScrollText, Flag, LogOut, ShieldCheck } from "lucide-react";
+import { LayoutDashboard, Building2, CreditCard, Megaphone, ScrollText, Flag, LogOut, ShieldCheck, Plug } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/admin")({
@@ -15,6 +15,7 @@ const NAV = [
   { to: "/admin/tenants", label: "Tenants", icon: Building2 },
   { to: "/admin/subscriptions", label: "Subscriptions", icon: CreditCard },
   { to: "/admin/flags", label: "Feature Flags", icon: Flag },
+  { to: "/admin/integrations", label: "Integrations", icon: Plug },
   { to: "/admin/broadcasts", label: "Broadcasts", icon: Megaphone },
   { to: "/admin/audit", label: "Audit Log", icon: ScrollText },
 ];

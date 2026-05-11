@@ -53,6 +53,20 @@ export const Route = createFileRoute("/api/public/paystack-webhook")({
               const newBal = Number(w?.balance || 0) + Number(tx.amount);
               await supabaseAdmin.from("wallets").update({ balance: newBal }).eq("id", tx.wallet_id);
             }
+          } else if (topic === "charge.success" && event?.data?.metadata?.kind === "integration_purchase" && reference) {
+            const meta = event.data.metadata;
+            await supabaseAdmin.from("store_integrations").upsert({
+              store_id: meta.store_id,
+              integration_key: meta.integration_key,
+              status: "active",
+              activated_at: new Date().toISOString(),
+              paystack_reference: reference,
+              expires_at: new Date(Date.now() + 31 * 86400000).toISOString(),
+            }, { onConflict: "store_id,integration_key" });
+            await supabaseAdmin.from("notifications").insert({
+              store_id: meta.store_id, user_id: meta.user_id || null,
+              title: "Integration activated", body: `${meta.integration_key} is now active.`, kind: "success",
+            }).then(() => null, () => null);
           } else if ((topic === "transfer.success" || topic === "transfer.failed" || topic === "transfer.reversed") && reference) {
             const newStatus = topic === "transfer.success" ? "success" : "failed";
             const { data: tx } = await supabaseAdmin.from("wallet_transactions")

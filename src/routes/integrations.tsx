@@ -1,63 +1,65 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import ProtectedShell from "@/components/ProtectedShell";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import {
-  Search, Plug, Lock, Sparkles, ShoppingBag, Globe, Trophy, Layout,
-  Store as StoreIcon, CreditCard, MessageCircle, MessageSquare, Users, Zap
-} from "lucide-react";
+import { Search, Plug, Lock, Sparkles, CheckCircle2 } from "lucide-react";
+import { initIntegrationPurchase } from "@/lib/integrations.functions";
 
 export const Route = createFileRoute("/integrations")({
   head: () => ({ meta: [{ title: "Integrations — Comart+" }, { name: "description", content: "Connect Comart+ to other tools and services." }] }),
   component: () => <ProtectedShell><Integrations /></ProtectedShell>,
 });
 
-const INTEGRATIONS = [
-  { name: "Auto Assign Orders", description: "Automatically distribute incoming orders to your sales agents.", tags: ["Orders", "Automation"], icon: Zap, color: "from-amber-500 to-orange-500" },
-  { name: "Online Store", description: "Launch a public storefront powered by your Comart+ catalog.", tags: ["Storefront"], icon: StoreIcon, color: "from-emerald-500 to-teal-500" },
-  { name: "Product Hunt", description: "Showcase your launches and gain early adopters.", tags: ["Marketing"], icon: Trophy, color: "from-orange-500 to-red-500" },
-  { name: "Elementor Forms", description: "Capture leads from your WordPress site straight into Comart+.", tags: ["Forms", "WordPress"], icon: Layout, color: "from-pink-500 to-rose-500" },
-  { name: "WooCommerce", description: "Sync products, orders and inventory with your WooCommerce store.", tags: ["E-commerce", "WordPress"], icon: ShoppingBag, color: "from-purple-500 to-indigo-500" },
-  { name: "Paystack", description: "Accept secure payments and reconcile transactions automatically.", tags: ["Payments"], icon: CreditCard, color: "from-sky-500 to-blue-500" },
-  { name: "WhatsApp Checkout", description: "Let customers complete purchases right inside WhatsApp.", tags: ["Checkout", "Messaging"], icon: MessageCircle, color: "from-green-500 to-emerald-500" },
-  { name: "Chat Room", description: "Internal team chat with real-time messaging and DMs.", tags: ["Team"], icon: MessageSquare, color: "from-cyan-500 to-blue-500" },
-  { name: "Staff Management", description: "Invite staff, assign roles and track attendance.", tags: ["HR", "Team"], icon: Users, color: "from-fuchsia-500 to-pink-500" },
-];
-
 function Integrations() {
+  const { store, user } = useAuth();
   const [q, setQ] = useState("");
+  const [catalog, setCatalog] = useState<any[]>([]);
+  const [activations, setActivations] = useState<Record<string, any>>({});
+  const [picked, setPicked] = useState<any | null>(null);
+  const [busy, setBusy] = useState(false);
+  const purchase = useServerFn(initIntegrationPurchase);
+
+  const load = async () => {
+    const { data: cat } = await supabase.from("integration_catalog").select("*").eq("is_active", true).order("name");
+    setCatalog(cat || []);
+    if (store) {
+      const { data: act } = await supabase.from("store_integrations").select("*").eq("store_id", store.id);
+      const m: Record<string, any> = {};
+      (act || []).forEach((a: any) => { m[a.integration_key] = a; });
+      setActivations(m);
+    }
+  };
+  useEffect(() => { load(); }, [store]);
+
   const filtered = useMemo(
-    () => INTEGRATIONS.filter(i => (i.name + i.description + i.tags.join(" ")).toLowerCase().includes(q.toLowerCase())),
-    [q]
+    () => catalog.filter(i => (i.name + " " + (i.description || "")).toLowerCase().includes(q.toLowerCase())),
+    [catalog, q]
   );
+
+  const upgrade = async () => {
+    if (!picked || !store || !user) return;
+    setBusy(true);
+    try {
+      const r = await purchase({ data: { integration_key: picked.key, email: user.email!, store_id: store.id } });
+      window.location.href = r.authorization_url;
+    } catch (e: any) {
+      toast.error(e.message || "Could not start checkout");
+    } finally { setBusy(false); }
+  };
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold flex items-center gap-2"><Plug className="h-6 w-6 text-primary" />Integrations</h1>
-        <p className="text-muted-foreground text-sm mt-1">Extend Comart+ with powerful third-party connections.</p>
-      </div>
-
-      {/* Banner */}
-      <div className="overflow-x-auto">
-        <div className="flex gap-3 pb-2 min-w-max">
-          {INTEGRATIONS.map(i => {
-            const Icon = i.icon;
-            return (
-              <div key={i.name} className={`shrink-0 w-56 h-24 rounded-xl bg-gradient-to-br ${i.color} text-white p-4 flex items-end relative overflow-hidden`}>
-                <Icon className="absolute top-3 right-3 h-6 w-6 opacity-40" />
-                <div>
-                  <div className="text-xs font-semibold opacity-80">Integration</div>
-                  <div className="font-bold">{i.name}</div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <p className="text-muted-foreground text-sm mt-1">Extend Comart+ with paid integrations. Activated by your super admin once payment is received.</p>
       </div>
 
       <Card className="p-4">
@@ -69,27 +71,50 @@ function Integrations() {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {filtered.map(i => {
-          const Icon = i.icon;
+          const act = activations[i.key];
+          const status = act?.status || "locked";
           return (
-            <Card key={i.name} className="p-5 flex flex-col">
+            <Card key={i.key} className="p-5 flex flex-col">
               <div className="flex items-start gap-3 mb-3">
-                <div className={`h-10 w-10 rounded-lg bg-gradient-to-br ${i.color} flex items-center justify-center text-white shrink-0`}>
-                  <Icon className="h-5 w-5" />
+                <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-primary-foreground shrink-0">
+                  <Plug className="h-5 w-5" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="font-semibold flex items-center gap-1.5">{i.name}<Lock className="h-3 w-3 text-muted-foreground" /></div>
-                  <div className="flex flex-wrap gap-1 mt-1">{i.tags.map(t => <Badge key={t} variant="secondary" className="text-[10px]">{t}</Badge>)}</div>
+                  <div className="font-semibold flex items-center gap-1.5">
+                    {i.name}
+                    {status === "active" ? <CheckCircle2 className="h-4 w-4 text-emerald-500" /> :
+                     status === "pending" ? <Badge variant="secondary" className="text-[10px]">Pending</Badge> :
+                     <Lock className="h-3 w-3 text-muted-foreground" />}
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-0.5">₦{Number(i.monthly_price).toLocaleString()}/mo</div>
                 </div>
               </div>
               <p className="text-sm text-muted-foreground flex-1">{i.description}</p>
-              <Button className="mt-4 w-full" variant="outline" onClick={() => toast.info("Upgrade to a paid plan to activate this integration.")}>
-                <Sparkles className="h-4 w-4 mr-2" />Upgrade to Activate
+              <Button className="mt-4 w-full" variant={status === "active" ? "secondary" : "outline"}
+                disabled={status === "active"}
+                onClick={() => setPicked(i)}>
+                {status === "active" ? "Active" : status === "pending" ? "Awaiting approval" : (<><Sparkles className="h-4 w-4 mr-2" />Upgrade to Activate</>)}
               </Button>
             </Card>
           );
         })}
-        {filtered.length === 0 && <Card className="p-12 text-center text-muted-foreground md:col-span-3"><Globe className="h-8 w-8 mx-auto mb-2 opacity-50" />No integrations match your search.</Card>}
+        {filtered.length === 0 && <Card className="p-12 text-center text-muted-foreground md:col-span-3">No integrations match your search.</Card>}
       </div>
+
+      <Dialog open={!!picked} onOpenChange={(o) => !o && setPicked(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Activate {picked?.name}</DialogTitle></DialogHeader>
+          <div className="space-y-3 text-sm">
+            <p>{picked?.description}</p>
+            <div className="rounded-md bg-muted p-3">
+              <div className="text-xs text-muted-foreground">Price</div>
+              <div className="text-2xl font-bold">₦{Number(picked?.monthly_price || 0).toLocaleString()}<span className="text-sm font-normal text-muted-foreground">/month</span></div>
+            </div>
+            <p className="text-xs text-muted-foreground">You'll be redirected to Paystack to complete payment. Once received, your super admin activates the integration for your store.</p>
+            <Button className="w-full" onClick={upgrade} disabled={busy}>{busy ? "Starting…" : "Pay with Paystack"}</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

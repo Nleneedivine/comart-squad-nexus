@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import ProtectedShell from "@/components/ProtectedShell";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,7 +16,8 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Trash2, Zap, Target, ListChecks, ClipboardList } from "lucide-react";
+import { Plus, Trash2, Zap, Target, ListChecks, ClipboardList, Sparkles } from "lucide-react";
+import { suggestTodos } from "@/lib/suggest-todos.functions";
 
 export const Route = createFileRoute("/productivity")({
   head: () => ({ meta: [{ title: "Productivity — Comart+" }, { name: "description", content: "Todos, tasks, and goals to keep your team productive." }] }),
@@ -75,31 +77,98 @@ function Todos() {
     await supabase.from("todos").delete().eq("id", id); load();
   };
 
+  const suggestFn = useServerFn(suggestTodos);
+  const [suggestOpen, setSuggestOpen] = useState(false);
+  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [picked, setPicked] = useState<Record<number, boolean>>({});
+  const [suggesting, setSuggesting] = useState(false);
+
+  const runSuggest = async () => {
+    setSuggesting(true);
+    try {
+      const r = await suggestFn();
+      setSuggestions(r.items || []);
+      const sel: Record<number, boolean> = {};
+      (r.items || []).forEach((_: any, i: number) => { sel[i] = true; });
+      setPicked(sel);
+      setSuggestOpen(true);
+    } catch (e: any) { toast.error(e.message || "AI suggestion failed"); }
+    finally { setSuggesting(false); }
+  };
+
+  const insertPicked = async () => {
+    if (!store || !user) return;
+    const chosen = suggestions.filter((_, i) => picked[i]);
+    if (!chosen.length) return setSuggestOpen(false);
+    const rows = chosen.map(s => ({
+      store_id: store.id, user_id: user.id,
+      title: s.title, priority: s.priority || "medium",
+      description: s.rationale || s.time_of_day ? `${s.time_of_day || ""}${s.rationale ? " · " + s.rationale : ""}` : null,
+    }));
+    const { error } = await supabase.from("todos").insert(rows);
+    if (error) return toast.error(error.message);
+    toast.success(`Added ${rows.length} to-do(s)`);
+    setSuggestOpen(false);
+    load();
+  };
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h2 className="font-semibold">My Todos</h2>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" />Add Todo</Button></DialogTrigger>
-          <DialogContent>
-            <DialogHeader><DialogTitle>New Todo</DialogTitle></DialogHeader>
-            <div className="space-y-3">
-              <div><Label>Title *</Label><Input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} /></div>
-              <div><Label>Description</Label><Textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} /></div>
-              <div className="grid grid-cols-2 gap-3">
-                <div><Label>Priority</Label>
-                  <Select value={form.priority} onValueChange={v => setForm({ ...form, priority: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent><SelectItem value="low">Low</SelectItem><SelectItem value="medium">Medium</SelectItem><SelectItem value="high">High</SelectItem></SelectContent>
-                  </Select>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={runSuggest} disabled={suggesting}>
+            <Sparkles className="h-4 w-4 mr-2" />{suggesting ? "Thinking…" : "Suggest my day"}
+          </Button>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" />Add Todo</Button></DialogTrigger>
+            <DialogContent>
+              <DialogHeader><DialogTitle>New Todo</DialogTitle></DialogHeader>
+              <div className="space-y-3">
+                <div><Label>Title *</Label><Input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} /></div>
+                <div><Label>Description</Label><Textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} /></div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div><Label>Priority</Label>
+                    <Select value={form.priority} onValueChange={v => setForm({ ...form, priority: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent><SelectItem value="low">Low</SelectItem><SelectItem value="medium">Medium</SelectItem><SelectItem value="high">High</SelectItem></SelectContent>
+                    </Select>
+                  </div>
+                  <div><Label>Due Date</Label><Input type="date" value={form.due_date} onChange={e => setForm({ ...form, due_date: e.target.value })} /></div>
                 </div>
-                <div><Label>Due Date</Label><Input type="date" value={form.due_date} onChange={e => setForm({ ...form, due_date: e.target.value })} /></div>
+                <Button onClick={save} className="w-full">Save Todo</Button>
               </div>
-              <Button onClick={save} className="w-full">Save Todo</Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
+
+      <Dialog open={suggestOpen} onOpenChange={setSuggestOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>AI suggestions for today</DialogTitle></DialogHeader>
+          <div className="space-y-2 max-h-96 overflow-y-auto">
+            {suggestions.length === 0 && <p className="text-sm text-muted-foreground">No suggestions returned.</p>}
+            {suggestions.map((s, i) => (
+              <label key={i} className="flex items-start gap-3 p-3 rounded-md border hover:bg-muted cursor-pointer">
+                <Checkbox checked={!!picked[i]} onCheckedChange={(v) => setPicked({ ...picked, [i]: !!v })} className="mt-0.5" />
+                <div className="flex-1">
+                  <div className="font-medium text-sm">{s.title}</div>
+                  <div className="flex gap-2 mt-1 text-xs">
+                    <Badge className={PRIORITY_COLOR[s.priority] || ""} variant="secondary">{s.priority || "medium"}</Badge>
+                    {s.time_of_day && <span className="text-muted-foreground capitalize">{s.time_of_day}</span>}
+                  </div>
+                  {s.rationale && <div className="text-xs text-muted-foreground mt-1">{s.rationale}</div>}
+                </div>
+              </label>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" className="flex-1" onClick={() => setSuggestOpen(false)}>Dismiss</Button>
+            <Button className="flex-1" onClick={insertPicked}>Add selected</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <div className="grid gap-2">
         {rows.map(t => (
           <Card key={t.id} className="p-4 flex items-start gap-3">
