@@ -178,3 +178,45 @@ function WhatsAppSendDialog({ order }: { order: any }) {
     </Dialog>
   );
 }
+
+function RefundDialog({ order }: { order: any }) {
+  const { store, user } = useAuth();
+  const [open, setOpen] = useState(false);
+  const [amount, setAmount] = useState<string>(String(order.amount || 0));
+  const [reason, setReason] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const submit = async () => {
+    if (!store || !user) return;
+    const amt = Number(amount);
+    if (!amt || amt <= 0) return toast.error("Enter a valid amount");
+    setBusy(true);
+    const { error } = await supabase.from("refunds").insert({
+      store_id: store.id, order_id: order.id, amount: amt,
+      reason: reason || null, requested_by: user.id, status: "requested",
+    });
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    toast.success("Refund requested"); setOpen(false); setReason("");
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm"><Undo2 className="h-4 w-4 mr-1" />Refund</Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader><DialogTitle>Request a refund</DialogTitle></DialogHeader>
+        <div className="space-y-3">
+          <div><Label>Amount (₦)</Label><Input type="number" value={amount} onChange={e => setAmount(e.target.value)} /></div>
+          <div><Label>Reason</Label><Textarea rows={4} value={reason} onChange={e => setReason(e.target.value)} placeholder="Why is this refund being requested?" /></div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+          <Button onClick={submit} disabled={busy}>Submit request</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
