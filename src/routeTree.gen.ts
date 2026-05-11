@@ -32,6 +32,7 @@ import { Route as StoreManagementRouteImport } from './routes/StoreManagement'
 import { Route as SettingsRouteImport } from './routes/Settings'
 import { Route as DashboardRouteImport } from './routes/Dashboard'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as OrdersIndexRouteImport } from './routes/orders.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as StoreProductsRouteImport } from './routes/store.products'
 import { Route as StoreOrdersRouteImport } from './routes/store.orders'
@@ -176,6 +177,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const OrdersIndexRoute = OrdersIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => OrdersRoute,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
@@ -375,6 +381,7 @@ export interface FileRoutesByFullPath {
   '/store/orders': typeof StoreOrdersRoute
   '/store/products': typeof StoreProductsRoute
   '/admin/': typeof AdminIndexRoute
+  '/orders/': typeof OrdersIndexRoute
   '/api/public/billing-webhook': typeof ApiPublicBillingWebhookRoute
   '/api/public/paystack-webhook': typeof ApiPublicPaystackWebhookRoute
 }
@@ -394,7 +401,6 @@ export interface FileRoutesByTo {
   '/health': typeof HealthRoute
   '/integrations': typeof IntegrationsRoute
   '/onboarding': typeof OnboardingRoute
-  '/orders': typeof OrdersRouteWithChildren
   '/pricing': typeof PricingRoute
   '/productivity': typeof ProductivityRoute
   '/staff': typeof StaffRoute
@@ -428,6 +434,7 @@ export interface FileRoutesByTo {
   '/store/orders': typeof StoreOrdersRoute
   '/store/products': typeof StoreProductsRoute
   '/admin': typeof AdminIndexRoute
+  '/orders': typeof OrdersIndexRoute
   '/api/public/billing-webhook': typeof ApiPublicBillingWebhookRoute
   '/api/public/paystack-webhook': typeof ApiPublicPaystackWebhookRoute
 }
@@ -483,6 +490,7 @@ export interface FileRoutesById {
   '/store/orders': typeof StoreOrdersRoute
   '/store/products': typeof StoreProductsRoute
   '/admin/': typeof AdminIndexRoute
+  '/orders/': typeof OrdersIndexRoute
   '/api/public/billing-webhook': typeof ApiPublicBillingWebhookRoute
   '/api/public/paystack-webhook': typeof ApiPublicPaystackWebhookRoute
 }
@@ -539,6 +547,7 @@ export interface FileRouteTypes {
     | '/store/orders'
     | '/store/products'
     | '/admin/'
+    | '/orders/'
     | '/api/public/billing-webhook'
     | '/api/public/paystack-webhook'
   fileRoutesByTo: FileRoutesByTo
@@ -558,7 +567,6 @@ export interface FileRouteTypes {
     | '/health'
     | '/integrations'
     | '/onboarding'
-    | '/orders'
     | '/pricing'
     | '/productivity'
     | '/staff'
@@ -592,6 +600,7 @@ export interface FileRouteTypes {
     | '/store/orders'
     | '/store/products'
     | '/admin'
+    | '/orders'
     | '/api/public/billing-webhook'
     | '/api/public/paystack-webhook'
   id:
@@ -646,6 +655,7 @@ export interface FileRouteTypes {
     | '/store/orders'
     | '/store/products'
     | '/admin/'
+    | '/orders/'
     | '/api/public/billing-webhook'
     | '/api/public/paystack-webhook'
   fileRoutesById: FileRoutesById
@@ -857,6 +867,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/orders/': {
+      id: '/orders/'
+      path: '/'
+      fullPath: '/orders/'
+      preLoaderRoute: typeof OrdersIndexRouteImport
+      parentRoute: typeof OrdersRoute
     }
     '/admin/': {
       id: '/admin/'
@@ -1100,11 +1117,13 @@ const FinanceRouteWithChildren =
 interface OrdersRouteChildren {
   OrdersIdRoute: typeof OrdersIdRoute
   OrdersImportRoute: typeof OrdersImportRoute
+  OrdersIndexRoute: typeof OrdersIndexRoute
 }
 
 const OrdersRouteChildren: OrdersRouteChildren = {
   OrdersIdRoute: OrdersIdRoute,
   OrdersImportRoute: OrdersImportRoute,
+  OrdersIndexRoute: OrdersIndexRoute,
 }
 
 const OrdersRouteWithChildren =

@@ -61,7 +61,27 @@ function BulkImport() {
     if (!store || !user) return;
     if (!drafts.length) return toast.error("Nothing to import");
     setBusy(true);
-    let ok = 0, fail = 0;
+
+    // build round-robin pool: active staff + current open-order counts
+    const { data: roleRows } = await supabase.from("user_roles").select("user_id, role, is_suspended").eq("store_id", store.id);
+    const targets = Array.from(new Map((roleRows || [])
+      .filter((r: any) => !r.is_suspended)
+      .map((r: any) => [r.user_id, { id: r.user_id, role: r.role }])).values());
+    const counts: Record<string, number> = {};
+    for (const t of targets) {
+      const { count } = await supabase.from("orders").select("id", { count: "exact", head: true })
+        .eq("store_id", store.id).eq("assigned_to", t.id).eq("is_archived", false)
+        .in("status", ["pending","processing","shipped"]);
+      counts[t.id] = count || 0;
+    }
+    const pickNext = () => {
+      if (targets.length === 0) return null;
+      const next = targets.reduce((a, b) => counts[a.id] <= counts[b.id] ? a : b);
+      counts[next.id] += 1;
+      return next.id;
+    };
+
+    let ok = 0, fail = 0, assigned = 0;
     for (const d of drafts) {
       try {
         // upsert customer by phone
@@ -80,11 +100,14 @@ function BulkImport() {
         }
         const amount = computeAmount(d);
         const units = d.items.reduce((s, it) => s + Number(it.quantity || 0), 0);
+        const assignTo = pickNext();
         const { data: order, error: oErr } = await supabase.from("orders").insert({
           store_id: store.id, customer_id: customerId, customer_name: d.customer_name,
           amount, units, notes: d.notes || null, created_by: user.id, status: "pending",
+          assigned_to: assignTo, assigned_at: assignTo ? new Date().toISOString() : null,
         }).select("id").single();
         if (oErr) throw oErr;
+        if (assignTo) assigned++;
         if (d.items.length) {
           await supabase.from("order_items").insert(d.items.map(it => ({
             store_id: store.id, order_id: order.id,
@@ -96,8 +119,14 @@ function BulkImport() {
         ok++;
       } catch { fail++; }
     }
+    if (ok) {
+      await supabase.from("activity_log").insert({
+        store_id: store.id, user_id: user.id, type: "order",
+        activity: `Bulk imported ${ok} order(s); ${assigned} auto-assigned via round-robin`,
+      });
+    }
     setBusy(false);
-    toast.success(`Imported ${ok} order(s)${fail ? ` · ${fail} failed` : ""}`);
+    toast.success(`Imported ${ok} order(s)${assigned ? ` · ${assigned} auto-assigned` : ""}${fail ? ` · ${fail} failed` : ""}`);
     if (ok) nav({ to: "/orders" });
   };
 
