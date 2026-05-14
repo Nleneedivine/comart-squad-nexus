@@ -114,6 +114,7 @@ export async function captureServerException(
   const url = `${parts.protocol}://${parts.host}/api/${parts.projectId}/envelope/`;
   const auth = `Sentry sentry_version=7, sentry_client=comart-server/1.0, sentry_key=${parts.publicKey}`;
 
+  // Send to Sentry
   try {
     await fetch(url, {
       method: "POST",
@@ -122,6 +123,48 @@ export async function captureServerException(
     });
   } catch {
     // Never let telemetry break the request.
+  }
+
+  // Mirror to app_errors / failed_webhooks for the in-app dashboard.
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const tagsObj = (context.tags || {}) as Record<string, any>;
+    const module = String(tagsObj.route || tagsObj.path || tagsObj.area || tagsObj.kind || "server");
+    const message = String(err.message || err).slice(0, 500);
+    const text = `${module} ${message}`;
+    const severity =
+      tagsObj.severity ||
+      (/billing|payment|paystack|auth|wallet|webhook|subscription/i.test(text) ? "critical" :
+       /order|inventory|stock/i.test(text) ? "high" :
+       /realtime|chat|render/i.test(text) ? "medium" : "low");
+    const storeId = (context.user?.id && /^[0-9a-f-]{36}$/i.test(context.user.id)) ? context.user.id : null;
+
+    await supabaseAdmin.from("app_errors").insert({
+      store_id: storeId,
+      tenant_id: storeId,
+      module,
+      message,
+      stack_trace: err.stack?.slice(0, 8000) || null,
+      severity,
+      status: "open",
+      environment: envName(),
+      sentry_event_id: eventId,
+      metadata: { tags: tagsObj, extra: context.extra || {}, fingerprint: context.fingerprint } as any,
+    });
+
+    // If it's a webhook, also log to failed_webhooks for the dedicated tab.
+    if (tagsObj.kind === "webhook" || /webhook/i.test(module)) {
+      await supabaseAdmin.from("failed_webhooks").insert({
+        store_id: storeId,
+        provider: tagsObj.provider || (/paystack/i.test(module) ? "paystack" : "unknown"),
+        event_type: tagsObj.topic || tagsObj.event_type || null,
+        payload: (context.extra || {}) as any,
+        error_message: message,
+        status: "failed",
+      });
+    }
+  } catch {
+    // dashboard mirror is best-effort
   }
 }
 
