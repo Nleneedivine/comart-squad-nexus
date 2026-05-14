@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
  */
 export default function RealtimeStatus() {
   const [online, setOnline] = useState<boolean>(typeof navigator === "undefined" ? true : navigator.onLine);
-  const [stale, setStale] = useState(false);
+  const stale = false;
 
   useEffect(() => {
     const goOnline = () => setOnline(true);
