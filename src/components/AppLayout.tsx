@@ -218,6 +218,15 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
           </DropdownMenu>
         </header>
         <main className="flex-1 overflow-y-auto p-4 md:p-6">{children ?? <Outlet />}</main>
+        {import.meta.env.DEV && import.meta.env.VITE_SENTRY_DSN && (
+          <button
+            onClick={() => { setTimeout(() => { throw new Error("This is your first error!"); }, 0); }}
+            className="fixed bottom-4 right-4 z-50 rounded-full bg-destructive text-destructive-foreground px-3 py-2 text-xs shadow-lg hover:opacity-90"
+            title="Throws an error to verify Sentry is wired up"
+          >
+            Test Sentry
+          </button>
+        )}
       </div>
     </div>
   );

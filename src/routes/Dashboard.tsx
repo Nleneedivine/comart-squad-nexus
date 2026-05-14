@@ -12,9 +12,26 @@ import MyPerformanceCard from "@/components/MyPerformanceCard";
 import StaffPerformanceCard from "@/components/StaffPerformanceCard";
 import LowStockCard from "@/components/LowStockCard";
 
+import { SentryErrorBoundary, captureError } from "@/lib/sentry";
+
 export const Route = createFileRoute("/Dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — Comart+" }, { name: "description", content: "Comart+ store dashboard: revenue, orders and performance in ₦." }] }),
-  component: () => <ProtectedShell><Dashboard /></ProtectedShell>,
+  component: () => (
+    <ProtectedShell>
+      <SentryErrorBoundary
+        onError={(error) => captureError(error, { tags: { area: "dashboard" } })}
+        fallback={({ resetError }) => (
+          <div className="p-8 text-center space-y-3">
+            <h2 className="text-lg font-semibold">Dashboard failed to render</h2>
+            <p className="text-sm text-muted-foreground">We couldn't load this section. Try again or refresh.</p>
+            <button onClick={resetError} className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground">Retry</button>
+          </div>
+        )}
+      >
+        <Dashboard />
+      </SentryErrorBoundary>
+    </ProtectedShell>
+  ),
 });
 
 const RANGES = ["Today", "Week", "Month", "Year"] as const;
