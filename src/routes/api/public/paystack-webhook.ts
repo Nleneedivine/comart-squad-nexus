@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createHmac, timingSafeEqual } from "crypto";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { captureServerException } from "@/lib/sentry.server";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -85,6 +86,13 @@ export const Route = createFileRoute("/api/public/paystack-webhook")({
           return new Response(JSON.stringify({ ok: true }), { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } });
         } catch (e: any) {
           await logWebhook(storeId, topic, "failed", e?.message || "Error processing", event, Date.now() - start);
+          await captureServerException(e, {
+            tags: { route: "paystack-webhook", topic, kind: "webhook" },
+            extra: { storeId, reference, event_type: topic },
+            user: storeId ? { id: storeId } : undefined,
+            request: { url: request.url, method: request.method },
+            fingerprint: ["paystack-webhook", topic],
+          });
           return new Response(JSON.stringify({ ok: false, error: e?.message }), { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } });
         }
       },

@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createHmac, timingSafeEqual } from "crypto";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { captureServerException } from "@/lib/sentry.server";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -131,6 +132,13 @@ export const Route = createFileRoute("/api/public/wp-forms-webhook")({
           await supabaseAdmin.from("webhook_deliveries").insert({
             store_id: storeId, source: "wp-forms", status: "failed",
             payload, error: e?.message || String(e),
+          });
+          await captureServerException(e, {
+            tags: { route: "wp-forms-webhook", kind: "webhook", source: "wp-forms" },
+            extra: { storeId, payload_keys: Object.keys(payload || {}) },
+            user: { id: storeId },
+            request: { url: request.url, method: request.method },
+            fingerprint: ["wp-forms-webhook"],
           });
           return new Response(JSON.stringify({ ok: false, error: e?.message }), {
             status: 500, headers: { "Content-Type": "application/json", ...corsHeaders },
