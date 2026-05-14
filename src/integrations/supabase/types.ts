@@ -1514,6 +1514,36 @@ export type Database = {
         }
         Relationships: []
       }
+      subscription_history: {
+        Row: {
+          created_at: string
+          from_status: string | null
+          id: string
+          metadata: Json | null
+          reason: string | null
+          store_id: string
+          to_status: string
+        }
+        Insert: {
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          metadata?: Json | null
+          reason?: string | null
+          store_id: string
+          to_status: string
+        }
+        Update: {
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          metadata?: Json | null
+          reason?: string | null
+          store_id?: string
+          to_status?: string
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           amount: number
@@ -1523,6 +1553,7 @@ export type Database = {
           discount_note: string | null
           discount_type: string
           discount_value: number
+          grace_period_ends_at: string | null
           id: string
           next_billing_at: string | null
           paystack_customer_code: string | null
@@ -1541,6 +1572,7 @@ export type Database = {
           discount_note?: string | null
           discount_type?: string
           discount_value?: number
+          grace_period_ends_at?: string | null
           id?: string
           next_billing_at?: string | null
           paystack_customer_code?: string | null
@@ -1559,6 +1591,7 @@ export type Database = {
           discount_note?: string | null
           discount_type?: string
           discount_value?: number
+          grace_period_ends_at?: string | null
           id?: string
           next_billing_at?: string | null
           paystack_customer_code?: string | null
@@ -1910,6 +1943,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      advance_subscription_lifecycle: { Args: never; Returns: undefined }
       compute_subscription_amount: {
         Args: { _store_id: string }
         Returns: number
