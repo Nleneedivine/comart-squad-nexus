@@ -1254,6 +1254,134 @@ export type Database = {
           },
         ]
       }
+      payroll_periods: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          notes: string | null
+          paid_at: string | null
+          period_end: string
+          period_start: string
+          staff_count: number
+          status: string
+          store_id: string
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          paid_at?: string | null
+          period_end: string
+          period_start: string
+          staff_count?: number
+          status?: string
+          store_id: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          paid_at?: string | null
+          period_end?: string
+          period_start?: string
+          staff_count?: number
+          status?: string
+          store_id?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      payslips: {
+        Row: {
+          allowances: number
+          base_salary: number
+          bonus: number
+          commission_amount: number
+          created_at: string
+          deductions: number
+          gross_pay: number
+          hourly_pay: number
+          hours_worked: number
+          id: string
+          net_pay: number
+          notes: string | null
+          paid_at: string | null
+          period_id: string
+          staff_name: string | null
+          status: string
+          store_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          allowances?: number
+          base_salary?: number
+          bonus?: number
+          commission_amount?: number
+          created_at?: string
+          deductions?: number
+          gross_pay?: number
+          hourly_pay?: number
+          hours_worked?: number
+          id?: string
+          net_pay?: number
+          notes?: string | null
+          paid_at?: string | null
+          period_id: string
+          staff_name?: string | null
+          status?: string
+          store_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          allowances?: number
+          base_salary?: number
+          bonus?: number
+          commission_amount?: number
+          created_at?: string
+          deductions?: number
+          gross_pay?: number
+          hourly_pay?: number
+          hours_worked?: number
+          id?: string
+          net_pay?: number
+          notes?: string | null
+          paid_at?: string | null
+          period_id?: string
+          staff_name?: string | null
+          status?: string
+          store_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payslips_period_id_fkey"
+            columns: ["period_id"]
+            isOneToOne: false
+            referencedRelation: "payroll_periods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       platform_audit_log: {
         Row: {
           action: string
@@ -1791,6 +1919,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      staff_salaries: {
+        Row: {
+          allowances: number
+          base_salary: number
+          created_at: string
+          effective_from: string
+          hourly_rate: number
+          id: string
+          notes: string | null
+          pay_type: string
+          store_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          allowances?: number
+          base_salary?: number
+          created_at?: string
+          effective_from?: string
+          hourly_rate?: number
+          id?: string
+          notes?: string | null
+          pay_type?: string
+          store_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          allowances?: number
+          base_salary?: number
+          created_at?: string
+          effective_from?: string
+          hourly_rate?: number
+          id?: string
+          notes?: string | null
+          pay_type?: string
+          store_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       staff_workload_stats: {
         Row: {
@@ -2509,6 +2679,7 @@ export type Database = {
       }
       expire_stale_orders: { Args: never; Returns: undefined }
       generate_daily_reports: { Args: never; Returns: undefined }
+      generate_payslips: { Args: { _period_id: string }; Returns: number }
       get_store_webhook_secret: { Args: { _store_id: string }; Returns: string }
       has_role: {
         Args: {
@@ -2542,6 +2713,7 @@ export type Database = {
           table_name: string
         }[]
       }
+      mark_payroll_paid: { Args: { _period_id: string }; Returns: undefined }
       receive_purchase_order_items: {
         Args: { _items: Json; _po_id: string }
         Returns: undefined

@@ -17,6 +17,7 @@ import { Route as StaffRouteImport } from './routes/staff'
 import { Route as PurchaseOrdersRouteImport } from './routes/purchase-orders'
 import { Route as ProductivityRouteImport } from './routes/productivity'
 import { Route as PricingRouteImport } from './routes/pricing'
+import { Route as PayrollRouteImport } from './routes/payroll'
 import { Route as OrdersRouteImport } from './routes/orders'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as IntegrationsRouteImport } from './routes/integrations'
@@ -107,6 +108,11 @@ const ProductivityRoute = ProductivityRouteImport.update({
 const PricingRoute = PricingRouteImport.update({
   id: '/pricing',
   path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PayrollRoute = PayrollRouteImport.update({
+  id: '/payroll',
+  path: '/payroll',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OrdersRoute = OrdersRouteImport.update({
@@ -384,6 +390,7 @@ export interface FileRoutesByFullPath {
   '/integrations': typeof IntegrationsRoute
   '/onboarding': typeof OnboardingRoute
   '/orders': typeof OrdersRouteWithChildren
+  '/payroll': typeof PayrollRoute
   '/pricing': typeof PricingRoute
   '/productivity': typeof ProductivityRoute
   '/purchase-orders': typeof PurchaseOrdersRoute
@@ -443,6 +450,7 @@ export interface FileRoutesByTo {
   '/health': typeof HealthRoute
   '/integrations': typeof IntegrationsRoute
   '/onboarding': typeof OnboardingRoute
+  '/payroll': typeof PayrollRoute
   '/pricing': typeof PricingRoute
   '/productivity': typeof ProductivityRoute
   '/purchase-orders': typeof PurchaseOrdersRoute
@@ -505,6 +513,7 @@ export interface FileRoutesById {
   '/integrations': typeof IntegrationsRoute
   '/onboarding': typeof OnboardingRoute
   '/orders': typeof OrdersRouteWithChildren
+  '/payroll': typeof PayrollRoute
   '/pricing': typeof PricingRoute
   '/productivity': typeof ProductivityRoute
   '/purchase-orders': typeof PurchaseOrdersRoute
@@ -568,6 +577,7 @@ export interface FileRouteTypes {
     | '/integrations'
     | '/onboarding'
     | '/orders'
+    | '/payroll'
     | '/pricing'
     | '/productivity'
     | '/purchase-orders'
@@ -627,6 +637,7 @@ export interface FileRouteTypes {
     | '/health'
     | '/integrations'
     | '/onboarding'
+    | '/payroll'
     | '/pricing'
     | '/productivity'
     | '/purchase-orders'
@@ -688,6 +699,7 @@ export interface FileRouteTypes {
     | '/integrations'
     | '/onboarding'
     | '/orders'
+    | '/payroll'
     | '/pricing'
     | '/productivity'
     | '/purchase-orders'
@@ -750,6 +762,7 @@ export interface RootRouteChildren {
   IntegrationsRoute: typeof IntegrationsRoute
   OnboardingRoute: typeof OnboardingRoute
   OrdersRoute: typeof OrdersRouteWithChildren
+  PayrollRoute: typeof PayrollRoute
   PricingRoute: typeof PricingRoute
   ProductivityRoute: typeof ProductivityRoute
   PurchaseOrdersRoute: typeof PurchaseOrdersRoute
@@ -836,6 +849,13 @@ declare module '@tanstack/react-router' {
       path: '/pricing'
       fullPath: '/pricing'
       preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/payroll': {
+      id: '/payroll'
+      path: '/payroll'
+      fullPath: '/payroll'
+      preLoaderRoute: typeof PayrollRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/orders': {
@@ -1280,6 +1300,7 @@ const rootRouteChildren: RootRouteChildren = {
   IntegrationsRoute: IntegrationsRoute,
   OnboardingRoute: OnboardingRoute,
   OrdersRoute: OrdersRouteWithChildren,
+  PayrollRoute: PayrollRoute,
   PricingRoute: PricingRoute,
   ProductivityRoute: ProductivityRoute,
   PurchaseOrdersRoute: PurchaseOrdersRoute,
