@@ -1472,11 +1472,14 @@ export type Database = {
           contact_email: string | null
           contact_phone: string | null
           created_at: string
+          deleted_at: string | null
           description: string | null
           id: string
           logo_url: string | null
           name: string
           owner_id: string
+          status: Database["public"]["Enums"]["store_status"]
+          suspended_at: string | null
           webhook_secret: string | null
         }
         Insert: {
@@ -1484,11 +1487,14 @@ export type Database = {
           contact_email?: string | null
           contact_phone?: string | null
           created_at?: string
+          deleted_at?: string | null
           description?: string | null
           id?: string
           logo_url?: string | null
           name: string
           owner_id: string
+          status?: Database["public"]["Enums"]["store_status"]
+          suspended_at?: string | null
           webhook_secret?: string | null
         }
         Update: {
@@ -1496,11 +1502,14 @@ export type Database = {
           contact_email?: string | null
           contact_phone?: string | null
           created_at?: string
+          deleted_at?: string | null
           description?: string | null
           id?: string
           logo_url?: string | null
           name?: string
           owner_id?: string
+          status?: Database["public"]["Enums"]["store_status"]
+          suspended_at?: string | null
           webhook_secret?: string | null
         }
         Relationships: []
@@ -1907,6 +1916,7 @@ export type Database = {
       }
       expire_stale_orders: { Args: never; Returns: undefined }
       generate_daily_reports: { Args: never; Returns: undefined }
+      get_store_webhook_secret: { Args: { _store_id: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1932,6 +1942,13 @@ export type Database = {
         Returns: boolean
       }
       is_superadmin: { Args: { _user_id: string }; Returns: boolean }
+      isolation_probe: {
+        Args: { _actor: string; _foreign_store: string }
+        Returns: {
+          leaked_rows: number
+          table_name: string
+        }[]
+      }
     }
     Enums: {
       app_role:
@@ -1954,6 +1971,7 @@ export type Database = {
         | "delivered"
         | "cancelled"
         | "shipped"
+      store_status: "active" | "suspended" | "deleted"
       wallet_tx_kind: "sale" | "funding" | "withdrawal"
       wallet_tx_status: "pending" | "success" | "failed"
     }
@@ -2105,6 +2123,7 @@ export const Constants = {
         "cancelled",
         "shipped",
       ],
+      store_status: ["active", "suspended", "deleted"],
       wallet_tx_kind: ["sale", "funding", "withdrawal"],
       wallet_tx_status: ["pending", "success", "failed"],
     },
