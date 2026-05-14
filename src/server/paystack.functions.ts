@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { captureServerException } from "@/lib/sentry.server";
 import { z } from "zod";
 
 const PAYSTACK = "https://api.paystack.co";
@@ -12,17 +13,35 @@ function key() {
 }
 
 async function ps(path: string, init?: RequestInit) {
-  const res = await fetch(`${PAYSTACK}${path}`, {
-    ...init,
-    headers: {
-      Authorization: `Bearer ${key()}`,
-      "Content-Type": "application/json",
-      ...(init?.headers || {}),
-    },
-  });
-  const json = await res.json();
-  if (!res.ok || json?.status === false) throw new Error(json?.message || `Paystack ${res.status}`);
-  return json;
+  try {
+    const res = await fetch(`${PAYSTACK}${path}`, {
+      ...init,
+      headers: {
+        Authorization: `Bearer ${key()}`,
+        "Content-Type": "application/json",
+        ...(init?.headers || {}),
+      },
+    });
+    const json = await res.json();
+    if (!res.ok || json?.status === false) {
+      const err = new Error(json?.message || `Paystack ${res.status}`);
+      await captureServerException(err, {
+        tags: { kind: "paystack_api", path, status: res.status },
+        extra: { gateway_response: json?.data?.gateway_response ?? null },
+        fingerprint: ["paystack-api", path],
+      });
+      throw err;
+    }
+    return json;
+  } catch (e) {
+    if (!(e instanceof Error && e.message.startsWith("Paystack"))) {
+      await captureServerException(e, {
+        tags: { kind: "paystack_api", path },
+        fingerprint: ["paystack-api", path],
+      });
+    }
+    throw e;
+  }
 }
 
 async function ensureWallet(storeId: string) {
