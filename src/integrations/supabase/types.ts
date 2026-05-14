@@ -711,6 +711,60 @@ export type Database = {
         }
         Relationships: []
       }
+      invoices: {
+        Row: {
+          created_at: string
+          currency: string
+          discount: number
+          id: string
+          invoice_number: string
+          issued_at: string
+          line_items: Json
+          paid_at: string | null
+          paystack_reference: string | null
+          period_end: string | null
+          period_start: string | null
+          status: string
+          store_id: string
+          subtotal: number
+          total: number
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          discount?: number
+          id?: string
+          invoice_number: string
+          issued_at?: string
+          line_items?: Json
+          paid_at?: string | null
+          paystack_reference?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          status?: string
+          store_id: string
+          subtotal?: number
+          total?: number
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          discount?: number
+          id?: string
+          invoice_number?: string
+          issued_at?: string
+          line_items?: Json
+          paid_at?: string | null
+          paystack_reference?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          status?: string
+          store_id?: string
+          subtotal?: number
+          total?: number
+        }
+        Relationships: []
+      }
       message_templates: {
         Row: {
           body: string
@@ -985,6 +1039,92 @@ export type Database = {
           },
         ]
       }
+      payment_events: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          event_type: string
+          id: string
+          processed_at: string | null
+          provider: string
+          raw: Json
+          reference: string
+          status: string
+          store_id: string | null
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          event_type: string
+          id?: string
+          processed_at?: string | null
+          provider?: string
+          raw?: Json
+          reference: string
+          status: string
+          store_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          event_type?: string
+          id?: string
+          processed_at?: string | null
+          provider?: string
+          raw?: Json
+          reference?: string
+          status?: string
+          store_id?: string | null
+        }
+        Relationships: []
+      }
+      payment_ledger: {
+        Row: {
+          amount: number
+          balance_after: number
+          created_at: string
+          description: string | null
+          entry_type: string
+          event_id: string | null
+          id: string
+          reference: string | null
+          store_id: string
+        }
+        Insert: {
+          amount: number
+          balance_after?: number
+          created_at?: string
+          description?: string | null
+          entry_type: string
+          event_id?: string | null
+          id?: string
+          reference?: string | null
+          store_id: string
+        }
+        Update: {
+          amount?: number
+          balance_after?: number
+          created_at?: string
+          description?: string | null
+          entry_type?: string
+          event_id?: string | null
+          id?: string
+          reference?: string | null
+          store_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_ledger_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "payment_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       platform_audit_log: {
         Row: {
           action: string
@@ -1202,6 +1342,44 @@ export type Database = {
             columns: ["store_id"]
             isOneToOne: false
             referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      receipts: {
+        Row: {
+          amount: number
+          id: string
+          invoice_id: string | null
+          issued_at: string
+          paystack_reference: string | null
+          receipt_number: string
+          store_id: string
+        }
+        Insert: {
+          amount: number
+          id?: string
+          invoice_id?: string | null
+          issued_at?: string
+          paystack_reference?: string | null
+          receipt_number: string
+          store_id: string
+        }
+        Update: {
+          amount?: number
+          id?: string
+          invoice_id?: string | null
+          issued_at?: string
+          paystack_reference?: string | null
+          receipt_number?: string
+          store_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "receipts_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
             referencedColumns: ["id"]
           },
         ]
@@ -1472,11 +1650,14 @@ export type Database = {
           contact_email: string | null
           contact_phone: string | null
           created_at: string
+          deleted_at: string | null
           description: string | null
           id: string
           logo_url: string | null
           name: string
           owner_id: string
+          status: Database["public"]["Enums"]["store_status"]
+          suspended_at: string | null
           webhook_secret: string | null
         }
         Insert: {
@@ -1484,11 +1665,14 @@ export type Database = {
           contact_email?: string | null
           contact_phone?: string | null
           created_at?: string
+          deleted_at?: string | null
           description?: string | null
           id?: string
           logo_url?: string | null
           name: string
           owner_id: string
+          status?: Database["public"]["Enums"]["store_status"]
+          suspended_at?: string | null
           webhook_secret?: string | null
         }
         Update: {
@@ -1496,12 +1680,45 @@ export type Database = {
           contact_email?: string | null
           contact_phone?: string | null
           created_at?: string
+          deleted_at?: string | null
           description?: string | null
           id?: string
           logo_url?: string | null
           name?: string
           owner_id?: string
+          status?: Database["public"]["Enums"]["store_status"]
+          suspended_at?: string | null
           webhook_secret?: string | null
+        }
+        Relationships: []
+      }
+      subscription_history: {
+        Row: {
+          created_at: string
+          from_status: string | null
+          id: string
+          metadata: Json | null
+          reason: string | null
+          store_id: string
+          to_status: string
+        }
+        Insert: {
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          metadata?: Json | null
+          reason?: string | null
+          store_id: string
+          to_status: string
+        }
+        Update: {
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          metadata?: Json | null
+          reason?: string | null
+          store_id?: string
+          to_status?: string
         }
         Relationships: []
       }
@@ -1514,6 +1731,7 @@ export type Database = {
           discount_note: string | null
           discount_type: string
           discount_value: number
+          grace_period_ends_at: string | null
           id: string
           next_billing_at: string | null
           paystack_customer_code: string | null
@@ -1532,6 +1750,7 @@ export type Database = {
           discount_note?: string | null
           discount_type?: string
           discount_value?: number
+          grace_period_ends_at?: string | null
           id?: string
           next_billing_at?: string | null
           paystack_customer_code?: string | null
@@ -1550,6 +1769,7 @@ export type Database = {
           discount_note?: string | null
           discount_type?: string
           discount_value?: number
+          grace_period_ends_at?: string | null
           id?: string
           next_billing_at?: string | null
           paystack_customer_code?: string | null
@@ -1901,12 +2121,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      advance_subscription_lifecycle: { Args: never; Returns: undefined }
       compute_subscription_amount: {
         Args: { _store_id: string }
         Returns: number
       }
       expire_stale_orders: { Args: never; Returns: undefined }
       generate_daily_reports: { Args: never; Returns: undefined }
+      get_store_webhook_secret: { Args: { _store_id: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1932,6 +2154,24 @@ export type Database = {
         Returns: boolean
       }
       is_superadmin: { Args: { _user_id: string }; Returns: boolean }
+      isolation_probe: {
+        Args: { _actor: string; _foreign_store: string }
+        Returns: {
+          leaked_rows: number
+          table_name: string
+        }[]
+      }
+      record_payment_event: {
+        Args: {
+          _amount: number
+          _event_type: string
+          _raw: Json
+          _reference: string
+          _status: string
+          _store_id: string
+        }
+        Returns: string
+      }
     }
     Enums: {
       app_role:
@@ -1954,6 +2194,7 @@ export type Database = {
         | "delivered"
         | "cancelled"
         | "shipped"
+      store_status: "active" | "suspended" | "deleted"
       wallet_tx_kind: "sale" | "funding" | "withdrawal"
       wallet_tx_status: "pending" | "success" | "failed"
     }
@@ -2105,6 +2346,7 @@ export const Constants = {
         "cancelled",
         "shipped",
       ],
+      store_status: ["active", "suspended", "deleted"],
       wallet_tx_kind: ["sale", "funding", "withdrawal"],
       wallet_tx_status: ["pending", "success", "failed"],
     },
