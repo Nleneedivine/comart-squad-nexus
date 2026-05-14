@@ -54,6 +54,7 @@ const NAV: Item[] = [
     { label: "Records", to: "/finance" },
     { label: "Commissions", to: "/finance/commissions" },
     { label: "Refunds", to: "/finance/refunds" },
+    { label: "Payroll", to: "/payroll" },
   ]},
   { label: "Staff Management", to: "/staff", icon: UserCog },
   { label: "Tasks", to: "/tasks", icon: ListTodo },
