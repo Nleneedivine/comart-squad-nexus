@@ -57,6 +57,7 @@ import { Route as FinanceCommissionsRouteImport } from './routes/finance.commiss
 import { Route as FSlugRouteImport } from './routes/f.$slug'
 import { Route as CustomersIdRouteImport } from './routes/customers.$id'
 import { Route as AdminTenantsRouteImport } from './routes/admin.tenants'
+import { Route as AdminSystemHealthRouteImport } from './routes/admin.system-health'
 import { Route as AdminSubscriptionsRouteImport } from './routes/admin.subscriptions'
 import { Route as AdminIntegrationsRouteImport } from './routes/admin.integrations'
 import { Route as AdminFlagsRouteImport } from './routes/admin.flags'
@@ -306,6 +307,11 @@ const AdminTenantsRoute = AdminTenantsRouteImport.update({
   path: '/tenants',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminSystemHealthRoute = AdminSystemHealthRouteImport.update({
+  id: '/system-health',
+  path: '/system-health',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminSubscriptionsRoute = AdminSubscriptionsRouteImport.update({
   id: '/subscriptions',
   path: '/subscriptions',
@@ -377,6 +383,7 @@ export interface FileRoutesByFullPath {
   '/admin/flags': typeof AdminFlagsRoute
   '/admin/integrations': typeof AdminIntegrationsRoute
   '/admin/subscriptions': typeof AdminSubscriptionsRoute
+  '/admin/system-health': typeof AdminSystemHealthRoute
   '/admin/tenants': typeof AdminTenantsRoute
   '/customers/$id': typeof CustomersIdRoute
   '/f/$slug': typeof FSlugRoute
@@ -433,6 +440,7 @@ export interface FileRoutesByTo {
   '/admin/flags': typeof AdminFlagsRoute
   '/admin/integrations': typeof AdminIntegrationsRoute
   '/admin/subscriptions': typeof AdminSubscriptionsRoute
+  '/admin/system-health': typeof AdminSystemHealthRoute
   '/admin/tenants': typeof AdminTenantsRoute
   '/customers/$id': typeof CustomersIdRoute
   '/f/$slug': typeof FSlugRoute
@@ -492,6 +500,7 @@ export interface FileRoutesById {
   '/admin/flags': typeof AdminFlagsRoute
   '/admin/integrations': typeof AdminIntegrationsRoute
   '/admin/subscriptions': typeof AdminSubscriptionsRoute
+  '/admin/system-health': typeof AdminSystemHealthRoute
   '/admin/tenants': typeof AdminTenantsRoute
   '/customers/$id': typeof CustomersIdRoute
   '/f/$slug': typeof FSlugRoute
@@ -552,6 +561,7 @@ export interface FileRouteTypes {
     | '/admin/flags'
     | '/admin/integrations'
     | '/admin/subscriptions'
+    | '/admin/system-health'
     | '/admin/tenants'
     | '/customers/$id'
     | '/f/$slug'
@@ -608,6 +618,7 @@ export interface FileRouteTypes {
     | '/admin/flags'
     | '/admin/integrations'
     | '/admin/subscriptions'
+    | '/admin/system-health'
     | '/admin/tenants'
     | '/customers/$id'
     | '/f/$slug'
@@ -666,6 +677,7 @@ export interface FileRouteTypes {
     | '/admin/flags'
     | '/admin/integrations'
     | '/admin/subscriptions'
+    | '/admin/system-health'
     | '/admin/tenants'
     | '/customers/$id'
     | '/f/$slug'
@@ -1080,6 +1092,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminTenantsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/system-health': {
+      id: '/admin/system-health'
+      path: '/system-health'
+      fullPath: '/admin/system-health'
+      preLoaderRoute: typeof AdminSystemHealthRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/subscriptions': {
       id: '/admin/subscriptions'
       path: '/subscriptions'
@@ -1145,6 +1164,7 @@ interface AdminRouteChildren {
   AdminFlagsRoute: typeof AdminFlagsRoute
   AdminIntegrationsRoute: typeof AdminIntegrationsRoute
   AdminSubscriptionsRoute: typeof AdminSubscriptionsRoute
+  AdminSystemHealthRoute: typeof AdminSystemHealthRoute
   AdminTenantsRoute: typeof AdminTenantsRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
@@ -1155,6 +1175,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminFlagsRoute: AdminFlagsRoute,
   AdminIntegrationsRoute: AdminIntegrationsRoute,
   AdminSubscriptionsRoute: AdminSubscriptionsRoute,
+  AdminSystemHealthRoute: AdminSystemHealthRoute,
   AdminTenantsRoute: AdminTenantsRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
