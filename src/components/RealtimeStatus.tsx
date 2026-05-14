@@ -16,12 +16,9 @@ export default function RealtimeStatus() {
     const goOffline = () => setOnline(false);
     window.addEventListener("online", goOnline);
     window.addEventListener("offline", goOffline);
-    const sub = supabase.realtime.onOpen?.(() => setStale(false));
-    const errSub = supabase.realtime.onError?.(() => setStale(true));
     return () => {
       window.removeEventListener("online", goOnline);
       window.removeEventListener("offline", goOffline);
-      try { (sub as any)?.(); (errSub as any)?.(); } catch {}
     };
   }, []);
 
