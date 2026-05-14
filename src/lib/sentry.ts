@@ -1,6 +1,49 @@
 import * as Sentry from "@sentry/react";
+import { supabase } from "@/integrations/supabase/client";
 
 let initialized = false;
+let currentStoreId: string | null = null;
+let currentUserId: string | null = null;
+
+const CRITICAL_MODULES = /billing|payment|paystack|auth|wallet|subscription/i;
+const HIGH_MODULES = /order|inventory|stock|webhook/i;
+const MEDIUM_MODULES = /realtime|chat|ui|dashboard|render/i;
+
+function classifySeverity(message: string, module: string): "critical" | "high" | "medium" | "low" {
+  const text = `${module} ${message}`;
+  if (CRITICAL_MODULES.test(text)) return "critical";
+  if (HIGH_MODULES.test(text)) return "high";
+  if (MEDIUM_MODULES.test(text)) return "medium";
+  return "low";
+}
+
+async function mirrorToDatabase(
+  err: unknown,
+  context?: { tags?: Record<string, string>; extra?: Record<string, any> },
+  sentryEventId?: string,
+) {
+  try {
+    const e = err instanceof Error ? err : new Error(typeof err === "string" ? err : JSON.stringify(err));
+    const module = context?.tags?.area || context?.tags?.module || context?.tags?.route || "frontend";
+    const message = String(e.message || "Unknown error").slice(0, 500);
+    const severity = (context?.tags?.severity as any) || classifySeverity(message, module);
+    await supabase.from("app_errors").insert({
+      store_id: currentStoreId,
+      tenant_id: currentStoreId,
+      user_id: currentUserId,
+      module,
+      message,
+      stack_trace: e.stack?.slice(0, 8000) || null,
+      severity,
+      status: "open",
+      environment: (import.meta.env.MODE || "production"),
+      sentry_event_id: sentryEventId || null,
+      metadata: scrub({ tags: context?.tags || {}, extra: context?.extra || {} }) as any,
+    });
+  } catch {
+    // never throw from telemetry
+  }
+}
 
 const SENSITIVE_KEY = /password|token|secret|pin|cvv|card|account_number|otp|paystack|authorization|apikey|api_key/i;
 
