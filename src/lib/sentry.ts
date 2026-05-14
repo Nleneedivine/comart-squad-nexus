@@ -130,6 +130,8 @@ export function initSentry() {
 }
 
 export function setSentryUser(u: { userId: string; storeId?: string | null; role?: string | null }) {
+  currentUserId = u.userId;
+  currentStoreId = u.storeId || null;
   if (!initialized) return;
   Sentry.setUser({ id: u.userId });
   Sentry.setTag("store_id", u.storeId || "none");
@@ -137,6 +139,8 @@ export function setSentryUser(u: { userId: string; storeId?: string | null; role
 }
 
 export function clearSentryUser() {
+  currentUserId = null;
+  currentStoreId = null;
   if (!initialized) return;
   Sentry.setUser(null);
   Sentry.setTag("store_id", "none");
@@ -144,15 +148,18 @@ export function clearSentryUser() {
 }
 
 export function captureError(err: unknown, context?: { tags?: Record<string, string>; extra?: Record<string, any> }) {
-  if (!initialized) {
-    if (import.meta.env.DEV) console.error("[sentry:disabled]", err, context);
-    return;
+  let eventId: string | undefined;
+  if (initialized) {
+    Sentry.withScope((scope) => {
+      if (context?.tags) for (const [k, v] of Object.entries(context.tags)) scope.setTag(k, v);
+      if (context?.extra) scope.setExtras(scrub(context.extra));
+      eventId = Sentry.captureException(err);
+    });
+  } else if (import.meta.env.DEV) {
+    console.error("[sentry:disabled]", err, context);
   }
-  Sentry.withScope((scope) => {
-    if (context?.tags) for (const [k, v] of Object.entries(context.tags)) scope.setTag(k, v);
-    if (context?.extra) scope.setExtras(scrub(context.extra));
-    Sentry.captureException(err);
-  });
+  // Mirror to database for the superadmin error dashboard (fire & forget).
+  void mirrorToDatabase(err, context, eventId);
 }
 
 export const SentryErrorBoundary = Sentry.ErrorBoundary;
