@@ -12,7 +12,9 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as WebhooksRouteImport } from './routes/webhooks'
 import { Route as WalletRouteImport } from './routes/wallet'
 import { Route as TasksRouteImport } from './routes/tasks'
+import { Route as SuppliersRouteImport } from './routes/suppliers'
 import { Route as StaffRouteImport } from './routes/staff'
+import { Route as PurchaseOrdersRouteImport } from './routes/purchase-orders'
 import { Route as ProductivityRouteImport } from './routes/productivity'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as OrdersRouteImport } from './routes/orders'
@@ -82,9 +84,19 @@ const TasksRoute = TasksRouteImport.update({
   path: '/tasks',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SuppliersRoute = SuppliersRouteImport.update({
+  id: '/suppliers',
+  path: '/suppliers',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const StaffRoute = StaffRouteImport.update({
   id: '/staff',
   path: '/staff',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PurchaseOrdersRoute = PurchaseOrdersRouteImport.update({
+  id: '/purchase-orders',
+  path: '/purchase-orders',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProductivityRoute = ProductivityRouteImport.update({
@@ -374,7 +386,9 @@ export interface FileRoutesByFullPath {
   '/orders': typeof OrdersRouteWithChildren
   '/pricing': typeof PricingRoute
   '/productivity': typeof ProductivityRoute
+  '/purchase-orders': typeof PurchaseOrdersRoute
   '/staff': typeof StaffRoute
+  '/suppliers': typeof SuppliersRoute
   '/tasks': typeof TasksRoute
   '/wallet': typeof WalletRoute
   '/webhooks': typeof WebhooksRouteWithChildren
@@ -431,7 +445,9 @@ export interface FileRoutesByTo {
   '/onboarding': typeof OnboardingRoute
   '/pricing': typeof PricingRoute
   '/productivity': typeof ProductivityRoute
+  '/purchase-orders': typeof PurchaseOrdersRoute
   '/staff': typeof StaffRoute
+  '/suppliers': typeof SuppliersRoute
   '/tasks': typeof TasksRoute
   '/wallet': typeof WalletRoute
   '/webhooks': typeof WebhooksRouteWithChildren
@@ -491,7 +507,9 @@ export interface FileRoutesById {
   '/orders': typeof OrdersRouteWithChildren
   '/pricing': typeof PricingRoute
   '/productivity': typeof ProductivityRoute
+  '/purchase-orders': typeof PurchaseOrdersRoute
   '/staff': typeof StaffRoute
+  '/suppliers': typeof SuppliersRoute
   '/tasks': typeof TasksRoute
   '/wallet': typeof WalletRoute
   '/webhooks': typeof WebhooksRouteWithChildren
@@ -552,7 +570,9 @@ export interface FileRouteTypes {
     | '/orders'
     | '/pricing'
     | '/productivity'
+    | '/purchase-orders'
     | '/staff'
+    | '/suppliers'
     | '/tasks'
     | '/wallet'
     | '/webhooks'
@@ -609,7 +629,9 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/pricing'
     | '/productivity'
+    | '/purchase-orders'
     | '/staff'
+    | '/suppliers'
     | '/tasks'
     | '/wallet'
     | '/webhooks'
@@ -668,7 +690,9 @@ export interface FileRouteTypes {
     | '/orders'
     | '/pricing'
     | '/productivity'
+    | '/purchase-orders'
     | '/staff'
+    | '/suppliers'
     | '/tasks'
     | '/wallet'
     | '/webhooks'
@@ -728,7 +752,9 @@ export interface RootRouteChildren {
   OrdersRoute: typeof OrdersRouteWithChildren
   PricingRoute: typeof PricingRoute
   ProductivityRoute: typeof ProductivityRoute
+  PurchaseOrdersRoute: typeof PurchaseOrdersRoute
   StaffRoute: typeof StaffRoute
+  SuppliersRoute: typeof SuppliersRoute
   TasksRoute: typeof TasksRoute
   WalletRoute: typeof WalletRoute
   WebhooksRoute: typeof WebhooksRouteWithChildren
@@ -777,11 +803,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TasksRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/suppliers': {
+      id: '/suppliers'
+      path: '/suppliers'
+      fullPath: '/suppliers'
+      preLoaderRoute: typeof SuppliersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/staff': {
       id: '/staff'
       path: '/staff'
       fullPath: '/staff'
       preLoaderRoute: typeof StaffRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/purchase-orders': {
+      id: '/purchase-orders'
+      path: '/purchase-orders'
+      fullPath: '/purchase-orders'
+      preLoaderRoute: typeof PurchaseOrdersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/productivity': {
@@ -1242,7 +1282,9 @@ const rootRouteChildren: RootRouteChildren = {
   OrdersRoute: OrdersRouteWithChildren,
   PricingRoute: PricingRoute,
   ProductivityRoute: ProductivityRoute,
+  PurchaseOrdersRoute: PurchaseOrdersRoute,
   StaffRoute: StaffRoute,
+  SuppliersRoute: SuppliersRoute,
   TasksRoute: TasksRoute,
   WalletRoute: WalletRoute,
   WebhooksRoute: WebhooksRouteWithChildren,

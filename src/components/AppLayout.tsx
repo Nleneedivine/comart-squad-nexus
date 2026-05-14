@@ -7,7 +7,7 @@ import {
   Megaphone, Wallet, Boxes, Users, Banknote, UserCog, MessageSquare,
   BarChart3, Zap, Plug, Webhook, Settings, Search, ChevronDown,
   ChevronRight, Maximize2, LogOut, Sun, Moon, Calculator, BookOpen, LifeBuoy,
-  User as UserIcon, Menu, X, CreditCard, ListTodo,
+  User as UserIcon, Menu, X, CreditCard, ListTodo, Truck,
 } from "lucide-react";
 import { useAuth, ROLE_LABELS } from "@/hooks/useAuth";
 import { useTheme } from "@/hooks/useTheme";
@@ -44,6 +44,10 @@ const NAV: Item[] = [
     { label: "Faulty Stocks", to: "/inventory/faulty" },
     { label: "Agent Stock Table", to: "/inventory/agent-stock" },
     { label: "Waybill", to: "/inventory/waybill" },
+  ]},
+  { label: "Procurement", icon: Truck, children: [
+    { label: "Suppliers", to: "/suppliers" },
+    { label: "Purchase Orders", to: "/purchase-orders" },
   ]},
   { label: "Agents", to: "/agents", icon: Users },
   { label: "Finance", icon: Banknote, children: [
