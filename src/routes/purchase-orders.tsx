@@ -16,7 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatNaira } from "@/lib/format";
 import { toast } from "sonner";
 import { Plus, ClipboardList, CheckCircle2, XCircle, Trash2, Package, FileText } from "lucide-react";
-import { captureException } from "@/lib/sentry";
+import { captureError } from "@/lib/sentry";
 
 export const Route = createFileRoute("/purchase-orders")({
   head: () => ({ meta: [{ title: "Purchase Orders — Comart+" }, { name: "description", content: "Create and receive purchase orders. Inventory updates automatically." }] }),
@@ -92,7 +92,7 @@ function PurchaseOrders() {
       status: "draft", subtotal, tax: Number(form.tax || 0), total,
       expected_date: form.expected_date || null, notes: form.notes, created_by: user?.id,
     }).select().single();
-    if (error || !po) { captureException(error, { module: "purchase_orders", message: "create_po_failed" }); return toast.error(error?.message || "Failed"); }
+    if (error || !po) { captureError(error, { module: "purchase_orders", message: "create_po_failed" }); return toast.error(error?.message || "Failed"); }
 
     const items = form.items.map((i: any) => ({
       store_id: store.id, purchase_order_id: po.id,
@@ -101,7 +101,7 @@ function PurchaseOrders() {
       subtotal: Number(i.quantity) * Number(i.unit_cost),
     }));
     const { error: itErr } = await supabase.from("purchase_order_items").insert(items);
-    if (itErr) { captureException(itErr, { module: "purchase_orders", message: "create_po_items_failed" }); return toast.error(itErr.message); }
+    if (itErr) { captureError(itErr, { module: "purchase_orders", message: "create_po_items_failed" }); return toast.error(itErr.message); }
 
     toast.success("PO created"); setOpen(false);
     setForm({ supplier_id: "", expected_date: "", tax: 0, notes: "", items: [] });
@@ -124,7 +124,7 @@ function PurchaseOrders() {
       .map(([id, v]) => ({ id, received: v.received, damaged: v.damaged }));
     if (items.length === 0) return toast.error("Enter received quantities");
     const { error } = await supabase.rpc("receive_purchase_order_items", { _po_id: detailId, _items: items as any });
-    if (error) { captureException(error, { module: "purchase_orders", message: "receive_failed", tags: { po_id: detailId } }); return toast.error(error.message); }
+    if (error) { captureError(error, { module: "purchase_orders", message: "receive_failed", tags: { po_id: detailId } }); return toast.error(error.message); }
     toast.success("Stock received & inventory updated");
     await loadDetail(detailId); load();
   };
