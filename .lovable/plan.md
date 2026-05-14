@@ -1,90 +1,115 @@
-# Phase 5 — Store Owner Workflow Polish
+# Sentry Integration Plan — Comart+ Frontend
 
-## 1. Fix Bulk Import routing
+## 1. Dependencies
 
-**Problem:** `/orders` and `/orders/import` render the same screen because `orders.tsx` has no `<Outlet />`, so the child route can't mount.
+- `bun add @sentry/react`
 
-**Fix:** Convert `orders.tsx` into a pathless wrapper that renders an `<Outlet />` plus the existing list at the index, and split the list into `orders.index.tsx`. `orders.import.tsx` already exists with the correct AI paste-text → review → commit flow — it will start showing once routing works.
+## 2. Environment
 
-## 2. Create Order — customer picker
+- Add `VITE_SENTRY_DSN` (DSN provided by user) — also add `VITE_SENTRY_ENVIRONMENT` (optional override; default derived from `import.meta.env.MODE`) and `VITE_APP_VERSION` (optional, for `release`).
+- Update `.env` is auto-managed; document required var in plan output. User pastes DSN in Lovable env settings.
+- Init is a no-op when `VITE_SENTRY_DSN` is missing (dev without DSN, previews, tests).
 
-On the New Order dialog (currently in `orders.tsx` / `orders.$id.tsx`):
+## 3. New file: `src/lib/sentry.ts`
 
-- Add a combobox "Customer" field that searches existing `customers` by name/phone.
-- Toggle "+ New customer" to expose name / phone / address inputs.
-- On submit: reuse existing customer (link `customer_id`) or insert a new row, then attach to the order. This automatically fulfils "orders save to customers section."
+Exports:
+- `initSentry()` — called once from `src/router.tsx` (or `__root.tsx` module top-level) before React renders.
+- `setSentryUser({ userId, storeId, role })` / `clearSentryUser()` — called from `useAuth` effect.
+- `captureError(err, context?)` — thin wrapper used by realtime/upload/paystack/edge-fn helpers.
+- `SentryErrorBoundary` — re-export of `Sentry.ErrorBoundary` preconfigured with fallback.
 
-## 3. Products at registration + Store > Products add
+`initSentry()` config:
+- `dsn: import.meta.env.VITE_SENTRY_DSN` — early return if absent.
+- `environment`: `VITE_SENTRY_ENVIRONMENT ?? MODE` (`development` | `staging` | `production`).
+- `release`: `VITE_APP_VERSION` if set.
+- `integrations`:
+  - `Sentry.browserTracingIntegration()` — navigation + pageload spans (TanStack Router instrumented via `Sentry.tanstackRouterBrowserTracingIntegration(router)` if available; otherwise default browser tracing covers it).
+  - `Sentry.replayIntegration({ maskAllText: true, blockAllMedia: true, maskAllInputs: true })` — privacy-strict.
+- Sample rates (mobile-friendly):
+  - `tracesSampleRate`: 1.0 dev, 0.1 prod.
+  - `replaysSessionSampleRate`: 0.0 dev, 0.05 prod.
+  - `replaysOnErrorSampleRate`: 1.0.
+- `sendDefaultPii: false`.
+- `beforeSend(event, hint)` — redact:
+  - Strip request/response bodies; remove cookies, `authorization`, `apikey`, `x-api-key` headers.
+  - Walk `event.extra`, `event.contexts`, `event.breadcrumbs[].data` and scrub keys matching `/password|token|secret|pin|cvv|card|account_number|otp|paystack/i` → `[Filtered]`.
+  - Drop events whose message matches known noisy benign errors (e.g. `ResizeObserver loop`).
+- `beforeBreadcrumb` — drop `console.debug`, scrub fetch URLs containing `access_token=` or `apikey=`.
+- `ignoreErrors`: `['ResizeObserver loop limit exceeded', 'Non-Error promise rejection captured']`.
 
-- `inventory.products.tsx`: add an "Add product" dialog (name, SKU, price, stock, reorder point) for store owners — already partially present, will be polished and surfaced under My Store > Products.
-- `onboarding.tsx`: add a "Starter products" step where the owner can add 1–N products in a repeatable mini-form before finishing onboarding. Skippable.
+Unhandled promise rejections + global errors are auto-instrumented by `@sentry/react` defaults; no extra code needed.
 
-## 4. Round-robin assignment on bulk import
+## 4. Bootstrap order
 
-- During the commit step in `orders.import.tsx`, fetch active sales reps (`user_roles` with role `sales_rep`/`agent`, not suspended) for the store.
-- Compute current open-order count per rep from `orders` (status in pending/processing/shipped, not archived).
-- Assign each new order to the rep with the lowest open count, then increment locally to keep distribution even within the batch.
-- Manual `assigned_to` value entered in the review grid always wins (never overridden).
-- Reps see assigned orders on `/tasks` (already wired to `assigned_to = auth.uid()`).
-- Owner reassignment from order detail page already works and continues to override.
+- Call `initSentry()` at the top of `src/router.tsx` (module scope, before `getRouter`). Module is imported by SSR entry and client entry — guard with `typeof window !== 'undefined'` to avoid running during SSR/build prerender.
+- Wrap the app in `SentryErrorBoundary` inside `src/routes/__root.tsx` `component` (around `<AuthProvider>...</AuthProvider>`), with a graceful fallback that reuses the styling of `RouteErrorBoundary` (icon, title, retry, go home).
+- Keep existing per-route `errorComponent` and router `defaultErrorComponent` — the Sentry boundary is the outermost net.
 
-## 5. Staff Management deep view
+## 5. User/tenant context
 
-Extend `/staff` with a per-staff drawer (click row → opens panel) showing:
+- In `src/hooks/useAuth.tsx`, after `loadStoreAndRoles` resolves, call `setSentryUser({ userId: session.user.id, storeId: store?.id, role: roles[0] })`. On sign-out, `clearSentryUser()`.
+- Tags set: `store_id`, `role`, `environment` (already on init, also as tag for filtering).
+- Never send `email` / `phone` (PII off).
 
-- Profile + role + suspended state (existing).
-- KPIs from `staff_workload_stats` aggregated all-time + this month: assigned, completed, delivered, cancelled, expired, completion rate, delivery rate.
-- Calls log from `activity_log` (filter `type = 'call'`) — count + last 20 entries.
-- Active workload (open orders), recent commissions earned (`commissions` table), tasks completed (`tasks` table).
-- Mini sparkline of last 30 days completion rate.
-- CSV export per staff.
+## 6. Targeted error logging hooks
 
-## 6. Group chat (subscription-gated)
+Add `captureError(err, { tags: { area: '...' } })` calls in:
+- `src/hooks/useStoreChannel.ts` — on `CHANNEL_ERROR` / `TIMED_OUT` status.
+- `src/server/paystack.functions.ts` and `src/routes/api/public/paystack-webhook.ts` — wrap fetch/handler in try/catch (server-side uses `@sentry/react` browser SDK only on client; for server functions we only instrument the client-side caller for now — full server instrumentation is out of scope for this pass).
+- Upload helpers (search for `supabase.storage` usage in routes; add capture on error).
+- Dashboard render: wrap `src/routes/Dashboard.tsx` inner content in `SentryErrorBoundary` with section-level fallback.
+- Server-fn callers: add a `withCaptureServerFn` thin wrapper used by hot paths (orders, integrations, suggest-todos) — captures on rejection with tag `area: 'server-fn'` and rethrows.
 
-- Migration: add `chat_groups` (id, store_id, name, created_by, created_at) and `chat_group_members` (group_id, user_id). Add `group_id` column to `chat_messages` (nullable, coexists with current `channel`/`recipient_id`).
-- RLS: members of a group can read/post; group creator + store admin can manage members.
-- Plan gating: read `subscriptions.plan` — enable group creation only when plan is `pro` or `business`. Super admin override via existing `feature_flags` (`chat_groups` flag) wins both ways.
-- UI in `chat.tsx`: "Create Group" button (disabled with upsell tooltip when locked), group list in sidebar, member picker dialog.
+(Scope note: instrument the client side of these flows; server-runtime Sentry is a separate phase.)
 
-## 7. Auto to-do suggestions (AI-assisted)
+## 7. Dev-only "Test Sentry" button
 
-- New server fn `suggestTodos` calling Lovable AI Gateway (`google/gemini-2.5-flash`) with the user's open tasks + assigned orders + active goals.
-- Returns 5–8 suggested to-do items with priority + suggested time of day.
-- `productivity.tsx` (To-do section): add "✨ Suggest my day" button → preview drawer with checkboxes:
-  - "Use all" inserts every suggestion into `todos`.
-  - Per-item edit before insert.
-  - "Dismiss" keeps the user's current list.
-- Tasks and goals remain pre-assignable by admins; users can append their own (already supported by current RLS).
+- Add a small floating button in `src/components/AppLayout.tsx` rendered only when `import.meta.env.DEV && import.meta.env.VITE_SENTRY_DSN`.
+- onClick: `throw new Error("This is your first error!")` inside a setTimeout so it surfaces as unhandled.
+- Per requirement #11: after user verifies in Sentry dashboard, they tell me to remove it. The plan includes the removal step as a follow-up turn (cannot auto-detect dashboard receipt from here).
 
-## 8. Integration payments (Hybrid model)
+## 8. Privacy / redaction guarantees
 
-**Control model (per your answer):** Lovable ships the integration code. You (super admin) set the price and approve activations. Store owners pay via Paystack and the system auto-enables the feature flag.
+- `maskAllText`, `maskAllInputs`, `blockAllMedia` on Replay → no form values, no media leak.
+- `sendDefaultPii: false` → no IP, no cookies.
+- `beforeSend` scrubber covers `password|token|secret|pin|cvv|card|account_number|otp` in extras/breadcrumb data.
+- Auth headers stripped from breadcrumb fetch URLs.
 
-Implementation:
+## 9. Performance
 
-- Migration: `integration_catalog` (key, name, description, monthly_price, is_active) — seeded by you in `/admin`. `store_integrations` (store_id, integration_key, status enum: locked/pending/active, activated_at, paystack_reference).
-- `/admin/integrations` (new): super admin manages catalog + sees activation requests, can manually toggle.
-- `integrations.tsx`: "Upgrade to Activate" → opens checkout dialog showing price → calls existing Paystack server fn → on webhook success, `store_integrations.status = active` and notification fires.
-- Existing `/api/public/paystack-webhook` route gets a new branch for `integration_purchase` metadata.
+- Prod `tracesSampleRate: 0.1`, `replaysSessionSampleRate: 0.05` keeps mobile cost low.
+- Replay integration is lazy-loaded by Sentry by default.
+- Init guarded by DSN presence and `typeof window !== 'undefined'`.
 
-## 9. WP Forms webhook + general inbound
+## 10. Files touched
 
-- New public route `src/routes/api/public/wp-forms-webhook.ts`. Accepts WP Forms JSON; verifies a per-store HMAC secret stored on `stores.webhook_secret` (new column).
-- Maps fields → creates `customers` row + `orders` + `order_items`, runs the round-robin assigner.
-- New page `/webhooks/setup` shows each store its endpoint URL, secret, sample payload, and recent deliveries (`webhook_deliveries` table). keep the weebhook secrets in webhook section of owners page.
-- Same endpoint pattern documented for generic JSON, Zapier, Make.
+Create:
+- `src/lib/sentry.ts`
 
-## Technical notes
+Edit:
+- `src/router.tsx` — call `initSentry()`.
+- `src/routes/__root.tsx` — wrap with `SentryErrorBoundary`.
+- `src/hooks/useAuth.tsx` — set/clear user context.
+- `src/hooks/useStoreChannel.ts` — capture channel errors.
+- `src/components/AppLayout.tsx` — dev-only test button.
+- `src/routes/Dashboard.tsx` — section-level boundary.
+- `src/server/paystack.functions.ts` — capture failures (client-callable surface).
+- `package.json` — `@sentry/react` dependency.
 
-- Migrations: 4 new files (group chat, integration catalog/store_integrations, webhook deliveries + store secret, plus index for round-robin workload).
-- New routes: `orders.index.tsx`, `admin.integrations.tsx`, `webhooks.setup.tsx`, `api/public/wp-forms-webhook.ts`.
-- New server fns: `suggest-todos.functions.ts`, `assign-round-robin.functions.ts`, `activate-integration.functions.ts`.
-- Touched: `orders.tsx`, `orders.import.tsx`, `orders.$id.tsx` (customer picker), `inventory.products.tsx`, `onboarding.tsx`, `staff.tsx`, `chat.tsx`, `productivity.tsx`, `integrations.tsx`, `AppLayout.tsx`, `api/public/paystack-webhook.ts`.
+## 11. Verification
 
-## Out of scope (flag if you want them)
+- `bun add` runs build automatically; confirm no SSR crash.
+- Manually click dev test button → confirm event in Sentry → user reports back → I remove the button in a follow-up turn.
 
-- Real WhatsApp/SMS sending (currently uses `wa.me` deep links). 
-- Migrating away from `pg_cron` for scheduled jobs.
-- Replacing existing `agents` table with `user_roles`-only model.
+## 12. Out of scope (explicit)
 
-Approve to implement, or tell me what to adjust.
+- Server-runtime Sentry on the Cloudflare Worker (TanStack server fns / server routes). Documented `@sentry/cloudflare` is the right next step but adds bundling complexity; flag for a follow-up phase.
+- Source map upload pipeline (requires auth token + CI step).
+- Alerting rules / dashboards in Sentry org.
+
+## Confirmation needed
+
+After approval I will:
+1. Install `@sentry/react`.
+2. Implement the files above.
+3. Request you add `VITE_SENTRY_DSN` to env (paste the provided DSN) — init is a no-op until then, so nothing breaks in the meantime.

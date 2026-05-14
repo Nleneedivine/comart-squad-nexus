@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { RealtimeChannel } from "@supabase/supabase-js";
+import { captureError } from "@/lib/sentry";
 
 type Handler = (payload: any) => void;
 
@@ -52,8 +53,13 @@ export function useStoreChannel({ storeId, name, on = [], broadcast = {}, enable
     ch.subscribe((status) => {
       if (status === "SUBSCRIBED") setHealth("open");
       else if (status === "CLOSED") setHealth("closed");
-      else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") setHealth("error");
-      else setHealth("connecting");
+      else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+        setHealth("error");
+        captureError(new Error(`Realtime channel ${status}: ${channelName}`), {
+          tags: { area: "realtime", channel: name },
+          extra: { storeId, channelName },
+        });
+      } else setHealth("connecting");
     });
 
     const { data: sub } = supabase.auth.onAuthStateChange(() => {

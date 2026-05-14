@@ -3,6 +3,7 @@ import appCss from "../styles.css?url";
 import { AuthProvider } from "@/hooks/useAuth";
 import { Toaster } from "@/components/ui/sonner";
 import RouteErrorBoundary from "@/components/RouteErrorBoundary";
+import { SentryErrorBoundary } from "@/lib/sentry";
 
 function NotFoundComponent() {
   return (
@@ -31,10 +32,25 @@ export const Route = createRootRoute({
   }),
   shellComponent: RootShell,
   component: () => (
-    <AuthProvider>
-      <Outlet />
-      <Toaster />
-    </AuthProvider>
+    <SentryErrorBoundary
+      fallback={({ resetError }) => (
+        <div className="min-h-screen flex items-center justify-center px-4 bg-background">
+          <div className="max-w-md text-center space-y-3">
+            <h1 className="text-2xl font-bold">Something went wrong</h1>
+            <p className="text-sm text-muted-foreground">An unexpected error occurred. Our team has been notified.</p>
+            <div className="flex gap-2 justify-center">
+              <button onClick={resetError} className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground">Try again</button>
+              <a href="/" className="rounded-md border px-4 py-2 text-sm">Go home</a>
+            </div>
+          </div>
+        </div>
+      )}
+    >
+      <AuthProvider>
+        <Outlet />
+        <Toaster />
+      </AuthProvider>
+    </SentryErrorBoundary>
   ),
   notFoundComponent: NotFoundComponent,
   errorComponent: RouteErrorBoundary,

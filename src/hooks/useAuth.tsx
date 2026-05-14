@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { setSentryUser, clearSentryUser } from "@/lib/sentry";
 
 type StoreInfo = { id: string; name: string };
 
@@ -30,11 +31,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .eq("user_id", uid);
     if (roleRows && roleRows.length > 0) {
       const first = roleRows[0] as any;
-      setStore(first.stores ? { id: first.stores.id, name: first.stores.name } : null);
-      setRoles(roleRows.map((r: any) => r.role));
+      const storeInfo = first.stores ? { id: first.stores.id, name: first.stores.name } : null;
+      const roleList = roleRows.map((r: any) => r.role);
+      setStore(storeInfo);
+      setRoles(roleList);
+      setSentryUser({ userId: uid, storeId: storeInfo?.id, role: roleList[0] });
     } else {
       setStore(null);
       setRoles([]);
+      setSentryUser({ userId: uid });
     }
   };
 
@@ -45,6 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setTimeout(() => loadStoreAndRoles(s.user.id), 0);
       } else {
         setStore(null); setRoles([]);
+        clearSentryUser();
       }
     });
     supabase.auth.getSession().then(({ data }) => {
