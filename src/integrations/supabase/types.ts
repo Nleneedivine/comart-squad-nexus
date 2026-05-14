@@ -134,6 +134,60 @@ export type Database = {
         }
         Relationships: []
       }
+      app_errors: {
+        Row: {
+          created_at: string
+          environment: string | null
+          id: string
+          message: string
+          metadata: Json
+          module: string
+          resolved_at: string | null
+          resolved_by: string | null
+          sentry_event_id: string | null
+          severity: string
+          stack_trace: string | null
+          status: string
+          store_id: string | null
+          tenant_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          environment?: string | null
+          id?: string
+          message: string
+          metadata?: Json
+          module?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          sentry_event_id?: string | null
+          severity?: string
+          stack_trace?: string | null
+          status?: string
+          store_id?: string | null
+          tenant_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          environment?: string | null
+          id?: string
+          message?: string
+          metadata?: Json
+          module?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          sentry_event_id?: string | null
+          severity?: string
+          stack_trace?: string | null
+          status?: string
+          store_id?: string | null
+          tenant_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       attendance: {
         Row: {
           clock_in: string
@@ -477,6 +531,81 @@ export type Database = {
           revenue?: number
           store_id?: string
           top_product?: string | null
+        }
+        Relationships: []
+      }
+      failed_jobs: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          id: string
+          job_name: string
+          last_retry_at: string | null
+          payload: Json
+          retry_count: number
+          status: string
+          store_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          job_name: string
+          last_retry_at?: string | null
+          payload?: Json
+          retry_count?: number
+          status?: string
+          store_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          job_name?: string
+          last_retry_at?: string | null
+          payload?: Json
+          retry_count?: number
+          status?: string
+          store_id?: string | null
+        }
+        Relationships: []
+      }
+      failed_webhooks: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          event_type: string | null
+          id: string
+          last_retry_at: string | null
+          payload: Json
+          provider: string
+          retry_count: number
+          status: string
+          store_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          event_type?: string | null
+          id?: string
+          last_retry_at?: string | null
+          payload?: Json
+          provider?: string
+          retry_count?: number
+          status?: string
+          store_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          event_type?: string | null
+          id?: string
+          last_retry_at?: string | null
+          payload?: Json
+          provider?: string
+          retry_count?: number
+          status?: string
+          store_id?: string | null
         }
         Relationships: []
       }
