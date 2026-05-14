@@ -7,7 +7,7 @@ import {
   Megaphone, Wallet, Boxes, Users, Banknote, UserCog, MessageSquare,
   BarChart3, Zap, Plug, Webhook, Settings, Search, ChevronDown,
   ChevronRight, Maximize2, LogOut, Sun, Moon, Calculator, BookOpen, LifeBuoy,
-  User as UserIcon, Menu, X, CreditCard, ListTodo,
+  User as UserIcon, Menu, X, CreditCard, ListTodo, Truck,
 } from "lucide-react";
 import { useAuth, ROLE_LABELS } from "@/hooks/useAuth";
 import { useTheme } from "@/hooks/useTheme";
