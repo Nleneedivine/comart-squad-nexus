@@ -45,6 +45,10 @@ const NAV: Item[] = [
     { label: "Agent Stock Table", to: "/inventory/agent-stock" },
     { label: "Waybill", to: "/inventory/waybill" },
   ]},
+  { label: "Procurement", icon: Truck, children: [
+    { label: "Suppliers", to: "/suppliers" },
+    { label: "Purchase Orders", to: "/purchase-orders" },
+  ]},
   { label: "Agents", to: "/agents", icon: Users },
   { label: "Finance", icon: Banknote, children: [
     { label: "Records", to: "/finance" },
