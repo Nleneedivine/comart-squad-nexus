@@ -24,6 +24,7 @@ type Item = { label: string; to?: string; icon: any; children?: { label: string;
 
 const NAV: Item[] = [
   { label: "Dashboard", to: "/Dashboard", icon: LayoutDashboard },
+  { label: "My Workspace", to: "/staff-portal", icon: UserIcon },
   { label: "My Attendance", to: "/attendance", icon: Clock },
   { label: "My Store", to: "/StoreManagement", icon: Store },
   { label: "Orders", icon: ShoppingCart, children: [
