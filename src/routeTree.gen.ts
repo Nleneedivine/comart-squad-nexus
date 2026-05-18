@@ -13,6 +13,7 @@ import { Route as WebhooksRouteImport } from './routes/webhooks'
 import { Route as WalletRouteImport } from './routes/wallet'
 import { Route as TasksRouteImport } from './routes/tasks'
 import { Route as SuppliersRouteImport } from './routes/suppliers'
+import { Route as StaffPortalRouteImport } from './routes/staff-portal'
 import { Route as StaffRouteImport } from './routes/staff'
 import { Route as PurchaseOrdersRouteImport } from './routes/purchase-orders'
 import { Route as ProductivityRouteImport } from './routes/productivity'
@@ -88,6 +89,11 @@ const TasksRoute = TasksRouteImport.update({
 const SuppliersRoute = SuppliersRouteImport.update({
   id: '/suppliers',
   path: '/suppliers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StaffPortalRoute = StaffPortalRouteImport.update({
+  id: '/staff-portal',
+  path: '/staff-portal',
   getParentRoute: () => rootRouteImport,
 } as any)
 const StaffRoute = StaffRouteImport.update({
@@ -395,6 +401,7 @@ export interface FileRoutesByFullPath {
   '/productivity': typeof ProductivityRoute
   '/purchase-orders': typeof PurchaseOrdersRoute
   '/staff': typeof StaffRoute
+  '/staff-portal': typeof StaffPortalRoute
   '/suppliers': typeof SuppliersRoute
   '/tasks': typeof TasksRoute
   '/wallet': typeof WalletRoute
@@ -455,6 +462,7 @@ export interface FileRoutesByTo {
   '/productivity': typeof ProductivityRoute
   '/purchase-orders': typeof PurchaseOrdersRoute
   '/staff': typeof StaffRoute
+  '/staff-portal': typeof StaffPortalRoute
   '/suppliers': typeof SuppliersRoute
   '/tasks': typeof TasksRoute
   '/wallet': typeof WalletRoute
@@ -518,6 +526,7 @@ export interface FileRoutesById {
   '/productivity': typeof ProductivityRoute
   '/purchase-orders': typeof PurchaseOrdersRoute
   '/staff': typeof StaffRoute
+  '/staff-portal': typeof StaffPortalRoute
   '/suppliers': typeof SuppliersRoute
   '/tasks': typeof TasksRoute
   '/wallet': typeof WalletRoute
@@ -582,6 +591,7 @@ export interface FileRouteTypes {
     | '/productivity'
     | '/purchase-orders'
     | '/staff'
+    | '/staff-portal'
     | '/suppliers'
     | '/tasks'
     | '/wallet'
@@ -642,6 +652,7 @@ export interface FileRouteTypes {
     | '/productivity'
     | '/purchase-orders'
     | '/staff'
+    | '/staff-portal'
     | '/suppliers'
     | '/tasks'
     | '/wallet'
@@ -704,6 +715,7 @@ export interface FileRouteTypes {
     | '/productivity'
     | '/purchase-orders'
     | '/staff'
+    | '/staff-portal'
     | '/suppliers'
     | '/tasks'
     | '/wallet'
@@ -767,6 +779,7 @@ export interface RootRouteChildren {
   ProductivityRoute: typeof ProductivityRoute
   PurchaseOrdersRoute: typeof PurchaseOrdersRoute
   StaffRoute: typeof StaffRoute
+  StaffPortalRoute: typeof StaffPortalRoute
   SuppliersRoute: typeof SuppliersRoute
   TasksRoute: typeof TasksRoute
   WalletRoute: typeof WalletRoute
@@ -821,6 +834,13 @@ declare module '@tanstack/react-router' {
       path: '/suppliers'
       fullPath: '/suppliers'
       preLoaderRoute: typeof SuppliersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/staff-portal': {
+      id: '/staff-portal'
+      path: '/staff-portal'
+      fullPath: '/staff-portal'
+      preLoaderRoute: typeof StaffPortalRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/staff': {
@@ -1305,6 +1325,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProductivityRoute: ProductivityRoute,
   PurchaseOrdersRoute: PurchaseOrdersRoute,
   StaffRoute: StaffRoute,
+  StaffPortalRoute: StaffPortalRoute,
   SuppliersRoute: SuppliersRoute,
   TasksRoute: TasksRoute,
   WalletRoute: WalletRoute,
@@ -1333,12 +1354,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}

@@ -996,6 +996,54 @@ export type Database = {
         }
         Relationships: []
       }
+      order_call_attempts: {
+        Row: {
+          attempt_number: number
+          created_at: string
+          id: string
+          notes: string | null
+          order_id: string
+          outcome: string
+          store_id: string
+          user_id: string
+        }
+        Insert: {
+          attempt_number: number
+          created_at?: string
+          id?: string
+          notes?: string | null
+          order_id: string
+          outcome?: string
+          store_id: string
+          user_id: string
+        }
+        Update: {
+          attempt_number?: number
+          created_at?: string
+          id?: string
+          notes?: string | null
+          order_id?: string
+          outcome?: string
+          store_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_call_attempts_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_call_attempts_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_items: {
         Row: {
           created_at: string
@@ -1467,8 +1515,10 @@ export type Database = {
       }
       profiles: {
         Row: {
+          address: string | null
           avatar_locked_until: string | null
           avatar_url: string | null
+          bio: string | null
           community_name: string | null
           created_at: string
           email: string | null
@@ -1481,8 +1531,10 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          address?: string | null
           avatar_locked_until?: string | null
           avatar_url?: string | null
+          bio?: string | null
           community_name?: string | null
           created_at?: string
           email?: string | null
@@ -1495,8 +1547,10 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          address?: string | null
           avatar_locked_until?: string | null
           avatar_url?: string | null
+          bio?: string | null
           community_name?: string | null
           created_at?: string
           email?: string | null
@@ -2091,6 +2145,8 @@ export type Database = {
       stores: {
         Row: {
           address: string | null
+          auto_assign_enabled: boolean
+          auto_assign_strategy: string
           contact_email: string | null
           contact_phone: string | null
           created_at: string
@@ -2098,6 +2154,7 @@ export type Database = {
           description: string | null
           id: string
           logo_url: string | null
+          max_call_attempts: number
           name: string
           owner_id: string
           status: Database["public"]["Enums"]["store_status"]
@@ -2106,6 +2163,8 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          auto_assign_enabled?: boolean
+          auto_assign_strategy?: string
           contact_email?: string | null
           contact_phone?: string | null
           created_at?: string
@@ -2113,6 +2172,7 @@ export type Database = {
           description?: string | null
           id?: string
           logo_url?: string | null
+          max_call_attempts?: number
           name: string
           owner_id: string
           status?: Database["public"]["Enums"]["store_status"]
@@ -2121,6 +2181,8 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          auto_assign_enabled?: boolean
+          auto_assign_strategy?: string
           contact_email?: string | null
           contact_phone?: string | null
           created_at?: string
@@ -2128,6 +2190,7 @@ export type Database = {
           description?: string | null
           id?: string
           logo_url?: string | null
+          max_call_attempts?: number
           name?: string
           owner_id?: string
           status?: Database["public"]["Enums"]["store_status"]
@@ -2673,6 +2736,7 @@ export type Database = {
     }
     Functions: {
       advance_subscription_lifecycle: { Args: never; Returns: undefined }
+      auto_assign_order: { Args: { _order_id: string }; Returns: string }
       compute_subscription_amount: {
         Args: { _store_id: string }
         Returns: number
@@ -2728,6 +2792,10 @@ export type Database = {
           _store_id: string
         }
         Returns: string
+      }
+      superadmin_delete_store: {
+        Args: { _store_id: string }
+        Returns: undefined
       }
     }
     Enums: {
