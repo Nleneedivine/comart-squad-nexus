@@ -250,6 +250,57 @@ function StaffPortal() {
             ))}
         </TabsContent>
 
+
+        <TabsContent value="performance" className="mt-4 space-y-4">
+          <Card className="p-4 space-y-4">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div>
+                <h3 className="font-semibold">Performance trend</h3>
+                <p className="text-xs text-muted-foreground">Orders assigned vs delivered and your conversion rate.</p>
+              </div>
+              <Select value={seriesRange} onValueChange={(v: any) => setSeriesRange(v)}>
+                <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="weekly">Last 8 weeks</SelectItem>
+                  <SelectItem value="monthly">Last 6 months</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={series}>
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                  <XAxis dataKey="label" fontSize={11} />
+                  <YAxis fontSize={11} allowDecimals={false} />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="assigned" fill="hsl(var(--muted-foreground))" name="Assigned" />
+                  <Bar dataKey="delivered" fill="hsl(var(--primary))" name="Delivered" />
+                  <Bar dataKey="confirmed" fill="#3b82f6" name="Confirmed" />
+                  <Bar dataKey="cancelled" fill="hsl(var(--destructive))" name="Cancelled" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="h-56">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={series}>
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                  <XAxis dataKey="label" fontSize={11} />
+                  <YAxis fontSize={11} domain={[0, 100]} unit="%" />
+                  <Tooltip />
+                  <Line type="monotone" dataKey="conversion" stroke="hsl(var(--primary))" strokeWidth={2} name="Conversion %" />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </Card>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <Card className="p-4"><div className="text-xs text-muted-foreground">Best week</div><div className="text-lg font-semibold">{series.reduce((m, r) => r.delivered > (m?.delivered || 0) ? r : m, null as any)?.label || "—"}</div></Card>
+            <Card className="p-4"><div className="text-xs text-muted-foreground">Total delivered</div><div className="text-lg font-semibold text-green-600">{series.reduce((s, r) => s + r.delivered, 0)}</div></Card>
+            <Card className="p-4"><div className="text-xs text-muted-foreground">Total cancelled</div><div className="text-lg font-semibold text-destructive">{series.reduce((s, r) => s + r.cancelled, 0)}</div></Card>
+            <Card className="p-4"><div className="text-xs text-muted-foreground">Avg conversion</div><div className="text-lg font-semibold">{series.length ? Math.round(series.reduce((s, r) => s + r.conversion, 0) / series.length) : 0}%</div></Card>
+          </div>
+        </TabsContent>
+
         <TabsContent value="attendance" className="mt-4">
           <Card className="p-4">
             <h3 className="font-semibold mb-3">Recent attendance</h3>
