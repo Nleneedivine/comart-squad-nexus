@@ -89,6 +89,7 @@ function SettingsPage() {
         <TabsList>
           <TabsTrigger value="profile">My Profile</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
+          {isAdmin && <TabsTrigger value="operations">Operations</TabsTrigger>}
           <TabsTrigger value="general">General Settings</TabsTrigger>
         </TabsList>
         <TabsContent value="notifications">
@@ -116,6 +117,44 @@ function SettingsPage() {
             <Button onClick={save}>Save changes</Button>
           </Card>
         </TabsContent>
+        {isAdmin && (
+          <TabsContent value="operations">
+            <Card className="p-6 space-y-5 max-w-2xl">
+              <div>
+                <h3 className="font-semibold">Order workflow</h3>
+                <p className="text-sm text-muted-foreground">Control how incoming orders are routed to staff and how many call attempts they should make.</p>
+              </div>
+              {!ops ? <p className="text-sm text-muted-foreground">Loading…</p> : (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Maximum call attempts per order</Label>
+                    <Input type="number" min={1} max={10} value={ops.max_call_attempts}
+                      onChange={e => setOps({ ...ops, max_call_attempts: Math.max(1, Math.min(10, Number(e.target.value) || 1)) })} />
+                    <p className="text-xs text-muted-foreground">Staff cannot log more than this many calls per order before marking it as unreachable.</p>
+                  </div>
+                  <div className="flex items-center justify-between border rounded-md p-3">
+                    <div>
+                      <Label className="text-sm">Auto-assign new orders</Label>
+                      <p className="text-xs text-muted-foreground">When off, orders stay unassigned until a manager assigns them.</p>
+                    </div>
+                    <Switch checked={ops.auto_assign_enabled} onCheckedChange={v => setOps({ ...ops, auto_assign_enabled: v })} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Assignment strategy</Label>
+                    <Select value={ops.auto_assign_strategy} onValueChange={v => setOps({ ...ops, auto_assign_strategy: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="least_load">Least load (fewest open orders)</SelectItem>
+                        <SelectItem value="round_robin">Round robin (rotate fairly)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button onClick={saveOps}>Save operations settings</Button>
+                </div>
+              )}
+            </Card>
+          </TabsContent>
+        )}
         <TabsContent value="general">
           <Card className="p-6 text-sm text-muted-foreground">General settings will appear here.</Card>
         </TabsContent>
