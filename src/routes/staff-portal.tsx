@@ -37,6 +37,8 @@ function StaffPortal() {
   const [callOpen, setCallOpen] = useState(false);
   const [callOutcome, setCallOutcome] = useState("no_answer");
   const [callNotes, setCallNotes] = useState("");
+  const [series, setSeries] = useState<any[]>([]);
+  const [seriesRange, setSeriesRange] = useState<"weekly" | "monthly">("weekly");
 
   const load = async () => {
     if (!store || !user) return;
