@@ -14,8 +14,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Phone, Clock, LogIn, LogOut, Upload, TrendingUp, Package, CheckCircle2, XCircle } from "lucide-react";
+import { Phone, Clock, LogIn, LogOut, Upload, TrendingUp, Package, CheckCircle2, XCircle, BarChart3 } from "lucide-react";
 import { formatNaira } from "@/lib/format";
+import { ResponsiveContainer, LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, CartesianGrid } from "recharts";
 
 export const Route = createFileRoute("/staff-portal")({
   head: () => ({ meta: [{ title: "My Workspace — Comart+" }, { name: "robots", content: "noindex" }] }),
