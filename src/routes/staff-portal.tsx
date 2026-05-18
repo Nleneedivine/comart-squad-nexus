@@ -14,8 +14,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Phone, Clock, LogIn, LogOut, Upload, TrendingUp, Package, CheckCircle2, XCircle } from "lucide-react";
+import { Phone, Clock, LogIn, LogOut, Upload, TrendingUp, Package, CheckCircle2, XCircle, BarChart3 } from "lucide-react";
 import { formatNaira } from "@/lib/format";
+import { ResponsiveContainer, LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, CartesianGrid } from "recharts";
 
 export const Route = createFileRoute("/staff-portal")({
   head: () => ({ meta: [{ title: "My Workspace — Comart+" }, { name: "robots", content: "noindex" }] }),
@@ -36,6 +37,8 @@ function StaffPortal() {
   const [callOpen, setCallOpen] = useState(false);
   const [callOutcome, setCallOutcome] = useState("no_answer");
   const [callNotes, setCallNotes] = useState("");
+  const [series, setSeries] = useState<any[]>([]);
+  const [seriesRange, setSeriesRange] = useState<"weekly" | "monthly">("weekly");
 
   const load = async () => {
     if (!store || !user) return;
@@ -75,6 +78,60 @@ function StaffPortal() {
   };
 
   useEffect(() => { load(); }, [store, user]);
+
+  // Build time-series perf data (last 8 weeks or last 6 months)
+  useEffect(() => {
+    if (!store || !user) return;
+    (async () => {
+      const since = new Date();
+      if (seriesRange === "weekly") since.setDate(since.getDate() - 7 * 8);
+      else since.setMonth(since.getMonth() - 6);
+      const { data } = await supabase.from("orders")
+        .select("status, created_at")
+        .eq("store_id", store.id).eq("assigned_to", user.id)
+        .gte("created_at", since.toISOString())
+        .limit(2000);
+      const bucketKey = (d: Date) => {
+        if (seriesRange === "weekly") {
+          const ref = new Date(d); ref.setHours(0,0,0,0);
+          ref.setDate(ref.getDate() - ref.getDay()); // Sunday start
+          return ref.toISOString().slice(0,10);
+        }
+        return d.toISOString().slice(0,7); // YYYY-MM
+      };
+      const buckets: Record<string, any> = {};
+      const labels: string[] = [];
+      const cursor = new Date(since);
+      if (seriesRange === "weekly") {
+        cursor.setDate(cursor.getDate() - cursor.getDay());
+        for (let i = 0; i < 8; i++) {
+          const k = cursor.toISOString().slice(0,10);
+          buckets[k] = { label: k.slice(5), assigned: 0, confirmed: 0, delivered: 0, cancelled: 0 };
+          labels.push(k);
+          cursor.setDate(cursor.getDate() + 7);
+        }
+      } else {
+        cursor.setDate(1);
+        for (let i = 0; i < 6; i++) {
+          const k = cursor.toISOString().slice(0,7);
+          buckets[k] = { label: k, assigned: 0, confirmed: 0, delivered: 0, cancelled: 0 };
+          labels.push(k);
+          cursor.setMonth(cursor.getMonth() + 1);
+        }
+      }
+      (data || []).forEach((r: any) => {
+        const k = bucketKey(new Date(r.created_at));
+        const b = buckets[k]; if (!b) return;
+        b.assigned++;
+        if (["delivered","completed","fulfilled"].includes(r.status)) b.delivered++;
+        else if (["processing","shipped"].includes(r.status)) b.confirmed++;
+        else if (["cancelled","canceled"].includes(r.status)) b.cancelled++;
+      });
+      const arr = labels.map(k => ({ ...buckets[k], conversion: buckets[k].assigned ? Math.round((buckets[k].delivered / buckets[k].assigned) * 100) : 0 }));
+      setSeries(arr);
+    })();
+  }, [store, user, seriesRange]);
+
 
   const openOrder = async (o: any) => {
     setSelectedOrder(o);
@@ -169,6 +226,7 @@ function StaffPortal() {
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList>
           <TabsTrigger value="orders"><Package className="h-4 w-4 mr-1" />My Orders</TabsTrigger>
+          <TabsTrigger value="performance"><BarChart3 className="h-4 w-4 mr-1" />Performance</TabsTrigger>
           <TabsTrigger value="attendance"><Clock className="h-4 w-4 mr-1" />Attendance</TabsTrigger>
           <TabsTrigger value="profile">Profile</TabsTrigger>
         </TabsList>
@@ -190,6 +248,57 @@ function StaffPortal() {
                 </div>
               </Card>
             ))}
+        </TabsContent>
+
+
+        <TabsContent value="performance" className="mt-4 space-y-4">
+          <Card className="p-4 space-y-4">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div>
+                <h3 className="font-semibold">Performance trend</h3>
+                <p className="text-xs text-muted-foreground">Orders assigned vs delivered and your conversion rate.</p>
+              </div>
+              <Select value={seriesRange} onValueChange={(v: any) => setSeriesRange(v)}>
+                <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="weekly">Last 8 weeks</SelectItem>
+                  <SelectItem value="monthly">Last 6 months</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={series}>
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                  <XAxis dataKey="label" fontSize={11} />
+                  <YAxis fontSize={11} allowDecimals={false} />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="assigned" fill="hsl(var(--muted-foreground))" name="Assigned" />
+                  <Bar dataKey="delivered" fill="hsl(var(--primary))" name="Delivered" />
+                  <Bar dataKey="confirmed" fill="#3b82f6" name="Confirmed" />
+                  <Bar dataKey="cancelled" fill="hsl(var(--destructive))" name="Cancelled" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="h-56">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={series}>
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                  <XAxis dataKey="label" fontSize={11} />
+                  <YAxis fontSize={11} domain={[0, 100]} unit="%" />
+                  <Tooltip />
+                  <Line type="monotone" dataKey="conversion" stroke="hsl(var(--primary))" strokeWidth={2} name="Conversion %" />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </Card>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <Card className="p-4"><div className="text-xs text-muted-foreground">Best week</div><div className="text-lg font-semibold">{series.reduce((m, r) => r.delivered > (m?.delivered || 0) ? r : m, null as any)?.label || "—"}</div></Card>
+            <Card className="p-4"><div className="text-xs text-muted-foreground">Total delivered</div><div className="text-lg font-semibold text-green-600">{series.reduce((s, r) => s + r.delivered, 0)}</div></Card>
+            <Card className="p-4"><div className="text-xs text-muted-foreground">Total cancelled</div><div className="text-lg font-semibold text-destructive">{series.reduce((s, r) => s + r.cancelled, 0)}</div></Card>
+            <Card className="p-4"><div className="text-xs text-muted-foreground">Avg conversion</div><div className="text-lg font-semibold">{series.length ? Math.round(series.reduce((s, r) => s + r.conversion, 0) / series.length) : 0}%</div></Card>
+          </div>
         </TabsContent>
 
         <TabsContent value="attendance" className="mt-4">

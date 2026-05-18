@@ -211,12 +211,14 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel>{user?.email}</DropdownMenuLabel>
               <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => nav({ to: "/staff-portal" })}><UserIcon className="h-4 w-4 mr-2" />My Workspace</DropdownMenuItem>
               <DropdownMenuItem onClick={() => nav({ to: "/Settings" })}><Settings className="h-4 w-4 mr-2" />Settings</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => nav({ to: "/StoreManagement" })}><Store className="h-4 w-4 mr-2" />My Store</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => nav({ to: "/billing" })}><CreditCard className="h-4 w-4 mr-2" />Billing & Plan</DropdownMenuItem>
-              <DropdownMenuItem><BookOpen className="h-4 w-4 mr-2" />Documentation</DropdownMenuItem>
-              <DropdownMenuItem><Calculator className="h-4 w-4 mr-2" />Calculator</DropdownMenuItem>
-              <DropdownMenuItem><LifeBuoy className="h-4 w-4 mr-2" />Support</DropdownMenuItem>
+              {canAccess(roles, "/StoreManagement") && (
+                <DropdownMenuItem onClick={() => nav({ to: "/StoreManagement" })}><Store className="h-4 w-4 mr-2" />My Store</DropdownMenuItem>
+              )}
+              {canAccess(roles, "/billing") && (
+                <DropdownMenuItem onClick={() => nav({ to: "/billing" })}><CreditCard className="h-4 w-4 mr-2" />Billing & Plan</DropdownMenuItem>
+              )}
               <DropdownMenuItem onClick={toggleDark}>{dark ? <Sun className="h-4 w-4 mr-2" /> : <Moon className="h-4 w-4 mr-2" />}{dark ? "Light Mode" : "Dark Mode"}</DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={logout} className="text-destructive"><LogOut className="h-4 w-4 mr-2" />Logout</DropdownMenuItem>
