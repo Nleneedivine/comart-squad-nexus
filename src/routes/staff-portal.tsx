@@ -226,6 +226,7 @@ function StaffPortal() {
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList>
           <TabsTrigger value="orders"><Package className="h-4 w-4 mr-1" />My Orders</TabsTrigger>
+          <TabsTrigger value="performance"><BarChart3 className="h-4 w-4 mr-1" />Performance</TabsTrigger>
           <TabsTrigger value="attendance"><Clock className="h-4 w-4 mr-1" />Attendance</TabsTrigger>
           <TabsTrigger value="profile">Profile</TabsTrigger>
         </TabsList>
