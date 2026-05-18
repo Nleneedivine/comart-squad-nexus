@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -19,13 +21,32 @@ export const Route = createFileRoute("/Settings")({
 });
 
 function SettingsPage() {
-  const { user, refresh } = useAuth();
+  const { user, store, roles, refresh } = useAuth();
   const [profile, setProfile] = useState<any>(null);
+  const [ops, setOps] = useState<{ max_call_attempts: number; auto_assign_enabled: boolean; auto_assign_strategy: string } | null>(null);
+  const isAdmin = roles.some(r => ["owner","admin","manager","head_of_operations"].includes(r));
 
   useEffect(() => {
     if (!user) return;
     supabase.from("profiles").select("*").eq("id", user.id).maybeSingle().then(({ data }) => setProfile(data));
   }, [user]);
+
+  useEffect(() => {
+    if (!store || !isAdmin) return;
+    supabase.from("stores").select("max_call_attempts, auto_assign_enabled, auto_assign_strategy").eq("id", store.id).maybeSingle()
+      .then(({ data }) => data && setOps(data as any));
+  }, [store, isAdmin]);
+
+  const saveOps = async () => {
+    if (!store || !ops) return;
+    const { error } = await supabase.from("stores").update({
+      max_call_attempts: ops.max_call_attempts,
+      auto_assign_enabled: ops.auto_assign_enabled,
+      auto_assign_strategy: ops.auto_assign_strategy,
+    }).eq("id", store.id);
+    if (error) return toast.error(error.message);
+    toast.success("Operations settings saved");
+  };
 
   const lockedUntil = profile?.avatar_locked_until ? new Date(profile.avatar_locked_until) : null;
   const isLocked = lockedUntil && isAfter(lockedUntil, new Date());
