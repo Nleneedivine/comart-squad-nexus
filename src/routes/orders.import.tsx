@@ -25,6 +25,7 @@ type DraftItem = { product_name: string; quantity: number; unit_price?: number; 
 type Draft = { customer_name: string; phone: string; address?: string; items: DraftItem[]; amount?: number; notes?: string; delivery?: string };
 
 async function extractPdfText(file: File): Promise<string> {
+  // @ts-ignore - no types for direct build path
   const pdfjs: any = await import("pdfjs-dist/build/pdf.mjs");
   // @ts-ignore
   pdfjs.GlobalWorkerOptions.workerSrc = (await import("pdfjs-dist/build/pdf.worker.mjs?url")).default;
