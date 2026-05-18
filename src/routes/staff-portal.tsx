@@ -79,6 +79,60 @@ function StaffPortal() {
 
   useEffect(() => { load(); }, [store, user]);
 
+  // Build time-series perf data (last 8 weeks or last 6 months)
+  useEffect(() => {
+    if (!store || !user) return;
+    (async () => {
+      const since = new Date();
+      if (seriesRange === "weekly") since.setDate(since.getDate() - 7 * 8);
+      else since.setMonth(since.getMonth() - 6);
+      const { data } = await supabase.from("orders")
+        .select("status, created_at")
+        .eq("store_id", store.id).eq("assigned_to", user.id)
+        .gte("created_at", since.toISOString())
+        .limit(2000);
+      const bucketKey = (d: Date) => {
+        if (seriesRange === "weekly") {
+          const ref = new Date(d); ref.setHours(0,0,0,0);
+          ref.setDate(ref.getDate() - ref.getDay()); // Sunday start
+          return ref.toISOString().slice(0,10);
+        }
+        return d.toISOString().slice(0,7); // YYYY-MM
+      };
+      const buckets: Record<string, any> = {};
+      const labels: string[] = [];
+      const cursor = new Date(since);
+      if (seriesRange === "weekly") {
+        cursor.setDate(cursor.getDate() - cursor.getDay());
+        for (let i = 0; i < 8; i++) {
+          const k = cursor.toISOString().slice(0,10);
+          buckets[k] = { label: k.slice(5), assigned: 0, confirmed: 0, delivered: 0, cancelled: 0 };
+          labels.push(k);
+          cursor.setDate(cursor.getDate() + 7);
+        }
+      } else {
+        cursor.setDate(1);
+        for (let i = 0; i < 6; i++) {
+          const k = cursor.toISOString().slice(0,7);
+          buckets[k] = { label: k, assigned: 0, confirmed: 0, delivered: 0, cancelled: 0 };
+          labels.push(k);
+          cursor.setMonth(cursor.getMonth() + 1);
+        }
+      }
+      (data || []).forEach((r: any) => {
+        const k = bucketKey(new Date(r.created_at));
+        const b = buckets[k]; if (!b) return;
+        b.assigned++;
+        if (["delivered","completed","fulfilled"].includes(r.status)) b.delivered++;
+        else if (["processing","shipped"].includes(r.status)) b.confirmed++;
+        else if (["cancelled","canceled"].includes(r.status)) b.cancelled++;
+      });
+      const arr = labels.map(k => ({ ...buckets[k], conversion: buckets[k].assigned ? Math.round((buckets[k].delivered / buckets[k].assigned) * 100) : 0 }));
+      setSeries(arr);
+    })();
+  }, [store, user, seriesRange]);
+
+
   const openOrder = async (o: any) => {
     setSelectedOrder(o);
     const { data } = await supabase.from("order_call_attempts")
