@@ -37,6 +37,13 @@ function AcceptInvite() {
   const [password, setPassword] = useState(() => genPassword());
   const [generatedShown, setGeneratedShown] = useState(true);
 
+  const markStaffReady = async (userId: string) => {
+    await supabase
+      .from("profiles")
+      .update({ onboarding_completed: true, onboarding_step: 4 })
+      .eq("id", userId);
+  };
+
   useEffect(() => {
     (async () => {
       const { data } = await supabase.from("staff_invites").select("*").eq("token", token).maybeSingle();
@@ -71,6 +78,7 @@ function AcceptInvite() {
         store_id: invite.store_id, user_id: user.id, type: "staff",
         activity: `${user.email} joined as ${ROLE_LABELS[invite.role] || invite.role}`,
       });
+      await markStaffReady(user.id);
       await refresh();
       toast.success("Welcome to the team!");
       nav({ to: "/staff-portal" });
@@ -101,6 +109,8 @@ function AcceptInvite() {
         toast.info("Check your inbox to confirm your email, then sign in with the password shown above.");
         setMode("signin");
       } else {
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (sessionData.session?.user?.id) await markStaffReady(sessionData.session.user.id);
         await refresh();
         nav({ to: "/staff-portal" });
       }
