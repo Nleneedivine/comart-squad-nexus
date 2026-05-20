@@ -24,39 +24,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [store, setStore] = useState<StoreInfo | null>(null);
   const [roles, setRoles] = useState<string[]>([]);
 
-  const loadStoreAndRoles = async (uid: string) => {
-    const { data: roleRows } = await supabase
-      .from("user_roles")
-      .select("role, store_id, stores(id, name)")
-      .eq("user_id", uid);
-    if (roleRows && roleRows.length > 0) {
-      const first = roleRows[0] as any;
-      const storeInfo = first.stores ? { id: first.stores.id, name: first.stores.name } : null;
-      const roleList = roleRows.map((r: any) => r.role);
-      setStore(storeInfo);
-      setRoles(roleList);
-      setSentryUser({ userId: uid, storeId: storeInfo?.id, role: roleList[0] });
-    } else {
-      setStore(null);
-      setRoles([]);
-      setSentryUser({ userId: uid });
+  const loadStoreAndRoles = async (uid: string, settleLoading = false) => {
+    try {
+      const { data: roleRows } = await supabase
+        .from("user_roles")
+        .select("role, store_id, stores(id, name)")
+        .eq("user_id", uid);
+      if (roleRows && roleRows.length > 0) {
+        const first = roleRows[0] as any;
+        const storeInfo = first.stores ? { id: first.stores.id, name: first.stores.name } : null;
+        const roleList = roleRows.map((r: any) => r.role);
+        setStore(storeInfo);
+        setRoles(roleList);
+        setSentryUser({ userId: uid, storeId: storeInfo?.id, role: roleList[0] });
+      } else {
+        setStore(null);
+        setRoles([]);
+        setSentryUser({ userId: uid });
+      }
+    } finally {
+      if (settleLoading) setLoading(false);
     }
   };
 
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
+      setLoading(true);
       setSession(s);
       if (s?.user) {
-        setTimeout(() => loadStoreAndRoles(s.user.id), 0);
+        setTimeout(() => loadStoreAndRoles(s.user.id, true), 0);
       } else {
         setStore(null); setRoles([]);
         clearSentryUser();
+        setLoading(false);
       }
     });
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
-      if (data.session?.user) loadStoreAndRoles(data.session.user.id);
-      setLoading(false);
+      if (data.session?.user) {
+        loadStoreAndRoles(data.session.user.id, true);
+      } else {
+        setLoading(false);
+      }
     });
     return () => sub.subscription.unsubscribe();
   }, []);
