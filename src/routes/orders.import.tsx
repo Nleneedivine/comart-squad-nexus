@@ -14,7 +14,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Sparkles, Upload, Save, Trash2, FileSpreadsheet, FileText, X } from "lucide-react";
 import { parseOrdersAi } from "@/lib/parse-orders.functions";
-import * as XLSX from "xlsx";
 
 export const Route = createFileRoute("/orders/import")({
   head: () => ({ meta: [{ title: "Import Orders — Comart+" }, { name: "description", content: "Paste orders or upload spreadsheets/PDFs — AI structures and assigns them." }] }),
@@ -41,6 +40,7 @@ async function extractPdfText(file: File): Promise<string> {
 }
 
 async function extractSpreadsheetText(file: File): Promise<string> {
+  const XLSX = await import("xlsx");
   const buf = await file.arrayBuffer();
   const wb = XLSX.read(buf, { type: "array" });
   const parts: string[] = [];
@@ -184,6 +184,16 @@ function BulkImport() {
           Paste any text or upload spreadsheets (.xlsx, .xls, .csv) and PDFs — AI structures them and auto-assigns to staff.
         </p>
       </div>
+
+      <Card className="p-5 space-y-3">
+        <h2 className="text-sm font-semibold">How tenants use bulk import</h2>
+        <ol className="list-decimal space-y-1 pl-5 text-sm text-muted-foreground">
+          <li>Paste raw order text or upload a spreadsheet, CSV, TXT, or PDF export from WhatsApp, WordPress forms, or another backend.</li>
+          <li>Click <span className="font-medium text-foreground">Parse with AI</span> to convert it into structured orders matched against your store product catalog.</li>
+          <li>Review the drafted orders below and correct names, phones, items, quantities, prices, or addresses if needed.</li>
+          <li>Click <span className="font-medium text-foreground">Commit all</span> to save the orders into your store. Auto-assignment then follows your store rules.</li>
+        </ol>
+      </Card>
 
       <Card className="p-5 space-y-3">
         <div className="flex items-center justify-between flex-wrap gap-2">
