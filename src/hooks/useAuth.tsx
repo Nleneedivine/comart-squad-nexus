@@ -51,15 +51,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
-      setLoading(true);
       setSession(s);
+      setHydrated(true);
       if (s?.user) {
-        setTimeout(() => loadStoreAndRoles(s.user.id, true), 0);
+        setTimeout(() => { void loadStoreAndRoles(s.user.id); }, 0);
       } else {
         setStore(null); setRoles([]);
         clearSentryUser();
         setLoading(false);
-        setHydrated(true);
       }
     });
     supabase.auth.getSession().then(({ data }) => {
