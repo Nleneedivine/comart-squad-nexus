@@ -16,7 +16,7 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
-  const { user, loading, roles } = useAuth();
+  const { user, loading, hydrated, roles } = useAuth();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -25,11 +25,12 @@ function AuthPage() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (!loading && user) {
+    if (!hydrated || loading) return;
+    if (user) {
       const isStaff = roles.length > 0 && !roles.some(r => ["owner","admin","manager","head_of_operations"].includes(r));
       navigate({ to: isStaff ? "/staff-portal" : "/Dashboard" });
     }
-  }, [user, loading, roles, navigate]);
+  }, [user, loading, hydrated, roles, navigate]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
