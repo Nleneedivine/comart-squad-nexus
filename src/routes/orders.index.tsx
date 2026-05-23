@@ -18,7 +18,7 @@ import { toast } from "sonner";
 import { Plus, Trash2, Archive, ArchiveRestore, UserPlus, RefreshCw, Check, ChevronsUpDown, UserCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/orders")({
+export const Route = createFileRoute("/orders/")({
   head: () => ({ meta: [{ title: "All Orders — Comart+" }, { name: "description", content: "View and manage all your customer orders in one place." }] }),
   component: OrdersIndex,
 });
