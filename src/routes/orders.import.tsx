@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import ProtectedShell from "@/components/ProtectedShell";
@@ -53,7 +53,7 @@ async function extractSpreadsheetText(file: File): Promise<string> {
 }
 
 function BulkImport() {
-  const { store, user } = useAuth();
+  const { store, user, hydrated, loading } = useAuth();
   const nav = useNavigate();
   const parse = useServerFn(parseOrdersAi);
   const [text, setText] = useState("");
@@ -64,11 +64,11 @@ function BulkImport() {
 
   useEffect(() => {
     (async () => {
-      if (!store) return;
+      if (!hydrated || loading || !store) return;
       const { data } = await supabase.from("products").select("name").eq("store_id", store.id).limit(500);
       setProducts((data || []).map((p: any) => p.name));
     })();
-  }, [store]);
+  }, [store, hydrated, loading]);
 
   const handleFiles = async (fileList: FileList) => {
     setBusy(true);
@@ -104,6 +104,8 @@ function BulkImport() {
   };
 
   const runParse = async () => {
+    if (!hydrated || loading || !user) return toast.error("Please wait for your session to finish loading");
+    if (!store) return toast.error("Your workspace is still loading. Try again in a moment.");
     if (!text.trim()) return toast.error("Paste text or upload a file first");
     setBusy(true);
     try {
@@ -193,6 +195,11 @@ function BulkImport() {
           <li>Review the drafted orders below and correct names, phones, items, quantities, prices, or addresses if needed.</li>
           <li>Click <span className="font-medium text-foreground">Commit all</span> to save the orders into your store. Auto-assignment then follows your store rules.</li>
         </ol>
+        {(!hydrated || loading || !store) && (
+          <div className="rounded-md border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
+            Preparing your workspace for AI import… if this takes too long, head back to <Link to="/orders" className="text-primary underline-offset-4 hover:underline">Orders</Link> and return once your account finishes loading.
+          </div>
+        )}
       </Card>
 
       <Card className="p-5 space-y-3">
