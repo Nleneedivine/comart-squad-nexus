@@ -17,7 +17,7 @@ import { parseOrdersAi } from "@/lib/parse-orders.functions";
 
 export const Route = createFileRoute("/orders/import")({
   head: () => ({ meta: [{ title: "Import Orders — Comart+" }, { name: "description", content: "Paste orders or upload spreadsheets/PDFs — AI structures and assigns them." }] }),
-  component: () => <ProtectedShell><BulkImport /></ProtectedShell>,
+  component: BulkImport,
 });
 
 type DraftItem = { product_name: string; quantity: number; unit_price?: number; variant?: string };
