@@ -9,18 +9,20 @@ interface AuthCtx {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  hydrated: boolean;
   store: StoreInfo | null;
   roles: string[];
   refresh: () => Promise<void>;
 }
 
 const Ctx = createContext<AuthCtx>({
-  user: null, session: null, loading: true, store: null, roles: [], refresh: async () => {},
+  user: null, session: null, loading: true, hydrated: false, store: null, roles: [], refresh: async () => {},
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [hydrated, setHydrated] = useState(false);
   const [store, setStore] = useState<StoreInfo | null>(null);
   const [roles, setRoles] = useState<string[]>([]);
 
@@ -49,10 +51,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
-      setLoading(true);
       setSession(s);
+      setHydrated(true);
       if (s?.user) {
-        setTimeout(() => loadStoreAndRoles(s.user.id, true), 0);
+        setTimeout(() => { void loadStoreAndRoles(s.user.id); }, 0);
       } else {
         setStore(null); setRoles([]);
         clearSentryUser();
@@ -62,9 +64,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
       if (data.session?.user) {
-        loadStoreAndRoles(data.session.user.id, true);
+        loadStoreAndRoles(data.session.user.id, true).finally(() => setHydrated(true));
       } else {
         setLoading(false);
+        setHydrated(true);
       }
     });
     return () => sub.subscription.unsubscribe();
@@ -75,7 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <Ctx.Provider value={{ user: session?.user ?? null, session, loading, store, roles, refresh }}>
+    <Ctx.Provider value={{ user: session?.user ?? null, session, loading, hydrated, store, roles, refresh }}>
       {children}
     </Ctx.Provider>
   );

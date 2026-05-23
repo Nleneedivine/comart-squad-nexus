@@ -26,7 +26,7 @@ function genPassword() {
 
 function AcceptInvite() {
   const { token } = Route.useParams();
-  const { user, loading, refresh } = useAuth();
+  const { user, loading, hydrated, refresh } = useAuth();
   const nav = useNavigate();
   const [invite, setInvite] = useState<any>(null);
   const [store, setStore] = useState<any>(null);
@@ -36,6 +36,7 @@ function AcceptInvite() {
   const [fullName, setFullName] = useState("");
   const [password, setPassword] = useState(() => genPassword());
   const [generatedShown, setGeneratedShown] = useState(true);
+  const [finishingInvite, setFinishingInvite] = useState(false);
 
   const markStaffReady = async (userId: string) => {
     await supabase
@@ -58,13 +59,23 @@ function AcceptInvite() {
   }, [token]);
 
   useEffect(() => {
+    if (!hydrated || loading || finishingInvite) return;
     if (state === "ready" && user && invite && user.email && invite.email && user.email.toLowerCase() !== invite.email.toLowerCase()) {
       setState("wrong-email");
     }
-  }, [state, user, invite]);
+  }, [state, user, invite, hydrated, loading, finishingInvite]);
 
-  const acceptForCurrentUser = async () => {
+  useEffect(() => {
+    if (!hydrated || loading || !user || !invite || state !== "ready" || finishingInvite) return;
+    if (user.email && invite.email && user.email.toLowerCase() === invite.email.toLowerCase()) {
+      void acceptForCurrentUser(true);
+    }
+  }, [hydrated, loading, user, invite, state]);
+
+  const acceptForCurrentUser = async (silent = false) => {
     if (!user || !invite) return;
+    if (finishingInvite) return;
+    setFinishingInvite(true);
     setBusy(true);
     try {
       const { error: roleErr } = await supabase.from("user_roles").insert({
@@ -80,9 +91,10 @@ function AcceptInvite() {
       });
       await markStaffReady(user.id);
       await refresh();
-      toast.success("Welcome to the team!");
+      if (!silent) toast.success("Welcome to the team!");
       nav({ to: "/staff-portal" });
     } catch (e: any) {
+      setFinishingInvite(false);
       toast.error(e.message || "Could not accept invite");
     } finally { setBusy(false); }
   };
@@ -112,7 +124,7 @@ function AcceptInvite() {
         const { data: sessionData } = await supabase.auth.getSession();
         if (sessionData.session?.user?.id) await markStaffReady(sessionData.session.user.id);
         await refresh();
-        nav({ to: "/staff-portal" });
+          await acceptForCurrentUser(true);
       }
     } catch (e: any) {
       toast.error(e.message || "Signup failed");
@@ -127,8 +139,7 @@ function AcceptInvite() {
       const { error } = await supabase.auth.signInWithPassword({ email: invite.email, password });
       if (error) throw error;
       await refresh();
-      // Trigger only runs on new users; for existing user we attach role manually
-      await acceptForCurrentUser();
+      await acceptForCurrentUser(true);
     } catch (e: any) {
       toast.error(e.message || "Sign-in failed");
     } finally { setBusy(false); }
@@ -192,8 +203,8 @@ function AcceptInvite() {
               <p className="text-xs text-muted-foreground mt-2">{invite.email}</p>
             </div>
 
-            {!loading && user ? (
-              <Button className="w-full" onClick={acceptForCurrentUser} disabled={busy} size="lg">
+            {!loading && hydrated && user ? (
+              <Button className="w-full" onClick={() => { void acceptForCurrentUser(); }} disabled={busy} size="lg">
                 {busy ? "Joining…" : "Accept & join"}
               </Button>
             ) : (
