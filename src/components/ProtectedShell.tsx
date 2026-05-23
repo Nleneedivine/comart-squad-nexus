@@ -22,15 +22,16 @@ const ROLE_LANDING: Record<string, string> = {
 };
 
 export default function ProtectedShell({ children }: { children?: ReactNode }) {
-  const { user, loading, roles } = useAuth();
+  const { user, loading, hydrated, roles } = useAuth();
   const nav = useNavigate();
   const loc = useLocation();
   const [check, setCheck] = useState<CheckState>("idle");
   const [attempts, setAttempts] = useState(0);
 
   useEffect(() => {
-    if (!loading && !user) { nav({ to: "/auth" }); return; }
-  }, [user, loading, nav]);
+    if (!hydrated || loading) return;
+    if (!user) { nav({ to: "/auth" }); return; }
+  }, [user, loading, hydrated, nav]);
 
   // One-time role-based landing: if a non-admin lands on /Dashboard, send to their natural page
   useEffect(() => {
@@ -45,6 +46,7 @@ export default function ProtectedShell({ children }: { children?: ReactNode }) {
   }, [user, roles, loc.pathname, nav]);
 
   useEffect(() => {
+    if (!hydrated || loading) return;
     if (!user || loc.pathname === "/onboarding") { setCheck("ok"); return; }
     let cancelled = false;
 
@@ -68,8 +70,8 @@ export default function ProtectedShell({ children }: { children?: ReactNode }) {
         if (error) throw error;
         // No profile row yet (handle_new_user trigger may still be running) → retry briefly
         if (!data) {
-          if (attempt < 3) { setTimeout(() => run(attempt + 1), 600 * (attempt + 1)); return; }
-          setCheck("ok"); // allow access; better than blocking forever
+          if (attempt < 5) { setTimeout(() => run(attempt + 1), 600 * (attempt + 1)); return; }
+          setCheck("ok");
           return;
         }
         const isStaffOnly = roles.length > 0 && !roles.some((r) => ["owner", "admin", "manager", "head_of_operations"].includes(r));
@@ -99,9 +101,9 @@ export default function ProtectedShell({ children }: { children?: ReactNode }) {
     };
     run(0);
     return () => { cancelled = true; };
-  }, [user, loc.pathname, attempts, nav]);
+  }, [user, loc.pathname, attempts, nav, hydrated, loading, roles]);
 
-  if (loading || !user || check === "checking" || check === "idle") {
+  if (!hydrated || loading || !user || check === "checking" || check === "idle") {
     return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Loading...</div>;
   }
 
