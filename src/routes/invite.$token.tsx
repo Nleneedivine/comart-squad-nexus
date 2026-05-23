@@ -204,7 +204,7 @@ function AcceptInvite() {
             </div>
 
             {!loading && hydrated && user ? (
-              <Button className="w-full" onClick={acceptForCurrentUser} disabled={busy} size="lg">
+              <Button className="w-full" onClick={() => { void acceptForCurrentUser(); }} disabled={busy} size="lg">
                 {busy ? "Joining…" : "Accept & join"}
               </Button>
             ) : (
