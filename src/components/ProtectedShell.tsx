@@ -75,13 +75,8 @@ export default function ProtectedShell({ children }: { children?: ReactNode }) {
           return;
         }
         const isStaffOnly = roles.length > 0 && !roles.some((r) => ["owner", "admin", "manager", "head_of_operations"].includes(r));
-        if (isStaffOnly && data.onboarding_completed === false) {
+        if (isStaffOnly || data.onboarding_completed === false) {
           setCheck("ok");
-          return;
-        }
-        if (data.onboarding_completed === false) {
-          setCheck("redirect");
-          nav({ to: "/onboarding" });
           return;
         }
         // Suspended members across all stores → forced sign-out
