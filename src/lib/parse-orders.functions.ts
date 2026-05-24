@@ -35,22 +35,21 @@ function sanitizeOrders(input: unknown): ParsedOrder[] {
       const record = row && typeof row === "object" ? row as Record<string, unknown> : null;
       if (!record) return null;
       const items = Array.isArray(record.items)
-        ? record.items
-            .map((item) => {
-              const itemRecord = item && typeof item === "object" ? item as Record<string, unknown> : null;
-              const productName = typeof itemRecord?.product_name === "string" ? itemRecord.product_name.trim() : "";
-              if (!productName) return null;
-              const quantity = Number(itemRecord?.quantity ?? 1);
-              const unitPrice = itemRecord?.unit_price == null ? undefined : Number(itemRecord.unit_price);
-              const variant = typeof itemRecord?.variant === "string" && itemRecord.variant.trim() ? itemRecord.variant.trim() : undefined;
-              return {
-                product_name: productName,
-                quantity: Number.isFinite(quantity) && quantity > 0 ? quantity : 1,
-                unit_price: Number.isFinite(unitPrice) ? unitPrice : undefined,
-                variant,
-              };
-            })
-            .filter(Boolean)
+        ? record.items.reduce<ParsedOrder["items"]>((acc, item) => {
+            const itemRecord = item && typeof item === "object" ? item as Record<string, unknown> : null;
+            const productName = typeof itemRecord?.product_name === "string" ? itemRecord.product_name.trim() : "";
+            if (!productName) return acc;
+            const quantity = Number(itemRecord?.quantity ?? 1);
+            const unitPrice = itemRecord?.unit_price == null ? undefined : Number(itemRecord.unit_price);
+            const variant = typeof itemRecord?.variant === "string" && itemRecord.variant.trim() ? itemRecord.variant.trim() : undefined;
+            acc.push({
+              product_name: productName,
+              quantity: Number.isFinite(quantity) && quantity > 0 ? quantity : 1,
+              unit_price: Number.isFinite(unitPrice) ? unitPrice : undefined,
+              variant,
+            });
+            return acc;
+          }, [])
         : [];
 
       if (items.length === 0) return null;
