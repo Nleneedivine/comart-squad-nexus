@@ -27,10 +27,12 @@ async function mirrorToDatabase(
     const module = context?.tags?.area || context?.tags?.module || context?.tags?.route || "frontend";
     const message = String(e.message || "Unknown error").slice(0, 500);
     const severity = (context?.tags?.severity as any) || classifySeverity(message, module);
+    const fallbackStoreId = typeof context?.extra?.storeId === "string" ? context.extra.storeId : null;
+    const fallbackUserId = typeof context?.extra?.userId === "string" ? context.extra.userId : null;
     await supabase.from("app_errors").insert({
-      store_id: currentStoreId,
-      tenant_id: currentStoreId,
-      user_id: currentUserId,
+      store_id: currentStoreId || fallbackStoreId,
+      tenant_id: currentStoreId || fallbackStoreId,
+      user_id: currentUserId || fallbackUserId,
       module,
       message,
       stack_trace: e.stack?.slice(0, 8000) || null,
