@@ -129,10 +129,11 @@ function SystemHealthPage() {
     const critical = rows.filter((r) => r.severity === "critical").length;
     const payments = rows.filter((r) => /billing|payment|paystack|wallet/i.test(r.module + " " + r.message)).length;
     const webhooks = rows.filter((r) => /webhook/i.test(r.module + " " + r.message)).length;
+    const bulkImport = rows.filter((r) => /bulk_import/i.test(r.module) || /bulk import|import failed during/i.test(r.message)).length;
     const tenants = new Set(rows.map((r) => r.store_id).filter(Boolean)).size;
     const resolved = rows.filter((r) => r.status === "resolved").length;
     const resolvedPct = total ? Math.round((resolved / total) * 100) : 0;
-    return { total, critical, payments, webhooks, tenants, resolvedPct };
+    return { total, critical, payments, webhooks, bulkImport, tenants, resolvedPct };
   }, [rows]);
 
   const modules = useMemo(() => Array.from(new Set(rows.map((r) => r.module))).sort(), [rows]);
@@ -165,11 +166,12 @@ function SystemHealthPage() {
       </header>
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3">
         <Kpi icon={AlertOctagon} label={`Total (${range})`} value={kpis.total} tone="default" />
         <Kpi icon={AlertTriangle} label="Critical" value={kpis.critical} tone="critical" />
         <Kpi icon={CreditCard} label="Payment failures" value={kpis.payments} tone="critical" />
         <Kpi icon={Webhook} label="Webhook failures" value={kpis.webhooks} tone="high" />
+        <Kpi icon={AlertTriangle} label="Bulk import failures" value={kpis.bulkImport} tone="high" />
         <Kpi icon={Building2} label="Affected tenants" value={kpis.tenants} tone="default" />
         <Kpi icon={CheckCircle2} label="Resolved %" value={`${kpis.resolvedPct}%`} tone="ok" />
       </div>

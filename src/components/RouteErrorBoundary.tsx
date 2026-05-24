@@ -1,8 +1,21 @@
+import { useEffect } from "react";
 import { useRouter } from "@tanstack/react-router";
 import { AlertTriangle } from "lucide-react";
+import { captureError } from "@/lib/sentry";
 
 export default function RouteErrorBoundary({ error, reset }: { error: Error; reset: () => void }) {
   const router = useRouter();
+
+  useEffect(() => {
+    captureError(error, {
+      tags: { module: "route_boundary", area: "routing", severity: "high" },
+      extra: {
+        pathname: router.state.location.pathname,
+        search: router.state.location.search,
+      },
+    });
+  }, [error, router.state.location.pathname, router.state.location.search]);
+
   return (
     <div className="min-h-[60vh] flex items-center justify-center px-4">
       <div className="max-w-md text-center space-y-3">
