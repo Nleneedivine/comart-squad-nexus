@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Sparkles, Upload, Save, Trash2, FileSpreadsheet, FileText, X } from "lucide-react";
 import { parseOrdersAi } from "@/lib/parse-orders.functions";
+import { captureError } from "@/lib/sentry";
 
 export const Route = createFileRoute("/orders/import")({
   head: () => ({ meta: [{ title: "Import Orders — Comart+" }, { name: "description", content: "Paste orders or upload spreadsheets/PDFs — AI structures and assigns them." }] }),
@@ -22,6 +23,17 @@ export const Route = createFileRoute("/orders/import")({
 
 type DraftItem = { product_name: string; quantity: number; unit_price?: number; variant?: string };
 type Draft = { customer_name: string; phone: string; address?: string; items: DraftItem[]; amount?: number; notes?: string; delivery?: string };
+type ImportStep = "upload" | "parse" | "commit";
+type ErrorDetails = { step: ImportStep; message: string; at: string } | null;
+
+function normalizeErrorMessage(error: unknown) {
+  if (error instanceof Error && error.message) return error.message;
+  if (typeof error === "string") return error;
+  if (error && typeof error === "object" && "message" in error && typeof (error as any).message === "string") {
+    return (error as any).message;
+  }
+  return "An unexpected error occurred.";
+}
 
 async function extractPdfText(file: File): Promise<string> {
   // @ts-ignore - no types for direct build path
@@ -61,6 +73,24 @@ function BulkImport() {
   const [drafts, setDrafts] = useState<Draft[]>([]);
   const [products, setProducts] = useState<string[]>([]);
   const [files, setFiles] = useState<{ name: string; type: string }[]>([]);
+  const [errorDetails, setErrorDetails] = useState<ErrorDetails>(null);
+
+  const reportImportError = (step: ImportStep, error: unknown, extra?: Record<string, unknown>) => {
+    const message = normalizeErrorMessage(error);
+    setErrorDetails({ step, message, at: new Date().toISOString() });
+    captureError(error, {
+      tags: { module: "bulk_import", area: "orders", step, severity: step === "commit" ? "high" : "medium" },
+      extra: {
+        route: "/orders/import",
+        storeId: store?.id,
+        userId: user?.id,
+        uploadedFiles: files.map((f) => f.name),
+        draftCount: drafts.length,
+        textLength: text.length,
+        ...extra,
+      },
+    });
+  };
 
   useEffect(() => {
     (async () => {
@@ -72,6 +102,7 @@ function BulkImport() {
 
   const handleFiles = async (fileList: FileList) => {
     setBusy(true);
+    setErrorDetails(null);
     const added: { name: string; type: string }[] = [];
     let combined = text ? text + "\n\n" : "";
     try {
@@ -99,7 +130,8 @@ function BulkImport() {
       setFiles(fs => [...fs, ...added]);
       if (added.length) toast.success(`Extracted ${added.length} file(s) — ready to parse`);
     } catch (e: any) {
-      toast.error(`Extraction failed: ${e.message}`);
+      reportImportError("upload", e, { selectedFileCount: fileList.length });
+      toast.error(`Extraction failed: ${normalizeErrorMessage(e)}`);
     } finally { setBusy(false); }
   };
 
@@ -108,13 +140,15 @@ function BulkImport() {
     if (!store) return toast.error("Your workspace is still loading. Try again in a moment.");
     if (!text.trim()) return toast.error("Paste text or upload a file first");
     setBusy(true);
+    setErrorDetails(null);
     try {
       const { orders } = await parse({ data: { text, products } });
       if (!orders.length) { toast.error("AI couldn't find any orders"); return; }
       setDrafts(orders);
       toast.success(`Parsed ${orders.length} order(s) — review below`);
     } catch (e: any) {
-      toast.error(e.message || "Parse failed");
+      reportImportError("parse", e, { productCatalogCount: products.length });
+      toast.error(normalizeErrorMessage(e) || "Parse failed");
     } finally { setBusy(false); }
   };
 
@@ -128,7 +162,9 @@ function BulkImport() {
     if (!store || !user) return;
     if (!drafts.length) return toast.error("Nothing to import");
     setBusy(true);
+    setErrorDetails(null);
     let ok = 0, fail = 0;
+    let firstFailure: { message: string; customer?: string; phone?: string; index: number } | null = null;
     for (const d of drafts) {
       try {
         let customerId: string | null = null;
@@ -163,7 +199,17 @@ function BulkImport() {
           })));
         }
         ok++;
-      } catch { fail++; }
+      } catch (error) {
+        fail++;
+        if (!firstFailure) {
+          firstFailure = {
+            message: normalizeErrorMessage(error),
+            customer: d.customer_name,
+            phone: d.phone,
+            index: ok + fail,
+          };
+        }
+      }
     }
     if (ok) {
       await supabase.from("activity_log").insert({
@@ -172,6 +218,15 @@ function BulkImport() {
       });
     }
     setBusy(false);
+    if (firstFailure) {
+      reportImportError("commit", new Error(firstFailure.message), {
+        failedCount: fail,
+        successfulCount: ok,
+        failedDraftIndex: firstFailure.index,
+        failedCustomer: firstFailure.customer,
+        failedPhone: firstFailure.phone,
+      });
+    }
     toast.success(`Imported ${ok} order(s)${fail ? ` · ${fail} failed` : ""} · auto-assignment triggered`);
     if (ok) nav({ to: "/orders" });
   };
@@ -198,6 +253,15 @@ function BulkImport() {
         {(!hydrated || loading || !store) && (
           <div className="rounded-md border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
             Preparing your workspace for AI import… if this takes too long, head back to <Link to="/orders" className="text-primary underline-offset-4 hover:underline">Orders</Link> and return once your account finishes loading.
+          </div>
+        )}
+        {errorDetails && (
+          <div className="rounded-md border border-destructive/30 bg-destructive/5 p-4 text-sm">
+            <div className="font-semibold text-destructive">Import failed during {errorDetails.step}</div>
+            <p className="mt-1 text-foreground break-words">{errorDetails.message}</p>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Logged for system health at {new Date(errorDetails.at).toLocaleString()}.
+            </p>
           </div>
         )}
       </Card>
