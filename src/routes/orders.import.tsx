@@ -143,7 +143,12 @@ function BulkImport() {
     setErrorDetails(null);
     try {
       const { orders } = await parse({ data: { text, products } });
-      if (!orders.length) { toast.error("AI couldn't find any orders"); return; }
+      if (!orders.length) {
+        const error = new Error("AI couldn't find any valid orders in the uploaded content.");
+        reportImportError("parse", error, { productCatalogCount: products.length, parseReturnedOrders: 0 });
+        toast.error(error.message);
+        return;
+      }
       setDrafts(orders);
       toast.success(`Parsed ${orders.length} order(s) — review below`);
     } catch (e: any) {
@@ -227,7 +232,11 @@ function BulkImport() {
         failedPhone: firstFailure.phone,
       });
     }
-    toast.success(`Imported ${ok} order(s)${fail ? ` · ${fail} failed` : ""} · auto-assignment triggered`);
+    if (fail > 0) {
+      toast.error(`Imported ${ok} order(s) · ${fail} failed. Review the error panel for the exact reason.`);
+      return;
+    }
+    toast.success(`Imported ${ok} order(s) · auto-assignment triggered`);
     if (ok) nav({ to: "/orders" });
   };
 
