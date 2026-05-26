@@ -22,6 +22,9 @@ function AdminIntegrations() {
   const [requests, setRequests] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<any>({ key: "", name: "", description: "", monthly_price: 0, is_active: true });
+  const [wpStats, setWpStats] = useState<{ active: number; traffic24h: number; traffic7d: number; failed24h: number; wpRow: any | null }>({
+    active: 0, traffic24h: 0, traffic7d: 0, failed24h: 0, wpRow: null,
+  });
 
   const load = async () => {
     const { data } = await supabase.from("integration_catalog").select("*").order("name");
@@ -29,6 +32,25 @@ function AdminIntegrations() {
     const { data: req } = await supabase.from("store_integrations")
       .select("*, stores(name)").order("created_at", { ascending: false }).limit(100);
     setRequests(req || []);
+
+    // WPForms metrics
+    const wpRow = (data || []).find((r: any) => r.key === "wp_forms") || null;
+    const { count: activeCount } = await supabase.from("store_integrations")
+      .select("id", { count: "exact", head: true })
+      .eq("integration_key", "wp_forms").eq("status", "active");
+    const since24 = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const since7d = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const { count: t24 } = await supabase.from("webhook_deliveries")
+      .select("id", { count: "exact", head: true }).eq("source", "wp-forms").gte("created_at", since24);
+    const { count: t7d } = await supabase.from("webhook_deliveries")
+      .select("id", { count: "exact", head: true }).eq("source", "wp-forms").gte("created_at", since7d);
+    const { count: failed } = await supabase.from("webhook_deliveries")
+      .select("id", { count: "exact", head: true }).eq("source", "wp-forms")
+      .in("status", ["failed", "rejected"]).gte("created_at", since24);
+
+    setWpStats({
+      active: activeCount ?? 0, traffic24h: t24 ?? 0, traffic7d: t7d ?? 0, failed24h: failed ?? 0, wpRow,
+    });
   };
   useEffect(() => { load(); }, []);
 
