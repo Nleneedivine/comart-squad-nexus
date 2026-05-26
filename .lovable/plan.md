@@ -1,115 +1,95 @@
-# Sentry Integration Plan — Comart+ Frontend
 
-## 1. Dependencies
+# Platform Integrations System — Fix & Extend Plan
 
-- `bun add @sentry/react`
+You already have a working integrations foundation. I'll extend it instead of rebuilding.
 
-## 2. Environment
+## What already exists (KEEP, do not rebuild)
 
-- Add `VITE_SENTRY_DSN` (DSN provided by user) — also add `VITE_SENTRY_ENVIRONMENT` (optional override; default derived from `import.meta.env.MODE`) and `VITE_APP_VERSION` (optional, for `release`).
-- Update `.env` is auto-managed; document required var in plan output. User pastes DSN in Lovable env settings.
-- Init is a no-op when `VITE_SENTRY_DSN` is missing (dev without DSN, previews, tests).
+- `integration_catalog` — platform-level catalog with pricing, active flag, RLS for superadmins
+- `store_integrations` — per-tenant activation rows (status: locked/pending/active, paystack ref)
+- `webhook_deliveries` — incoming webhook log (store_id, source, status, payload, result, error)
+- `POST /api/public/wp-forms-webhook` — already parses WPForms payloads, creates customers + orders + order_items, runs round-robin assignment, logs to `webhook_deliveries`
+- `/admin/integrations` — superadmin catalog + activation approvals
+- `/integrations` — tenant marketplace
+- `initIntegrationPurchase` server fn — Paystack checkout
 
-## 3. New file: `src/lib/sentry.ts`
+## What's actually missing (BUILD)
 
-Exports:
-- `initSentry()` — called once from `src/router.tsx` (or `__root.tsx` module top-level) before React renders.
-- `setSentryUser({ userId, storeId, role })` / `clearSentryUser()` — called from `useAuth` effect.
-- `captureError(err, context?)` — thin wrapper used by realtime/upload/paystack/edge-fn helpers.
-- `SentryErrorBoundary` — re-export of `Sentry.ErrorBoundary` preconfigured with fallback.
+### 1. Schema extensions (migration)
+Add to `store_integrations` (don't create a duplicate `integrations` table):
+- `api_key text unique` — generated per tenant per integration
+- `settings jsonb not null default '{}'` — holds field mappings, etc.
+- `last_webhook_at timestamptz` — for "Last received"
+- `orders_imported_count int not null default 0` — increment counter
 
-`initSentry()` config:
-- `dsn: import.meta.env.VITE_SENTRY_DSN` — early return if absent.
-- `environment`: `VITE_SENTRY_ENVIRONMENT ?? MODE` (`development` | `staging` | `production`).
-- `release`: `VITE_APP_VERSION` if set.
-- `integrations`:
-  - `Sentry.browserTracingIntegration()` — navigation + pageload spans (TanStack Router instrumented via `Sentry.tanstackRouterBrowserTracingIntegration(router)` if available; otherwise default browser tracing covers it).
-  - `Sentry.replayIntegration({ maskAllText: true, blockAllMedia: true, maskAllInputs: true })` — privacy-strict.
-- Sample rates (mobile-friendly):
-  - `tracesSampleRate`: 1.0 dev, 0.1 prod.
-  - `replaysSessionSampleRate`: 0.0 dev, 0.05 prod.
-  - `replaysOnErrorSampleRate`: 1.0.
-- `sendDefaultPii: false`.
-- `beforeSend(event, hint)` — redact:
-  - Strip request/response bodies; remove cookies, `authorization`, `apikey`, `x-api-key` headers.
-  - Walk `event.extra`, `event.contexts`, `event.breadcrumbs[].data` and scrub keys matching `/password|token|secret|pin|cvv|card|account_number|otp|paystack/i` → `[Filtered]`.
-  - Drop events whose message matches known noisy benign errors (e.g. `ResizeObserver loop`).
-- `beforeBreadcrumb` — drop `console.debug`, scrub fetch URLs containing `access_token=` or `apikey=`.
-- `ignoreErrors`: `['ResizeObserver loop limit exceeded', 'Non-Error promise rejection captured']`.
+Add to `webhook_deliveries`:
+- `response jsonb` — what we sent back
+- `integration_key text` — so superadmin can filter by WPForms
 
-Unhandled promise rejections + global errors are auto-instrumented by `@sentry/react` defaults; no extra code needed.
+New RPC `generate_integration_api_key(_store_id, _key)` — superadmin or store admin only, rotates key.
 
-## 4. Bootstrap order
+### 2. Extend webhook endpoint
+Keep existing `/api/public/wp-forms-webhook` (HMAC mode for store-secret path) AND add NEW endpoint `/api/public/integrations/wpforms/webhook` that:
+- Reads `x-api-key` header
+- Looks up `store_integrations` by api_key, status='active', integration_key='wpforms'
+- Rejects invalid/inactive keys (logged to webhook_deliveries with store_id null + error)
+- Applies tenant's saved field mapping from `settings.field_mapping`
+- Calls the SAME order creation + round-robin logic as the existing webhook (extract into shared helper `processWpFormsOrder` in `src/lib/wpforms.server.ts`)
+- Sets order metadata source='wpforms'
+- Increments `orders_imported_count`, sets `last_webhook_at`
+- Logs full request+response into `webhook_deliveries`
 
-- Call `initSentry()` at the top of `src/router.tsx` (module scope, before `getRouter`). Module is imported by SSR entry and client entry — guard with `typeof window !== 'undefined'` to avoid running during SSR/build prerender.
-- Wrap the app in `SentryErrorBoundary` inside `src/routes/__root.tsx` `component` (around `<AuthProvider>...</AuthProvider>`), with a graceful fallback that reuses the styling of `RouteErrorBoundary` (icon, title, retry, go home).
-- Keep existing per-route `errorComponent` and router `defaultErrorComponent` — the Sentry boundary is the outermost net.
+Auto-assignment: existing `tg_orders_auto_assign` trigger ALREADY runs on every order insert — orders from this endpoint will be distributed identically to AI-imported orders. No new assignment engine.
 
-## 5. User/tenant context
+### 3. Tenant UI — `/integrations` WPForms card enhancements
+Only the WPForms card gets new actions (other cards untouched):
+- "Connect" → opens setup modal showing webhook URL + API key + instructions (install WPForms Pro, enable Webhooks addon, paste URL, add `x-api-key` header)
+- "Generate API Key" (rotate) button inside modal
+- "Copy" buttons for URL and key
+- Status badge (active/pending/inactive)
+- "Last webhook received" timestamp
+- "Orders imported" count
+- "Configure Fields" → opens mapping editor (WPForms field name → Comart+ field: customer_name/phone/product/quantity/address/notes/amount). Saved to `store_integrations.settings.field_mapping`
+- "Test Connection" → posts a sample payload to the endpoint with the tenant's key, shows the response
 
-- In `src/hooks/useAuth.tsx`, after `loadStoreAndRoles` resolves, call `setSentryUser({ userId: session.user.id, storeId: store?.id, role: roles[0] })`. On sign-out, `clearSentryUser()`.
-- Tags set: `store_id`, `role`, `environment` (already on init, also as tag for filtering).
-- Never send `email` / `phone` (PII off).
+### 4. Superadmin WPForms panel — `/admin/integrations`
+Append a "WPForms" stats block (existing catalog table stays):
+- Global enable/disable toggle (uses existing `integration_catalog.is_active` for key='wpforms')
+- Monthly price (already editable in existing table)
+- Active tenants count (`store_integrations` where integration_key='wpforms' and status='active')
+- Webhook traffic (count of `webhook_deliveries` source='wp-forms' last 24h / 7d)
+- Failed requests (status='failed' or 'rejected' last 24h)
 
-## 6. Targeted error logging hooks
+Seed `integration_catalog` with `wpforms` row if missing.
 
-Add `captureError(err, { tags: { area: '...' } })` calls in:
-- `src/hooks/useStoreChannel.ts` — on `CHANNEL_ERROR` / `TIMED_OUT` status.
-- `src/server/paystack.functions.ts` and `src/routes/api/public/paystack-webhook.ts` — wrap fetch/handler in try/catch (server-side uses `@sentry/react` browser SDK only on client; for server functions we only instrument the client-side caller for now — full server instrumentation is out of scope for this pass).
-- Upload helpers (search for `supabase.storage` usage in routes; add capture on error).
-- Dashboard render: wrap `src/routes/Dashboard.tsx` inner content in `SentryErrorBoundary` with section-level fallback.
-- Server-fn callers: add a `withCaptureServerFn` thin wrapper used by hot paths (orders, integrations, suggest-todos) — captures on rejection with tag `area: 'server-fn'` and rethrows.
+## Technical implementation map
 
-(Scope note: instrument the client side of these flows; server-runtime Sentry is a separate phase.)
+```text
+DB migration
+ ├─ ALTER store_integrations  (api_key, settings, last_webhook_at, orders_imported_count)
+ ├─ ALTER webhook_deliveries  (response, integration_key)
+ ├─ CREATE FUNCTION generate_integration_api_key
+ └─ INSERT into integration_catalog (wpforms) if not exists
 
-## 7. Dev-only "Test Sentry" button
+New file: src/lib/wpforms.server.ts
+ └─ processWpFormsOrder(storeId, payload, mapping) — extracted from existing route
 
-- Add a small floating button in `src/components/AppLayout.tsx` rendered only when `import.meta.env.DEV && import.meta.env.VITE_SENTRY_DSN`.
-- onClick: `throw new Error("This is your first error!")` inside a setTimeout so it surfaces as unhandled.
-- Per requirement #11: after user verifies in Sentry dashboard, they tell me to remove it. The plan includes the removal step as a follow-up turn (cannot auto-detect dashboard receipt from here).
+New file: src/routes/api/public/integrations.wpforms.webhook.ts
+ └─ x-api-key auth → processWpFormsOrder → log delivery + bump counter
 
-## 8. Privacy / redaction guarantees
+Edit: src/routes/api/public/wp-forms-webhook.ts
+ └─ Refactor to call processWpFormsOrder (no behavior change, just dedupe)
 
-- `maskAllText`, `maskAllInputs`, `blockAllMedia` on Replay → no form values, no media leak.
-- `sendDefaultPii: false` → no IP, no cookies.
-- `beforeSend` scrubber covers `password|token|secret|pin|cvv|card|account_number|otp` in extras/breadcrumb data.
-- Auth headers stripped from breadcrumb fetch URLs.
+Edit: src/routes/integrations.tsx
+ └─ Special render path for catalog row where key='wpforms':
+     Connect modal, mapping dialog, test-connection, stats
 
-## 9. Performance
+Edit: src/routes/admin.integrations.tsx
+ └─ Add WPForms metrics block at top
+```
 
-- Prod `tracesSampleRate: 0.1`, `replaysSessionSampleRate: 0.05` keeps mobile cost low.
-- Replay integration is lazy-loaded by Sentry by default.
-- Init guarded by DSN presence and `typeof window !== 'undefined'`.
-
-## 10. Files touched
-
-Create:
-- `src/lib/sentry.ts`
-
-Edit:
-- `src/router.tsx` — call `initSentry()`.
-- `src/routes/__root.tsx` — wrap with `SentryErrorBoundary`.
-- `src/hooks/useAuth.tsx` — set/clear user context.
-- `src/hooks/useStoreChannel.ts` — capture channel errors.
-- `src/components/AppLayout.tsx` — dev-only test button.
-- `src/routes/Dashboard.tsx` — section-level boundary.
-- `src/server/paystack.functions.ts` — capture failures (client-callable surface).
-- `package.json` — `@sentry/react` dependency.
-
-## 11. Verification
-
-- `bun add` runs build automatically; confirm no SSR crash.
-- Manually click dev test button → confirm event in Sentry → user reports back → I remove the button in a follow-up turn.
-
-## 12. Out of scope (explicit)
-
-- Server-runtime Sentry on the Cloudflare Worker (TanStack server fns / server routes). Documented `@sentry/cloudflare` is the right next step but adds bundling complexity; flag for a follow-up phase.
-- Source map upload pipeline (requires auth token + CI step).
-- Alerting rules / dashboards in Sentry org.
-
-## Confirmation needed
-
-After approval I will:
-1. Install `@sentry/react`.
-2. Implement the files above.
-3. Request you add `VITE_SENTRY_DSN` to env (paste the provided DSN) — init is a no-op until then, so nothing breaks in the meantime.
+## Out of scope (per "fix & extend only")
+- Won't create a duplicate `integrations` table — `store_integrations` already serves this purpose
+- Won't create a duplicate `webhook_logs` table — `webhook_deliveries` already serves this purpose
+- Won't touch existing order creation, auto-assignment, or other integration cards
+- WooCommerce / Elementor / WhatsApp Checkout cards remain catalog-only until you ask for their endpoints

@@ -2109,33 +2109,45 @@ export type Database = {
       store_integrations: {
         Row: {
           activated_at: string | null
+          api_key: string | null
           created_at: string
           expires_at: string | null
           id: string
           integration_key: string
+          last_webhook_at: string | null
+          orders_imported_count: number
           paystack_reference: string | null
+          settings: Json
           status: string
           store_id: string
           updated_at: string
         }
         Insert: {
           activated_at?: string | null
+          api_key?: string | null
           created_at?: string
           expires_at?: string | null
           id?: string
           integration_key: string
+          last_webhook_at?: string | null
+          orders_imported_count?: number
           paystack_reference?: string | null
+          settings?: Json
           status?: string
           store_id: string
           updated_at?: string
         }
         Update: {
           activated_at?: string | null
+          api_key?: string | null
           created_at?: string
           expires_at?: string | null
           id?: string
           integration_key?: string
+          last_webhook_at?: string | null
+          orders_imported_count?: number
           paystack_reference?: string | null
+          settings?: Json
           status?: string
           store_id?: string
           updated_at?: string
@@ -2669,31 +2681,37 @@ export type Database = {
           created_at: string
           error: string | null
           id: string
+          integration_key: string | null
           payload: Json
+          response: Json | null
           result: Json | null
           source: string
           status: string
-          store_id: string
+          store_id: string | null
         }
         Insert: {
           created_at?: string
           error?: string | null
           id?: string
+          integration_key?: string | null
           payload?: Json
+          response?: Json | null
           result?: Json | null
           source?: string
           status?: string
-          store_id: string
+          store_id?: string | null
         }
         Update: {
           created_at?: string
           error?: string | null
           id?: string
+          integration_key?: string | null
           payload?: Json
+          response?: Json | null
           result?: Json | null
           source?: string
           status?: string
-          store_id?: string
+          store_id?: string | null
         }
         Relationships: []
       }
@@ -2743,6 +2761,10 @@ export type Database = {
       }
       expire_stale_orders: { Args: never; Returns: undefined }
       generate_daily_reports: { Args: never; Returns: undefined }
+      generate_integration_api_key: {
+        Args: { _integration_key: string; _store_id: string }
+        Returns: string
+      }
       generate_payslips: { Args: { _period_id: string }; Returns: number }
       get_store_webhook_secret: { Args: { _store_id: string }; Returns: string }
       has_role: {
