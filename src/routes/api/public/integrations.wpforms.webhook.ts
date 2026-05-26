@@ -73,7 +73,7 @@ export const Route = createFileRoute("/api/public/integrations/wpforms/webhook")
             integration_key: "wp_forms",
             status: result.ok ? "processed" : "failed",
             payload,
-            response: result,
+            response: result as any,
             result: result.ok ? { order_id: result.order_id, assigned_to: result.assigned_to } : null,
             error: result.ok ? null : result.error,
           });
