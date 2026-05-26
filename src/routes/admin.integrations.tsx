@@ -22,6 +22,9 @@ function AdminIntegrations() {
   const [requests, setRequests] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<any>({ key: "", name: "", description: "", monthly_price: 0, is_active: true });
+  const [wpStats, setWpStats] = useState<{ active: number; traffic24h: number; traffic7d: number; failed24h: number; wpRow: any | null }>({
+    active: 0, traffic24h: 0, traffic7d: 0, failed24h: 0, wpRow: null,
+  });
 
   const load = async () => {
     const { data } = await supabase.from("integration_catalog").select("*").order("name");
@@ -29,6 +32,25 @@ function AdminIntegrations() {
     const { data: req } = await supabase.from("store_integrations")
       .select("*, stores(name)").order("created_at", { ascending: false }).limit(100);
     setRequests(req || []);
+
+    // WPForms metrics
+    const wpRow = (data || []).find((r: any) => r.key === "wp_forms") || null;
+    const { count: activeCount } = await supabase.from("store_integrations")
+      .select("id", { count: "exact", head: true })
+      .eq("integration_key", "wp_forms").eq("status", "active");
+    const since24 = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const since7d = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const { count: t24 } = await supabase.from("webhook_deliveries")
+      .select("id", { count: "exact", head: true }).eq("source", "wp-forms").gte("created_at", since24);
+    const { count: t7d } = await supabase.from("webhook_deliveries")
+      .select("id", { count: "exact", head: true }).eq("source", "wp-forms").gte("created_at", since7d);
+    const { count: failed } = await supabase.from("webhook_deliveries")
+      .select("id", { count: "exact", head: true }).eq("source", "wp-forms")
+      .in("status", ["failed", "rejected"]).gte("created_at", since24);
+
+    setWpStats({
+      active: activeCount ?? 0, traffic24h: t24 ?? 0, traffic7d: t7d ?? 0, failed24h: failed ?? 0, wpRow,
+    });
   };
   useEffect(() => { load(); }, []);
 
@@ -80,6 +102,47 @@ function AdminIntegrations() {
           </DialogContent>
         </Dialog>
       </div>
+
+      <Card className="p-4">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <h2 className="font-semibold flex items-center gap-2"><Plug className="h-4 w-4 text-primary" />WPForms Integration</h2>
+            <p className="text-xs text-muted-foreground">Platform-level WPForms webhook metrics</p>
+          </div>
+          {wpStats.wpRow && (
+            <div className="flex items-center gap-3 text-sm">
+              <span className="text-muted-foreground">Global enabled</span>
+              <Switch checked={!!wpStats.wpRow.is_active} onCheckedChange={async v => {
+                await supabase.from("integration_catalog").update({ is_active: v }).eq("id", wpStats.wpRow.id);
+                load();
+              }} />
+              <span className="text-muted-foreground ml-3">₦/mo</span>
+              <Input type="number" defaultValue={wpStats.wpRow.monthly_price} className="h-8 w-24"
+                onBlur={async e => { await supabase.from("integration_catalog").update({ monthly_price: Number(e.target.value) }).eq("id", wpStats.wpRow.id); load(); }} />
+            </div>
+          )}
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+          <div className="rounded-md bg-muted/40 p-3">
+            <div className="text-xs text-muted-foreground">Active tenants</div>
+            <div className="text-2xl font-bold">{wpStats.active}</div>
+          </div>
+          <div className="rounded-md bg-muted/40 p-3">
+            <div className="text-xs text-muted-foreground">Webhook traffic · 24h</div>
+            <div className="text-2xl font-bold">{wpStats.traffic24h}</div>
+          </div>
+          <div className="rounded-md bg-muted/40 p-3">
+            <div className="text-xs text-muted-foreground">Webhook traffic · 7d</div>
+            <div className="text-2xl font-bold">{wpStats.traffic7d}</div>
+          </div>
+          <div className="rounded-md bg-muted/40 p-3">
+            <div className="text-xs text-muted-foreground">Failed · 24h</div>
+            <div className={`text-2xl font-bold ${wpStats.failed24h > 0 ? "text-destructive" : ""}`}>{wpStats.failed24h}</div>
+          </div>
+        </div>
+      </Card>
+
+
 
       <Card className="p-0">
         <table className="w-full text-sm">

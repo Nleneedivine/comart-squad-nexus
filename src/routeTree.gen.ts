@@ -70,6 +70,7 @@ import { Route as AdminAuditRouteImport } from './routes/admin.audit'
 import { Route as ApiPublicWpFormsWebhookRouteImport } from './routes/api/public/wp-forms-webhook'
 import { Route as ApiPublicPaystackWebhookRouteImport } from './routes/api/public/paystack-webhook'
 import { Route as ApiPublicBillingWebhookRouteImport } from './routes/api/public/billing-webhook'
+import { Route as ApiPublicIntegrationsWpformsWebhookRouteImport } from './routes/api/public/integrations.wpforms.webhook'
 
 const WebhooksRoute = WebhooksRouteImport.update({
   id: '/webhooks',
@@ -377,6 +378,12 @@ const ApiPublicBillingWebhookRoute = ApiPublicBillingWebhookRouteImport.update({
   path: '/api/public/billing-webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicIntegrationsWpformsWebhookRoute =
+  ApiPublicIntegrationsWpformsWebhookRouteImport.update({
+    id: '/api/public/integrations/wpforms/webhook',
+    path: '/api/public/integrations/wpforms/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -440,6 +447,7 @@ export interface FileRoutesByFullPath {
   '/api/public/billing-webhook': typeof ApiPublicBillingWebhookRoute
   '/api/public/paystack-webhook': typeof ApiPublicPaystackWebhookRoute
   '/api/public/wp-forms-webhook': typeof ApiPublicWpFormsWebhookRoute
+  '/api/public/integrations/wpforms/webhook': typeof ApiPublicIntegrationsWpformsWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -501,6 +509,7 @@ export interface FileRoutesByTo {
   '/api/public/billing-webhook': typeof ApiPublicBillingWebhookRoute
   '/api/public/paystack-webhook': typeof ApiPublicPaystackWebhookRoute
   '/api/public/wp-forms-webhook': typeof ApiPublicWpFormsWebhookRoute
+  '/api/public/integrations/wpforms/webhook': typeof ApiPublicIntegrationsWpformsWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -565,6 +574,7 @@ export interface FileRoutesById {
   '/api/public/billing-webhook': typeof ApiPublicBillingWebhookRoute
   '/api/public/paystack-webhook': typeof ApiPublicPaystackWebhookRoute
   '/api/public/wp-forms-webhook': typeof ApiPublicWpFormsWebhookRoute
+  '/api/public/integrations/wpforms/webhook': typeof ApiPublicIntegrationsWpformsWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -630,6 +640,7 @@ export interface FileRouteTypes {
     | '/api/public/billing-webhook'
     | '/api/public/paystack-webhook'
     | '/api/public/wp-forms-webhook'
+    | '/api/public/integrations/wpforms/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -691,6 +702,7 @@ export interface FileRouteTypes {
     | '/api/public/billing-webhook'
     | '/api/public/paystack-webhook'
     | '/api/public/wp-forms-webhook'
+    | '/api/public/integrations/wpforms/webhook'
   id:
     | '__root__'
     | '/'
@@ -754,6 +766,7 @@ export interface FileRouteTypes {
     | '/api/public/billing-webhook'
     | '/api/public/paystack-webhook'
     | '/api/public/wp-forms-webhook'
+    | '/api/public/integrations/wpforms/webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -804,6 +817,7 @@ export interface RootRouteChildren {
   ApiPublicBillingWebhookRoute: typeof ApiPublicBillingWebhookRoute
   ApiPublicPaystackWebhookRoute: typeof ApiPublicPaystackWebhookRoute
   ApiPublicWpFormsWebhookRoute: typeof ApiPublicWpFormsWebhookRoute
+  ApiPublicIntegrationsWpformsWebhookRoute: typeof ApiPublicIntegrationsWpformsWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1235,6 +1249,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicBillingWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/integrations/wpforms/webhook': {
+      id: '/api/public/integrations/wpforms/webhook'
+      path: '/api/public/integrations/wpforms/webhook'
+      fullPath: '/api/public/integrations/wpforms/webhook'
+      preLoaderRoute: typeof ApiPublicIntegrationsWpformsWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -1350,17 +1371,9 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicBillingWebhookRoute: ApiPublicBillingWebhookRoute,
   ApiPublicPaystackWebhookRoute: ApiPublicPaystackWebhookRoute,
   ApiPublicWpFormsWebhookRoute: ApiPublicWpFormsWebhookRoute,
+  ApiPublicIntegrationsWpformsWebhookRoute:
+    ApiPublicIntegrationsWpformsWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
