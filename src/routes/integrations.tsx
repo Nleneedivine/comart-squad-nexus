@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Search, Plug, Lock, Sparkles, CheckCircle2, Copy, RefreshCw, Settings2, PlayCircle } from "lucide-react";
+import { Search, Plug, Lock, Sparkles, CheckCircle2, Copy, RefreshCw, Settings2, PlayCircle, FileText, AlertCircle, Clock } from "lucide-react";
 import { initIntegrationPurchase } from "@/lib/integrations.functions";
 import { Label } from "@/components/ui/label";
 
@@ -46,6 +46,9 @@ function Integrations() {
   const [mapModal, setMapModal] = useState(false);
   const [mapping, setMapping] = useState<Record<string, string>>(DEFAULT_MAPPING);
   const [testResult, setTestResult] = useState<any>(null);
+  const [logsModal, setLogsModal] = useState(false);
+  const [logs, setLogs] = useState<any[]>([]);
+  const [failedCount, setFailedCount] = useState(0);
   const purchase = useServerFn(initIntegrationPurchase);
 
   const load = async () => {
@@ -60,9 +63,27 @@ function Integrations() {
       if (wp?.settings?.field_mapping) {
         setMapping({ ...DEFAULT_MAPPING, ...wp.settings.field_mapping });
       }
+      // Failed webhook count (last 30d)
+      const since = new Date(Date.now() - 30 * 86_400_000).toISOString();
+      const { count } = await supabase.from("webhook_deliveries")
+        .select("id", { count: "exact", head: true })
+        .eq("store_id", store.id).eq("integration_key", "wp_forms")
+        .in("status", ["failed", "rejected"])
+        .gte("created_at", since);
+      setFailedCount(count ?? 0);
     }
   };
   useEffect(() => { load(); }, [store]);
+
+  const openLogs = async () => {
+    if (!store) return;
+    setLogsModal(true);
+    const { data } = await supabase.from("webhook_deliveries")
+      .select("id, created_at, status, payload, response, error, result")
+      .eq("store_id", store.id).eq("integration_key", "wp_forms")
+      .order("created_at", { ascending: false }).limit(50);
+    setLogs(data || []);
+  };
 
   const filtered = useMemo(
     () => catalog.filter(i => (i.name + " " + (i.description || "")).toLowerCase().includes(q.toLowerCase())),
@@ -180,18 +201,26 @@ function Integrations() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-3 text-sm">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3 text-sm">
+                  <div className="rounded-md bg-muted/40 p-3">
+                    <div className="text-xs text-muted-foreground">Connection</div>
+                    <div className="font-medium flex items-center gap-1.5">
+                      {act?.api_key
+                        ? <><span className="h-2 w-2 rounded-full bg-emerald-500 inline-block" /> Connected</>
+                        : <><span className="h-2 w-2 rounded-full bg-muted-foreground inline-block" /> Not connected</>}
+                    </div>
+                  </div>
                   <div className="rounded-md bg-muted/40 p-3">
                     <div className="text-xs text-muted-foreground">Last webhook</div>
-                    <div className="font-medium">{act?.last_webhook_at ? new Date(act.last_webhook_at).toLocaleString() : "Never"}</div>
+                    <div className="font-medium text-xs">{act?.last_webhook_at ? new Date(act.last_webhook_at).toLocaleString() : "Never"}</div>
                   </div>
                   <div className="rounded-md bg-muted/40 p-3">
                     <div className="text-xs text-muted-foreground">Orders imported</div>
                     <div className="font-medium">{act?.orders_imported_count ?? 0}</div>
                   </div>
                   <div className="rounded-md bg-muted/40 p-3">
-                    <div className="text-xs text-muted-foreground">API key</div>
-                    <div className="font-mono text-xs truncate">{act?.api_key ? `${act.api_key.slice(0, 16)}…` : "Not generated"}</div>
+                    <div className="text-xs text-muted-foreground">Failed (30d)</div>
+                    <div className={`font-medium ${failedCount > 0 ? "text-destructive" : ""}`}>{failedCount}</div>
                   </div>
                 </div>
 
@@ -200,7 +229,7 @@ function Integrations() {
                     <Plug className="h-4 w-4 mr-2" />{act?.api_key ? "View Setup" : "Connect"}
                   </Button>
                   <Button variant="outline" onClick={generateKey} disabled={busy}>
-                    <RefreshCw className="h-4 w-4 mr-2" />{act?.api_key ? "Rotate API Key" : "Generate API Key"}
+                    <RefreshCw className="h-4 w-4 mr-2" />{act?.api_key ? "Regenerate Key" : "Generate API Key"}
                   </Button>
                   <Button variant="outline" onClick={() => setMapModal(true)}>
                     <Settings2 className="h-4 w-4 mr-2" />Configure Fields
@@ -208,7 +237,11 @@ function Integrations() {
                   <Button variant="outline" onClick={testConnection} disabled={!act?.api_key}>
                     <PlayCircle className="h-4 w-4 mr-2" />Test Connection
                   </Button>
+                  <Button variant="outline" onClick={openLogs}>
+                    <FileText className="h-4 w-4 mr-2" />View Logs
+                  </Button>
                 </div>
+
 
                 {testResult && (
                   <div className="mt-3 rounded-md bg-muted p-3 text-xs">
@@ -295,7 +328,41 @@ function Integrations() {
                 <li>Click <strong>Test Connection</strong> on this page to verify.</li>
               </ol>
             </div>
+
+            <div className="rounded-md border-2 border-primary/30 bg-primary/5 p-4 space-y-2 text-xs">
+              <div className="font-semibold text-sm flex items-center gap-2">
+                <Settings2 className="h-4 w-4 text-primary" /> FIELD MAPPING EXAMPLE
+              </div>
+              <ol className="list-decimal pl-4 space-y-1.5">
+                <li>In WPForms open <strong>Settings → Webhooks</strong>.</li>
+                <li>Enable <strong>Webhooks</strong>.</li>
+                <li>Request Method: <strong>POST</strong></li>
+                <li>Request Format: <strong>JSON</strong></li>
+                <li>Request URL: use the <strong>Webhook URL</strong> shown above.</li>
+                <li>
+                  Request Header:
+                  <div className="mt-1 ml-2 grid grid-cols-[80px_1fr] gap-1 font-mono">
+                    <span className="text-muted-foreground">Key:</span><code className="bg-background rounded px-1">x-api-key</code>
+                    <span className="text-muted-foreground">Value:</span><code className="bg-background rounded px-1 truncate">{wpRow?.api_key || "[generated api key]"}</code>
+                  </div>
+                </li>
+                <li>
+                  Add Request Body fields. Examples:
+                  <div className="mt-1 ml-2 grid grid-cols-[160px_auto_1fr] gap-x-2 gap-y-0.5 font-mono text-[11px]">
+                    <code>customer_name</code><span>→</span><span>Name field</span>
+                    <code>phone_number</code><span>→</span><span>Phone Number field</span>
+                    <code>product_name</code><span>→</span><span>Product field</span>
+                    <code>quantity</code><span>→</span><span>Quantity field</span>
+                    <code>delivery_address</code><span>→</span><span>Address field</span>
+                  </div>
+                </li>
+                <li>Save the form.</li>
+                <li>Submit a test entry.</li>
+                <li>Return to Comart+ and click <strong>Test Connection</strong>.</li>
+              </ol>
+            </div>
           </div>
+
         </DialogContent>
       </Dialog>
 
@@ -317,6 +384,40 @@ function Integrations() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* WPForms activity logs */}
+      <Dialog open={logsModal} onOpenChange={setLogsModal}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><FileText className="h-5 w-5" />WPForms webhook logs</DialogTitle></DialogHeader>
+          <div className="space-y-2">
+            {logs.length === 0 && (
+              <div className="text-center text-sm text-muted-foreground p-6">No webhook activity yet.</div>
+            )}
+            {logs.map((l) => {
+              const ok = l.status === "processed";
+              const bad = l.status === "failed" || l.status === "rejected";
+              return (
+                <Card key={l.id} className="p-3 text-xs space-y-1">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      {ok ? <CheckCircle2 className="h-4 w-4 text-emerald-500" /> : bad ? <AlertCircle className="h-4 w-4 text-destructive" /> : <Clock className="h-4 w-4 text-muted-foreground" />}
+                      <Badge variant={ok ? "default" : bad ? "destructive" : "secondary"}>{l.status}</Badge>
+                      <span className="text-muted-foreground">{new Date(l.created_at).toLocaleString()}</span>
+                    </div>
+                    {l.result?.order_id && <span className="font-mono text-[10px]">Order: {String(l.result.order_id).slice(0,8)}…</span>}
+                  </div>
+                  {l.error && <div className="text-destructive">{l.error}</div>}
+                  <details>
+                    <summary className="cursor-pointer text-muted-foreground">Payload received</summary>
+                    <pre className="mt-1 bg-muted p-2 rounded overflow-auto max-h-40">{JSON.stringify(l.payload, null, 2)}</pre>
+                  </details>
+                </Card>
+              );
+            })}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
+
   );
 }
