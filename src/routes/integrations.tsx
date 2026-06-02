@@ -328,7 +328,41 @@ function Integrations() {
                 <li>Click <strong>Test Connection</strong> on this page to verify.</li>
               </ol>
             </div>
+
+            <div className="rounded-md border-2 border-primary/30 bg-primary/5 p-4 space-y-2 text-xs">
+              <div className="font-semibold text-sm flex items-center gap-2">
+                <Settings2 className="h-4 w-4 text-primary" /> FIELD MAPPING EXAMPLE
+              </div>
+              <ol className="list-decimal pl-4 space-y-1.5">
+                <li>In WPForms open <strong>Settings → Webhooks</strong>.</li>
+                <li>Enable <strong>Webhooks</strong>.</li>
+                <li>Request Method: <strong>POST</strong></li>
+                <li>Request Format: <strong>JSON</strong></li>
+                <li>Request URL: use the <strong>Webhook URL</strong> shown above.</li>
+                <li>
+                  Request Header:
+                  <div className="mt-1 ml-2 grid grid-cols-[80px_1fr] gap-1 font-mono">
+                    <span className="text-muted-foreground">Key:</span><code className="bg-background rounded px-1">x-api-key</code>
+                    <span className="text-muted-foreground">Value:</span><code className="bg-background rounded px-1 truncate">{wpRow?.api_key || "[generated api key]"}</code>
+                  </div>
+                </li>
+                <li>
+                  Add Request Body fields. Examples:
+                  <div className="mt-1 ml-2 grid grid-cols-[160px_auto_1fr] gap-x-2 gap-y-0.5 font-mono text-[11px]">
+                    <code>customer_name</code><span>→</span><span>Name field</span>
+                    <code>phone_number</code><span>→</span><span>Phone Number field</span>
+                    <code>product_name</code><span>→</span><span>Product field</span>
+                    <code>quantity</code><span>→</span><span>Quantity field</span>
+                    <code>delivery_address</code><span>→</span><span>Address field</span>
+                  </div>
+                </li>
+                <li>Save the form.</li>
+                <li>Submit a test entry.</li>
+                <li>Return to Comart+ and click <strong>Test Connection</strong>.</li>
+              </ol>
+            </div>
           </div>
+
         </DialogContent>
       </Dialog>
 
