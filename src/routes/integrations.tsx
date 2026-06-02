@@ -63,9 +63,27 @@ function Integrations() {
       if (wp?.settings?.field_mapping) {
         setMapping({ ...DEFAULT_MAPPING, ...wp.settings.field_mapping });
       }
+      // Failed webhook count (last 30d)
+      const since = new Date(Date.now() - 30 * 86_400_000).toISOString();
+      const { count } = await supabase.from("webhook_deliveries")
+        .select("id", { count: "exact", head: true })
+        .eq("store_id", store.id).eq("integration_key", "wp_forms")
+        .in("status", ["failed", "rejected"])
+        .gte("created_at", since);
+      setFailedCount(count ?? 0);
     }
   };
   useEffect(() => { load(); }, [store]);
+
+  const openLogs = async () => {
+    if (!store) return;
+    setLogsModal(true);
+    const { data } = await supabase.from("webhook_deliveries")
+      .select("id, created_at, status, payload, response, error, result")
+      .eq("store_id", store.id).eq("integration_key", "wp_forms")
+      .order("created_at", { ascending: false }).limit(50);
+    setLogs(data || []);
+  };
 
   const filtered = useMemo(
     () => catalog.filter(i => (i.name + " " + (i.description || "")).toLowerCase().includes(q.toLowerCase())),
