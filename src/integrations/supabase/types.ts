@@ -681,6 +681,53 @@ export type Database = {
         }
         Relationships: []
       }
+      feature_overrides: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          feature_key: string
+          granted_by: string | null
+          id: string
+          is_active: boolean
+          notes: string | null
+          start_at: string
+          store_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          feature_key: string
+          granted_by?: string | null
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          start_at?: string
+          store_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          feature_key?: string
+          granted_by?: string | null
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          start_at?: string
+          store_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feature_overrides_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       finance_records: {
         Row: {
           amount: number
@@ -2759,6 +2806,7 @@ export type Database = {
         Args: { _store_id: string }
         Returns: number
       }
+      expire_feature_overrides: { Args: never; Returns: undefined }
       expire_stale_orders: { Args: never; Returns: undefined }
       generate_daily_reports: { Args: never; Returns: undefined }
       generate_integration_api_key: {
@@ -2767,6 +2815,10 @@ export type Database = {
       }
       generate_payslips: { Args: { _period_id: string }; Returns: number }
       get_store_webhook_secret: { Args: { _store_id: string }; Returns: string }
+      has_active_feature_override: {
+        Args: { _feature_key: string; _store_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
