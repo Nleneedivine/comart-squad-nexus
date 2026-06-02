@@ -201,18 +201,26 @@ function Integrations() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-3 text-sm">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3 text-sm">
+                  <div className="rounded-md bg-muted/40 p-3">
+                    <div className="text-xs text-muted-foreground">Connection</div>
+                    <div className="font-medium flex items-center gap-1.5">
+                      {act?.api_key
+                        ? <><span className="h-2 w-2 rounded-full bg-emerald-500 inline-block" /> Connected</>
+                        : <><span className="h-2 w-2 rounded-full bg-muted-foreground inline-block" /> Not connected</>}
+                    </div>
+                  </div>
                   <div className="rounded-md bg-muted/40 p-3">
                     <div className="text-xs text-muted-foreground">Last webhook</div>
-                    <div className="font-medium">{act?.last_webhook_at ? new Date(act.last_webhook_at).toLocaleString() : "Never"}</div>
+                    <div className="font-medium text-xs">{act?.last_webhook_at ? new Date(act.last_webhook_at).toLocaleString() : "Never"}</div>
                   </div>
                   <div className="rounded-md bg-muted/40 p-3">
                     <div className="text-xs text-muted-foreground">Orders imported</div>
                     <div className="font-medium">{act?.orders_imported_count ?? 0}</div>
                   </div>
                   <div className="rounded-md bg-muted/40 p-3">
-                    <div className="text-xs text-muted-foreground">API key</div>
-                    <div className="font-mono text-xs truncate">{act?.api_key ? `${act.api_key.slice(0, 16)}…` : "Not generated"}</div>
+                    <div className="text-xs text-muted-foreground">Failed (30d)</div>
+                    <div className={`font-medium ${failedCount > 0 ? "text-destructive" : ""}`}>{failedCount}</div>
                   </div>
                 </div>
 
@@ -221,7 +229,7 @@ function Integrations() {
                     <Plug className="h-4 w-4 mr-2" />{act?.api_key ? "View Setup" : "Connect"}
                   </Button>
                   <Button variant="outline" onClick={generateKey} disabled={busy}>
-                    <RefreshCw className="h-4 w-4 mr-2" />{act?.api_key ? "Rotate API Key" : "Generate API Key"}
+                    <RefreshCw className="h-4 w-4 mr-2" />{act?.api_key ? "Regenerate Key" : "Generate API Key"}
                   </Button>
                   <Button variant="outline" onClick={() => setMapModal(true)}>
                     <Settings2 className="h-4 w-4 mr-2" />Configure Fields
@@ -229,7 +237,11 @@ function Integrations() {
                   <Button variant="outline" onClick={testConnection} disabled={!act?.api_key}>
                     <PlayCircle className="h-4 w-4 mr-2" />Test Connection
                   </Button>
+                  <Button variant="outline" onClick={openLogs}>
+                    <FileText className="h-4 w-4 mr-2" />View Logs
+                  </Button>
                 </div>
+
 
                 {testResult && (
                   <div className="mt-3 rounded-md bg-muted p-3 text-xs">
