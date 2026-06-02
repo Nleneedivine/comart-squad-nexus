@@ -46,6 +46,9 @@ function Integrations() {
   const [mapModal, setMapModal] = useState(false);
   const [mapping, setMapping] = useState<Record<string, string>>(DEFAULT_MAPPING);
   const [testResult, setTestResult] = useState<any>(null);
+  const [logsModal, setLogsModal] = useState(false);
+  const [logs, setLogs] = useState<any[]>([]);
+  const [failedCount, setFailedCount] = useState(0);
   const purchase = useServerFn(initIntegrationPurchase);
 
   const load = async () => {
