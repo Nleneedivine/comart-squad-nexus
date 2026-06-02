@@ -384,6 +384,40 @@ function Integrations() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* WPForms activity logs */}
+      <Dialog open={logsModal} onOpenChange={setLogsModal}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><FileText className="h-5 w-5" />WPForms webhook logs</DialogTitle></DialogHeader>
+          <div className="space-y-2">
+            {logs.length === 0 && (
+              <div className="text-center text-sm text-muted-foreground p-6">No webhook activity yet.</div>
+            )}
+            {logs.map((l) => {
+              const ok = l.status === "processed";
+              const bad = l.status === "failed" || l.status === "rejected";
+              return (
+                <Card key={l.id} className="p-3 text-xs space-y-1">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      {ok ? <CheckCircle2 className="h-4 w-4 text-emerald-500" /> : bad ? <AlertCircle className="h-4 w-4 text-destructive" /> : <Clock className="h-4 w-4 text-muted-foreground" />}
+                      <Badge variant={ok ? "default" : bad ? "destructive" : "secondary"}>{l.status}</Badge>
+                      <span className="text-muted-foreground">{new Date(l.created_at).toLocaleString()}</span>
+                    </div>
+                    {l.result?.order_id && <span className="font-mono text-[10px]">Order: {String(l.result.order_id).slice(0,8)}…</span>}
+                  </div>
+                  {l.error && <div className="text-destructive">{l.error}</div>}
+                  <details>
+                    <summary className="cursor-pointer text-muted-foreground">Payload received</summary>
+                    <pre className="mt-1 bg-muted p-2 rounded overflow-auto max-h-40">{JSON.stringify(l.payload, null, 2)}</pre>
+                  </details>
+                </Card>
+              );
+            })}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
+
   );
 }
