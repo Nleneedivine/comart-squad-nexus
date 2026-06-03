@@ -16,7 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatNaira } from "@/lib/format";
 import { toast } from "sonner";
 import { Eye, EyeOff, ArrowUpRight, ArrowDownLeft, Settings as SettingsIcon, AlertTriangle, Search } from "lucide-react";
-import { initFundWallet, verifyFunding, requestWithdrawal } from "@/server/paystack.functions";
+import { initFundWallet, verifyFunding, requestWithdrawal } from "@/lib/paystack.functions";
 
 export const Route = createFileRoute("/wallet")({
   head: () => ({ meta: [{ title: "Wallet — Comart+" }, { name: "description", content: "Wallet powered by Paystack." }] }),
