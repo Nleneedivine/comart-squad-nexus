@@ -28,9 +28,25 @@ export const Route = createFileRoute("/Settings")({
 
 function SettingsPage() {
   const { user, store, roles, refresh } = useAuth();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState<any>(null);
   const [ops, setOps] = useState<{ max_call_attempts: number; auto_assign_enabled: boolean; auto_assign_strategy: string } | null>(null);
+  const [closeConfirm, setCloseConfirm] = useState("");
+  const [closing, setClosing] = useState(false);
   const isAdmin = roles.some(r => ["owner","admin","manager","head_of_operations"].includes(r));
+  const isOwner = roles.includes("owner");
+
+  const closeStore = async () => {
+    if (!store) return;
+    if (closeConfirm !== store.name) return toast.error("Type your store name to confirm");
+    setClosing(true);
+    const { error } = await supabase.rpc("close_my_store", { _store_id: store.id });
+    setClosing(false);
+    if (error) return toast.error(error.message);
+    toast.success("Store closed. All data has been deleted.");
+    await supabase.auth.signOut();
+    navigate({ to: "/auth" });
+  };
 
   useEffect(() => {
     if (!user) return;
