@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import ProtectedShell from "@/components/ProtectedShell";
 import { Card } from "@/components/ui/card";
@@ -9,6 +9,12 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader,
+  AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { AlertTriangle } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -22,9 +28,25 @@ export const Route = createFileRoute("/Settings")({
 
 function SettingsPage() {
   const { user, store, roles, refresh } = useAuth();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState<any>(null);
   const [ops, setOps] = useState<{ max_call_attempts: number; auto_assign_enabled: boolean; auto_assign_strategy: string } | null>(null);
+  const [closeConfirm, setCloseConfirm] = useState("");
+  const [closing, setClosing] = useState(false);
   const isAdmin = roles.some(r => ["owner","admin","manager","head_of_operations"].includes(r));
+  const isOwner = roles.includes("owner");
+
+  const closeStore = async () => {
+    if (!store) return;
+    if (closeConfirm !== store.name) return toast.error("Type your store name to confirm");
+    setClosing(true);
+    const { error } = await supabase.rpc("close_my_store", { _store_id: store.id });
+    setClosing(false);
+    if (error) return toast.error(error.message);
+    toast.success("Store closed. All data has been deleted.");
+    await supabase.auth.signOut();
+    navigate({ to: "/auth" });
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -91,6 +113,7 @@ function SettingsPage() {
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
           {isAdmin && <TabsTrigger value="operations">Operations</TabsTrigger>}
           <TabsTrigger value="general">General Settings</TabsTrigger>
+          {isOwner && <TabsTrigger value="danger" className="text-destructive">Danger Zone</TabsTrigger>}
         </TabsList>
         <TabsContent value="notifications">
           <NotificationPreferences />
@@ -158,6 +181,47 @@ function SettingsPage() {
         <TabsContent value="general">
           <Card className="p-6 text-sm text-muted-foreground">General settings will appear here.</Card>
         </TabsContent>
+        {isOwner && (
+          <TabsContent value="danger">
+            <Card className="p-6 space-y-4 border-destructive/40">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="h-6 w-6 text-destructive flex-shrink-0 mt-0.5" />
+                <div>
+                  <h3 className="font-semibold text-destructive">Close store permanently</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    This will permanently delete <strong>{store?.name}</strong> and all of its data: orders, customers, products,
+                    staff roles, invites, finance records, payroll, inventory, chats — everything. This cannot be undone.
+                  </p>
+                </div>
+              </div>
+              <AlertDialog onOpenChange={(o) => { if (!o) setCloseConfirm(""); }}>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive">Close my store</Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will permanently delete <strong>{store?.name}</strong> and every record tied to it. You will be signed out.
+                      <br /><br />Type the store name <code className="bg-muted px-1 rounded">{store?.name}</code> to confirm.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <Input value={closeConfirm} onChange={(e) => setCloseConfirm(e.target.value)} placeholder={store?.name} />
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      disabled={closing || closeConfirm !== store?.name}
+                      onClick={closeStore}
+                    >
+                      {closing ? "Closing…" : "Permanently close store"}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </Card>
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );
