@@ -190,20 +190,40 @@ function Staff() {
       <Card className="p-6">
         <h2 className="font-semibold mb-4">Team members</h2>
         {members.length === 0 ? <p className="text-sm text-muted-foreground">No members yet.</p> : (
-          <table className="w-full text-sm">
-            <thead className="text-left text-muted-foreground"><tr><th className="py-2">Name</th><th>Email</th><th>Roles</th><th>Status</th><th className="text-right">Active</th></tr></thead>
-            <tbody>
-              {members.map((m: any) => (
-                <tr key={m.user_id} className="border-t">
-                  <td className="py-3">{m.name}</td>
-                  <td>{m.email}</td>
-                  <td className="py-3"><div className="flex gap-1 flex-wrap">{m.roles.map((r: string) => <Badge key={r} variant="secondary">{ROLE_LABELS[r] || r}</Badge>)}</div></td>
-                  <td>{m.is_suspended ? <Badge variant="destructive">Suspended</Badge> : <Badge variant="outline">Active</Badge>}</td>
-                  <td className="text-right"><Switch checked={!m.is_suspended} onCheckedChange={(v) => toggleSuspend(m, !v)} /></td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[720px]">
+              <thead className="text-left text-muted-foreground">
+                <tr>
+                  <th className="py-2">Name</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Joined</th>
+                  <th>Last active</th>
+                  <th>Status</th>
+                  <th className="text-right">Active</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {members.map((m: any) => (
+                  <tr key={m.user_id} className="border-t">
+                    <td className="py-3">{m.name}</td>
+                    <td>{m.email}</td>
+                    <td className="py-3"><div className="flex gap-1 flex-wrap">{m.roles.map((r: string) => <Badge key={r} variant="secondary">{ROLE_LABELS[r] || r}</Badge>)}</div></td>
+                    <td className="text-muted-foreground">{m.joined_at ? new Date(m.joined_at).toLocaleDateString() : "—"}</td>
+                    <td className="text-muted-foreground">{m.last_sign_in_at ? new Date(m.last_sign_in_at).toLocaleString() : "Never"}</td>
+                    <td>
+                      {m.is_suspended
+                        ? <Badge variant="destructive">Inactive</Badge>
+                        : m.status === "Pending"
+                          ? <Badge variant="outline">Pending</Badge>
+                          : <Badge variant="default">Active</Badge>}
+                    </td>
+                    <td className="text-right"><Switch checked={!m.is_suspended} onCheckedChange={(v) => toggleSuspend(m, !v)} /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </Card>
 
