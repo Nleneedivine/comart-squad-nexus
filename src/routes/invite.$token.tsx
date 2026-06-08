@@ -92,8 +92,10 @@ function AcceptInvite() {
       });
       await markStaffReady(user.id);
       await refresh();
+      const storeName = store?.name || "your team";
+      setWelcome(storeName);
       if (!silent) toast.success("Welcome to the team!");
-      nav({ to: "/staff-portal" });
+      setTimeout(() => { nav({ to: "/staff-portal" }); }, 3200);
     } catch (e: any) {
       setFinishingInvite(false);
       toast.error(e.message || "Could not accept invite");
