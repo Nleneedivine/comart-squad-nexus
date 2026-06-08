@@ -49,11 +49,25 @@ function Staff() {
 
   const load = async () => {
     if (!store) return;
-    const { data: roleRows } = await supabase.from("user_roles").select("id, user_id, role, is_suspended, profiles(full_name, email)").eq("store_id", store.id);
+    const { data: roleRows, error: roleErr } = await supabase
+      .from("user_roles")
+      .select("id, user_id, role, is_suspended")
+      .eq("store_id", store.id);
+    if (roleErr) console.error("user_roles fetch error", roleErr);
+    const userIds = Array.from(new Set((roleRows || []).map((r: any) => r.user_id)));
+    let profilesById: Record<string, { full_name: string | null; email: string | null }> = {};
+    if (userIds.length > 0) {
+      const { data: profs } = await supabase
+        .from("profiles")
+        .select("id, full_name, email")
+        .in("id", userIds);
+      (profs || []).forEach((p: any) => { profilesById[p.id] = { full_name: p.full_name, email: p.email }; });
+    }
     const grouped: Record<string, { user_id: string; name: string; email: string; roles: string[]; is_suspended: boolean; role_ids: string[] }> = {};
     (roleRows || []).forEach((r: any) => {
       const k = r.user_id;
-      if (!grouped[k]) grouped[k] = { user_id: k, name: r.profiles?.full_name || "—", email: r.profiles?.email || "—", roles: [], is_suspended: !!r.is_suspended, role_ids: [] };
+      const prof = profilesById[k];
+      if (!grouped[k]) grouped[k] = { user_id: k, name: prof?.full_name || "—", email: prof?.email || "—", roles: [], is_suspended: !!r.is_suspended, role_ids: [] };
       grouped[k].roles.push(r.role);
       grouped[k].role_ids.push(r.id);
       if (r.is_suspended) grouped[k].is_suspended = true;
