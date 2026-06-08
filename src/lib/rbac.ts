@@ -25,7 +25,14 @@ const ROLE_ROUTES: Record<string, string[]> = {
   order_manager: ["/orders", "/store/orders", "/customer-service", "/inventory/waybill"],
   customer_care: ["/customer-service", "/orders"],
   logistics_manager: ["/inventory/waybill", "/orders", "/inventory/agent-stock"],
-  accountant: ["/finance", "/wallet", "/reports/export", "/reports/activity", "/suppliers", "/payroll"],
+  accountant: [
+    "/finance", "/finance/commissions", "/finance/refunds",
+    "/wallet", "/reports/export", "/reports/activity", "/reports/daily",
+    "/suppliers", "/payroll",
+    "/inventory/products", "/inventory/buy-stock", "/inventory/stock-record",
+    "/inventory/faulty", "/inventory/agent-stock", "/inventory/waybill",
+    "/purchase-orders",
+  ],
 };
 
 export function canAccess(roles: string[], path: string): boolean {
