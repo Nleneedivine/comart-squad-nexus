@@ -158,7 +158,7 @@ function Staff() {
                   <SelectContent>{EXPIRY_OPTIONS.map(o => <SelectItem key={o.days} value={String(o.days)}>{o.label}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
-              <p className="text-xs text-muted-foreground">A unique sign-up link will be created. Share it with the invitee — they must sign in with this email.</p>
+              <p className="text-xs text-muted-foreground">A unique sign-up link will be created and emailed to the invitee. They must sign in with this email.</p>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
