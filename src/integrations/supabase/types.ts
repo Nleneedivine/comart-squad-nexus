@@ -2802,6 +2802,7 @@ export type Database = {
     Functions: {
       advance_subscription_lifecycle: { Args: never; Returns: undefined }
       auto_assign_order: { Args: { _order_id: string }; Returns: string }
+      close_my_store: { Args: { _store_id: string }; Returns: undefined }
       compute_subscription_amount: {
         Args: { _store_id: string }
         Returns: number
