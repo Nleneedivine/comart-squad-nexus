@@ -65,33 +65,52 @@ function TenantsPage() {
         <p className="text-sm text-muted-foreground">{rows.length} stores on the platform</p>
       </div>
       <Input placeholder="Search by name or email…" value={q} onChange={(e) => setQ(e.target.value)} className="max-w-sm" />
-      <Card className="overflow-hidden">
-        <table className="w-full text-sm">
+      <Card className="overflow-x-auto">
+        <table className="w-full text-sm min-w-[960px]">
           <thead className="bg-muted/40">
             <tr className="text-left">
               <th className="p-3">Store</th>
-              <th className="p-3">Plan</th>
-              <th className="p-3">Status</th>
-              <th className="p-3">Created</th>
+              <th className="p-3">Owner</th>
               <th className="p-3">Contact</th>
+              <th className="p-3">Staff</th>
+              <th className="p-3">Plan</th>
+              <th className="p-3">Subscription</th>
+              <th className="p-3">Store status</th>
+              <th className="p-3">Created</th>
               <th className="p-3 text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {loading && <tr><td colSpan={6} className="p-6 text-center text-muted-foreground">Loading…</td></tr>}
+            {loading && <tr><td colSpan={9} className="p-6 text-center text-muted-foreground">Loading…</td></tr>}
             {!loading && filtered.length === 0 && (
-              <tr><td colSpan={6} className="p-10 text-center">
+              <tr><td colSpan={9} className="p-10 text-center">
                 <Building2 className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
                 <div className="text-muted-foreground">No tenants yet</div>
               </td></tr>
             )}
             {filtered.map((r) => (
-              <tr key={r.id} className="border-t">
-                <td className="p-3 font-medium">{r.name}</td>
-                <td className="p-3 capitalize">{r.sub?.plan ?? "—"}</td>
-                <td className="p-3"><StatusBadge status={r.sub?.status} /></td>
+              <tr key={r.id} className="border-t align-top">
+                <td className="p-3">
+                  <div className="font-medium">{r.name}</div>
+                  <div className="text-xs text-muted-foreground font-mono">{r.id?.slice(0,8)}…</div>
+                </td>
+                <td className="p-3">
+                  <div>{r.owner_name || "—"}</div>
+                  <div className="text-xs text-muted-foreground">{r.owner_email || "—"}</div>
+                </td>
+                <td className="p-3 text-muted-foreground">
+                  <div>{r.contact_email || "—"}</div>
+                  <div className="text-xs">{r.contact_phone || "—"}</div>
+                </td>
+                <td className="p-3">{r.staff_count ?? 0}</td>
+                <td className="p-3 capitalize">{r.plan ?? "—"}</td>
+                <td className="p-3"><StatusBadge status={r.sub_status} /></td>
+                <td className="p-3">
+                  <Badge variant={r.status === "active" ? "default" : r.status === "suspended" ? "destructive" : "outline"}>
+                    {r.status || "—"}
+                  </Badge>
+                </td>
                 <td className="p-3 text-muted-foreground">{new Date(r.created_at).toLocaleDateString()}</td>
-                <td className="p-3 text-muted-foreground">{r.contact_email ?? "—"}</td>
                 <td className="p-3 text-right">
                   <div className="flex gap-1 justify-end">
                     <Button variant="ghost" size="sm" onClick={() => setDetailStore(r)} title="Manage">
