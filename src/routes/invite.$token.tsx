@@ -79,18 +79,8 @@ function AcceptInvite() {
     setFinishingInvite(true);
     setBusy(true);
     try {
-      const { error: roleErr } = await supabase.from("user_roles").insert({
-        user_id: user.id, store_id: invite.store_id, role: invite.role,
-      });
-      if (roleErr && !roleErr.message.toLowerCase().includes("duplicate")) throw roleErr;
-      await supabase.from("staff_invites").update({
-        status: "accepted", accepted_by: user.id, accepted_at: new Date().toISOString(),
-      }).eq("id", invite.id);
-      await supabase.from("activity_log").insert({
-        store_id: invite.store_id, user_id: user.id, type: "staff",
-        activity: `${user.email} joined as ${ROLE_LABELS[invite.role] || invite.role}`,
-      });
-      await markStaffReady(user.id);
+      const { error: rpcErr } = await supabase.rpc("accept_staff_invite", { _token: token });
+      if (rpcErr) throw rpcErr;
       await refresh();
       const storeName = store?.name || "your team";
       setWelcome(storeName);
