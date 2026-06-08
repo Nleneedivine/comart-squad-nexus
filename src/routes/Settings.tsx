@@ -181,6 +181,47 @@ function SettingsPage() {
         <TabsContent value="general">
           <Card className="p-6 text-sm text-muted-foreground">General settings will appear here.</Card>
         </TabsContent>
+        {isOwner && (
+          <TabsContent value="danger">
+            <Card className="p-6 space-y-4 border-destructive/40">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="h-6 w-6 text-destructive flex-shrink-0 mt-0.5" />
+                <div>
+                  <h3 className="font-semibold text-destructive">Close store permanently</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    This will permanently delete <strong>{store?.name}</strong> and all of its data: orders, customers, products,
+                    staff roles, invites, finance records, payroll, inventory, chats — everything. This cannot be undone.
+                  </p>
+                </div>
+              </div>
+              <AlertDialog onOpenChange={(o) => { if (!o) setCloseConfirm(""); }}>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive">Close my store</Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will permanently delete <strong>{store?.name}</strong> and every record tied to it. You will be signed out.
+                      <br /><br />Type the store name <code className="bg-muted px-1 rounded">{store?.name}</code> to confirm.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <Input value={closeConfirm} onChange={(e) => setCloseConfirm(e.target.value)} placeholder={store?.name} />
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      disabled={closing || closeConfirm !== store?.name}
+                      onClick={closeStore}
+                    >
+                      {closing ? "Closing…" : "Permanently close store"}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </Card>
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );
