@@ -158,6 +158,20 @@ function AcceptInvite() {
 
   return (
     <div className="min-h-screen bg-muted/30 flex items-center justify-center p-4">
+      {welcome && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-background/95 backdrop-blur-sm animate-fade-in cursor-pointer"
+          onClick={() => nav({ to: "/staff-portal" })}
+        >
+          <div className="text-center px-6 animate-scale-in">
+            <div className="mx-auto mb-4 h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+              <MailCheck className="h-8 w-8 text-primary" />
+            </div>
+            <h1 className="text-3xl md:text-4xl font-bold tracking-tight">Welcome to {welcome}!</h1>
+            <p className="mt-3 text-muted-foreground">Taking you to your dashboard…</p>
+          </div>
+        </div>
+      )}
       <Card className="w-full max-w-md p-6 md:p-8 space-y-4">
         {state === "loading" && <div className="text-center text-muted-foreground py-8">Checking invitation…</div>}
 
