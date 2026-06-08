@@ -37,6 +37,7 @@ function AcceptInvite() {
   const [password, setPassword] = useState(() => genPassword());
   const [generatedShown, setGeneratedShown] = useState(true);
   const [finishingInvite, setFinishingInvite] = useState(false);
+  const [welcome, setWelcome] = useState<string | null>(null);
 
   const markStaffReady = async (userId: string) => {
     await supabase
