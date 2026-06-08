@@ -49,30 +49,24 @@ function Staff() {
 
   const load = async () => {
     if (!store) return;
-    const { data: roleRows, error: roleErr } = await supabase
-      .from("user_roles")
-      .select("id, user_id, role, is_suspended")
-      .eq("store_id", store.id);
-    if (roleErr) console.error("user_roles fetch error", roleErr);
-    const userIds = Array.from(new Set((roleRows || []).map((r: any) => r.user_id)));
-    let profilesById: Record<string, { full_name: string | null; email: string | null }> = {};
-    if (userIds.length > 0) {
-      const { data: profs } = await supabase
-        .from("profiles")
-        .select("id, full_name, email")
-        .in("id", userIds);
-      (profs || []).forEach((p: any) => { profilesById[p.id] = { full_name: p.full_name, email: p.email }; });
+    const { data: detail, error: detailErr } = await supabase.rpc("get_store_members_detail", { _store_id: store.id });
+    if (detailErr) {
+      console.error("members detail error", detailErr);
+      setMembers([]);
+    } else {
+      setMembers((detail || []).map((r: any) => ({
+        user_id: r.user_id,
+        name: r.full_name || "—",
+        email: r.email || "—",
+        phone: r.phone || "—",
+        roles: r.roles || [],
+        role_ids: r.role_ids || [],
+        is_suspended: !!r.is_suspended,
+        joined_at: r.joined_at,
+        last_sign_in_at: r.last_sign_in_at,
+        status: r.status,
+      })));
     }
-    const grouped: Record<string, { user_id: string; name: string; email: string; roles: string[]; is_suspended: boolean; role_ids: string[] }> = {};
-    (roleRows || []).forEach((r: any) => {
-      const k = r.user_id;
-      const prof = profilesById[k];
-      if (!grouped[k]) grouped[k] = { user_id: k, name: prof?.full_name || "—", email: prof?.email || "—", roles: [], is_suspended: !!r.is_suspended, role_ids: [] };
-      grouped[k].roles.push(r.role);
-      grouped[k].role_ids.push(r.id);
-      if (r.is_suspended) grouped[k].is_suspended = true;
-    });
-    setMembers(Object.values(grouped));
 
     // Auto-delete expired invitations (still pending past expiry)
     await supabase
