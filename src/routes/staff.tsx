@@ -49,30 +49,24 @@ function Staff() {
 
   const load = async () => {
     if (!store) return;
-    const { data: roleRows, error: roleErr } = await supabase
-      .from("user_roles")
-      .select("id, user_id, role, is_suspended")
-      .eq("store_id", store.id);
-    if (roleErr) console.error("user_roles fetch error", roleErr);
-    const userIds = Array.from(new Set((roleRows || []).map((r: any) => r.user_id)));
-    let profilesById: Record<string, { full_name: string | null; email: string | null }> = {};
-    if (userIds.length > 0) {
-      const { data: profs } = await supabase
-        .from("profiles")
-        .select("id, full_name, email")
-        .in("id", userIds);
-      (profs || []).forEach((p: any) => { profilesById[p.id] = { full_name: p.full_name, email: p.email }; });
+    const { data: detail, error: detailErr } = await supabase.rpc("get_store_members_detail", { _store_id: store.id });
+    if (detailErr) {
+      console.error("members detail error", detailErr);
+      setMembers([]);
+    } else {
+      setMembers((detail || []).map((r: any) => ({
+        user_id: r.user_id,
+        name: r.full_name || "—",
+        email: r.email || "—",
+        phone: r.phone || "—",
+        roles: r.roles || [],
+        role_ids: r.role_ids || [],
+        is_suspended: !!r.is_suspended,
+        joined_at: r.joined_at,
+        last_sign_in_at: r.last_sign_in_at,
+        status: r.status,
+      })));
     }
-    const grouped: Record<string, { user_id: string; name: string; email: string; roles: string[]; is_suspended: boolean; role_ids: string[] }> = {};
-    (roleRows || []).forEach((r: any) => {
-      const k = r.user_id;
-      const prof = profilesById[k];
-      if (!grouped[k]) grouped[k] = { user_id: k, name: prof?.full_name || "—", email: prof?.email || "—", roles: [], is_suspended: !!r.is_suspended, role_ids: [] };
-      grouped[k].roles.push(r.role);
-      grouped[k].role_ids.push(r.id);
-      if (r.is_suspended) grouped[k].is_suspended = true;
-    });
-    setMembers(Object.values(grouped));
 
     // Auto-delete expired invitations (still pending past expiry)
     await supabase
@@ -196,20 +190,40 @@ function Staff() {
       <Card className="p-6">
         <h2 className="font-semibold mb-4">Team members</h2>
         {members.length === 0 ? <p className="text-sm text-muted-foreground">No members yet.</p> : (
-          <table className="w-full text-sm">
-            <thead className="text-left text-muted-foreground"><tr><th className="py-2">Name</th><th>Email</th><th>Roles</th><th>Status</th><th className="text-right">Active</th></tr></thead>
-            <tbody>
-              {members.map((m: any) => (
-                <tr key={m.user_id} className="border-t">
-                  <td className="py-3">{m.name}</td>
-                  <td>{m.email}</td>
-                  <td className="py-3"><div className="flex gap-1 flex-wrap">{m.roles.map((r: string) => <Badge key={r} variant="secondary">{ROLE_LABELS[r] || r}</Badge>)}</div></td>
-                  <td>{m.is_suspended ? <Badge variant="destructive">Suspended</Badge> : <Badge variant="outline">Active</Badge>}</td>
-                  <td className="text-right"><Switch checked={!m.is_suspended} onCheckedChange={(v) => toggleSuspend(m, !v)} /></td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[720px]">
+              <thead className="text-left text-muted-foreground">
+                <tr>
+                  <th className="py-2">Name</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Joined</th>
+                  <th>Last active</th>
+                  <th>Status</th>
+                  <th className="text-right">Active</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {members.map((m: any) => (
+                  <tr key={m.user_id} className="border-t">
+                    <td className="py-3">{m.name}</td>
+                    <td>{m.email}</td>
+                    <td className="py-3"><div className="flex gap-1 flex-wrap">{m.roles.map((r: string) => <Badge key={r} variant="secondary">{ROLE_LABELS[r] || r}</Badge>)}</div></td>
+                    <td className="text-muted-foreground">{m.joined_at ? new Date(m.joined_at).toLocaleDateString() : "—"}</td>
+                    <td className="text-muted-foreground">{m.last_sign_in_at ? new Date(m.last_sign_in_at).toLocaleString() : "Never"}</td>
+                    <td>
+                      {m.is_suspended
+                        ? <Badge variant="destructive">Inactive</Badge>
+                        : m.status === "Pending"
+                          ? <Badge variant="outline">Pending</Badge>
+                          : <Badge variant="default">Active</Badge>}
+                    </td>
+                    <td className="text-right"><Switch checked={!m.is_suspended} onCheckedChange={(v) => toggleSuspend(m, !v)} /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </Card>
 

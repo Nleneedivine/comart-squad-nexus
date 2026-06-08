@@ -116,7 +116,35 @@ export default function ProtectedShell({ children }: { children?: ReactNode }) {
 
   if (check === "redirect") return null;
 
-  const allowed = roles.length === 0 ? true : canAccess(roles, loc.pathname);
+  // Block users whose store no longer exists (e.g. tenant deleted by superadmin).
+  const isSuperadminPath = loc.pathname.startsWith("/admin");
+  const isOnboarding = loc.pathname === "/onboarding";
+  if (!isSuperadminPath && !isOnboarding && roles.length === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4 bg-muted/20">
+        <div className="max-w-md text-center space-y-4 p-8 bg-background rounded-lg border shadow-sm animate-fade-in">
+          <Lock className="mx-auto h-10 w-10 text-muted-foreground" />
+          <h1 className="text-xl font-bold">Your store is not registered</h1>
+          <p className="text-sm text-muted-foreground">
+            We couldn't find an active store linked to <strong>{user?.email}</strong>.
+            Please sign up to create a new store, or accept an invitation from your store admin.
+          </p>
+          <Button
+            className="w-full"
+            onClick={async () => {
+              try { localStorage.clear(); sessionStorage.clear(); } catch {}
+              await supabase.auth.signOut();
+              nav({ to: "/auth" });
+            }}
+          >
+            Sign out & sign up
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  const allowed = canAccess(roles, loc.pathname);
 
   return (
     <AppLayout>

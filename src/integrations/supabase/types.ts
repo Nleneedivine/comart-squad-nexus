@@ -2815,6 +2815,21 @@ export type Database = {
         Returns: string
       }
       generate_payslips: { Args: { _period_id: string }; Returns: number }
+      get_store_members_detail: {
+        Args: { _store_id: string }
+        Returns: {
+          email: string
+          full_name: string
+          is_suspended: boolean
+          joined_at: string
+          last_sign_in_at: string
+          phone: string
+          role_ids: string[]
+          roles: string[]
+          status: string
+          user_id: string
+        }[]
+      }
       get_store_webhook_secret: { Args: { _store_id: string }; Returns: string }
       has_active_feature_override: {
         Args: { _feature_key: string; _store_id: string }
@@ -2871,6 +2886,25 @@ export type Database = {
       superadmin_delete_store: {
         Args: { _store_id: string }
         Returns: undefined
+      }
+      superadmin_list_tenants: {
+        Args: never
+        Returns: {
+          contact_email: string
+          contact_phone: string
+          created_at: string
+          id: string
+          name: string
+          owner_email: string
+          owner_id: string
+          owner_name: string
+          plan: string
+          staff_count: number
+          status: string
+          sub_status: string
+          suspended_at: string
+          trial_ends_at: string
+        }[]
       }
     }
     Enums: {
