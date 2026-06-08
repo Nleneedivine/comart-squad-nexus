@@ -45,6 +45,8 @@ function Staff() {
   const [open, setOpen] = useState(false);
   const [created, setCreated] = useState<{ link: string; email: string } | null>(null);
 
+  const sendEmailFn = useServerFn(sendInviteEmail);
+
   const load = async () => {
     if (!store) return;
     const { data: roleRows } = await supabase.from("user_roles").select("id, user_id, role, is_suspended, profiles(full_name, email)").eq("store_id", store.id);
@@ -57,7 +59,22 @@ function Staff() {
       if (r.is_suspended) grouped[k].is_suspended = true;
     });
     setMembers(Object.values(grouped));
-    const { data: inv } = await supabase.from("staff_invites").select("*").eq("store_id", store.id).order("created_at", { ascending: false });
+
+    // Auto-delete expired invitations (still pending past expiry)
+    await supabase
+      .from("staff_invites")
+      .delete()
+      .eq("store_id", store.id)
+      .eq("status", "pending")
+      .lt("expires_at", new Date().toISOString());
+
+    // Only fetch pending invites (accepted move to team members; expired are deleted above)
+    const { data: inv } = await supabase
+      .from("staff_invites")
+      .select("*")
+      .eq("store_id", store.id)
+      .eq("status", "pending")
+      .order("created_at", { ascending: false });
     setInvites(inv || []);
   };
   useEffect(() => { load(); }, [store]);
@@ -69,19 +86,37 @@ function Staff() {
     load();
   };
 
+  const sendEmail = async (token: string, email: string, roleKey: string) => {
+    try {
+      await sendEmailFn({
+        data: {
+          email,
+          invite_link: inviteUrl(token),
+          store_name: store?.name || "Comart+",
+          role_label: ROLE_LABELS[roleKey] || roleKey,
+          inviter_name: user?.user_metadata?.full_name || user?.email || undefined,
+        },
+      });
+      toast.success(`Invite email sent to ${email}`);
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to send email");
+    }
+  };
+
   const invite = async () => {
     if (!store || !user) return;
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { toast.error("Enter a valid email"); return; }
     const expiresAt = new Date(Date.now() + Number(expiryDays) * 86400000).toISOString();
     const { data, error } = await supabase.from("staff_invites").insert({
       store_id: store.id, email: email.trim().toLowerCase(), role: role as any, invited_by: user.id, expires_at: expiresAt,
-    }).select("token,email").single();
+    }).select("token,email,role").single();
     if (error) return toast.error(error.message);
     const link = inviteUrl(data.token);
     setCreated({ link, email: data.email });
     setEmail(""); setOpen(false); load();
-    try { await navigator.clipboard.writeText(link); toast.success("Invite link copied to clipboard"); }
-    catch { toast.success("Invite created"); }
+    try { await navigator.clipboard.writeText(link); toast.success("Invite link copied"); } catch {}
+    // Send email automatically via Resend
+    sendEmail(data.token, data.email, data.role);
   };
 
   const revoke = async (id: string) => {
