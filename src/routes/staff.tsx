@@ -11,7 +11,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { useAuth, ROLE_LABELS } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Copy, Trash2 } from "lucide-react";
+import { Copy, Trash2, Mail } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { sendInviteEmail } from "@/lib/invites.functions";
 import { Switch } from "@/components/ui/switch";
 import StaffPerformanceCard from "@/components/StaffPerformanceCard";
 
