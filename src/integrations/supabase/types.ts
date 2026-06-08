@@ -2800,6 +2800,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_staff_invite: { Args: { _token: string }; Returns: Json }
       advance_subscription_lifecycle: { Args: never; Returns: undefined }
       auto_assign_order: { Args: { _order_id: string }; Returns: string }
       close_my_store: { Args: { _store_id: string }; Returns: undefined }
