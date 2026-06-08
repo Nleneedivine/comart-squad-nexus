@@ -113,6 +113,7 @@ function SettingsPage() {
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
           {isAdmin && <TabsTrigger value="operations">Operations</TabsTrigger>}
           <TabsTrigger value="general">General Settings</TabsTrigger>
+          {isOwner && <TabsTrigger value="danger" className="text-destructive">Danger Zone</TabsTrigger>}
         </TabsList>
         <TabsContent value="notifications">
           <NotificationPreferences />
