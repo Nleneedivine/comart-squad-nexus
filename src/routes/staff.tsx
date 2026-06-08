@@ -221,8 +221,9 @@ function Staff() {
                     <Badge variant={variant}>{status}</Badge>
                     {status === "pending" && (
                       <>
-                        <Button size="sm" variant="outline" onClick={() => copyLink(i.token)}><Copy className="h-3.5 w-3.5" /></Button>
-                        <Button size="sm" variant="ghost" onClick={() => revoke(i.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                        <Button size="sm" variant="outline" onClick={() => sendEmail(i.token, i.email, i.role)} title="Email invite link"><Mail className="h-3.5 w-3.5" /></Button>
+                        <Button size="sm" variant="outline" onClick={() => copyLink(i.token)} title="Copy link"><Copy className="h-3.5 w-3.5" /></Button>
+                        <Button size="sm" variant="ghost" onClick={() => revoke(i.id)} title="Revoke"><Trash2 className="h-3.5 w-3.5" /></Button>
                       </>
                     )}
                   </div>
