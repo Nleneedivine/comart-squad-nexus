@@ -49,7 +49,19 @@ export const sendInviteEmail = createServerFn({ method: "POST" })
     if (!res.ok) {
       const errText = await res.text();
       console.error("Resend error", res.status, errText);
-      throw new Error(`Failed to send invite email (${res.status})`);
+      let detail = errText;
+      try {
+        const j = JSON.parse(errText);
+        detail = j?.message || j?.error || errText;
+      } catch {}
+      if (res.status === 403) {
+        throw new Error(
+          `Resend rejected the request (403): ${detail}. ` +
+          `This usually means you're using the test sender 'onboarding@resend.dev' which can only deliver to the email address that owns the Resend account. ` +
+          `Verify a domain in Resend (https://resend.com/domains) and update the 'from' address in src/lib/invites.functions.ts to use that domain.`
+        );
+      }
+      throw new Error(`Failed to send invite email (${res.status}): ${detail}`);
     }
     const json = await res.json().catch(() => ({}));
     return { ok: true, id: (json as any)?.id ?? null };
