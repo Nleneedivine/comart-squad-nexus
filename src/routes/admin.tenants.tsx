@@ -30,10 +30,14 @@ function TenantsPage() {
 
   const load = async () => {
     setLoading(true);
-    const { data: stores } = await supabase.from("stores").select("id,name,owner_id,created_at,contact_email").order("created_at", { ascending: false });
-    const { data: subs } = await supabase.from("subscriptions").select("store_id,plan,status,trial_ends_at");
-    const subMap = new Map((subs ?? []).map((s: any) => [s.store_id, s]));
-    setRows((stores ?? []).map((s: any) => ({ ...s, sub: subMap.get(s.id) })));
+    const { data, error } = await supabase.rpc("superadmin_list_tenants");
+    if (error) {
+      console.error("tenants load error", error);
+      toast.error(error.message);
+      setRows([]);
+    } else {
+      setRows(data || []);
+    }
     setLoading(false);
   };
   useEffect(() => { load(); }, []);
@@ -47,7 +51,12 @@ function TenantsPage() {
     load();
   };
 
-  const filtered = rows.filter(r => !q || r.name?.toLowerCase().includes(q.toLowerCase()) || r.contact_email?.toLowerCase().includes(q.toLowerCase()));
+  const filtered = rows.filter(r =>
+    !q ||
+    r.name?.toLowerCase().includes(q.toLowerCase()) ||
+    r.contact_email?.toLowerCase().includes(q.toLowerCase()) ||
+    r.owner_email?.toLowerCase().includes(q.toLowerCase())
+  );
 
   return (
     <div className="space-y-4">
