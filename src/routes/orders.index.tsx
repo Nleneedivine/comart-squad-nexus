@@ -367,10 +367,16 @@ function OrdersIndex() {
             {filtered.length === 0 ? <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">No orders found.</TableCell></TableRow> :
               filtered.map(o => {
                 const assignee = staff.find(s => s.id === o.assigned_to);
+                const isDup = duplicateIds.has(o.id);
                 return (
-                  <TableRow key={o.id} data-state={selected.has(o.id) ? "selected" : undefined}>
+                  <TableRow key={o.id} data-state={selected.has(o.id) ? "selected" : undefined} className={isDup ? "bg-amber-50 dark:bg-amber-950/30 hover:bg-amber-100/70 dark:hover:bg-amber-950/40" : undefined}>
                     <TableCell><Checkbox checked={selected.has(o.id)} onCheckedChange={(v) => toggleOne(o.id, !!v)} /></TableCell>
-                    <TableCell className="font-mono text-xs"><Link to="/orders/$id" params={{ id: o.id }} className="hover:text-primary">{o.order_number || o.id.slice(0, 8)}</Link></TableCell>
+                    <TableCell className="font-mono text-xs">
+                      <div className="flex items-center gap-2">
+                        <Link to="/orders/$id" params={{ id: o.id }} className="hover:text-primary">{o.order_number || o.id.slice(0, 8)}</Link>
+                        {isDup && <Badge variant="outline" className="border-amber-500 text-amber-700 dark:text-amber-300 bg-amber-100/60 dark:bg-amber-950/50 text-[10px] py-0 px-1.5">Possible Duplicate</Badge>}
+                      </div>
+                    </TableCell>
                     <TableCell>{new Date(o.created_at).toLocaleDateString()}</TableCell>
                     <TableCell>{o.customers?.name || o.customer_name || "—"}</TableCell>
                     <TableCell><Badge variant="outline">{o.status}</Badge></TableCell>
