@@ -397,10 +397,11 @@ function OrdersIndex() {
               </TableHead>
               <TableHead>Order #</TableHead><TableHead>Date</TableHead><TableHead>Customer</TableHead>
               <TableHead>Status</TableHead><TableHead>Assignee</TableHead><TableHead>Units</TableHead><TableHead>Amount</TableHead>
+              {canDelete && <TableHead className="w-10"></TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filtered.length === 0 ? <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">No orders found.</TableCell></TableRow> :
+            {filtered.length === 0 ? <TableRow><TableCell colSpan={canDelete ? 9 : 8} className="text-center py-8 text-muted-foreground">No orders found.</TableCell></TableRow> :
               filtered.map(o => {
                 const assignee = staff.find(s => s.id === o.assigned_to);
                 const isDup = duplicateIds.has(o.id);
