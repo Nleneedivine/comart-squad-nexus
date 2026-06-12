@@ -15,7 +15,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { formatNaira } from "@/lib/format";
 import { toast } from "sonner";
-import { Plus, Trash2, Archive, ArchiveRestore, UserPlus, RefreshCw, Check, ChevronsUpDown, UserCheck } from "lucide-react";
+import { Plus, Trash2, Archive, ArchiveRestore, UserPlus, RefreshCw, Check, ChevronsUpDown, UserCheck, Trash } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/orders/")({
