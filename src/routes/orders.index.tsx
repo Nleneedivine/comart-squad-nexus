@@ -73,6 +73,35 @@ function OrdersIndex() {
     return true;
   }), [orders, statusFilter, customerFilter, from, to, showArchived]);
 
+  // Duplicate detection: orders sharing customer phone OR address (case/space-insensitive)
+  // within a 24h window of each other. Builds a Set of order IDs flagged as possible duplicates.
+  const duplicateIds = useMemo(() => {
+    const norm = (s: any) => (s == null ? "" : String(s).trim().toLowerCase().replace(/\s+/g, " "));
+    const WINDOW_MS = 24 * 60 * 60 * 1000;
+    const enriched = orders.map(o => ({
+      id: o.id,
+      t: new Date(o.created_at).getTime(),
+      phone: norm(o.customers?.phone),
+      addr: norm(o.customers?.full_address),
+      name: norm(o.customers?.name || o.customer_name),
+    }));
+    const flagged = new Set<string>();
+    for (let i = 0; i < enriched.length; i++) {
+      for (let j = i + 1; j < enriched.length; j++) {
+        const a = enriched[i], b = enriched[j];
+        if (Math.abs(a.t - b.t) > WINDOW_MS) continue;
+        const phoneMatch = a.phone && a.phone === b.phone;
+        const addrMatch = a.addr && a.addr === b.addr;
+        const nameMatch = a.name && a.name === b.name;
+        if (phoneMatch || addrMatch || (nameMatch && (a.phone || a.addr) && (a.phone === b.phone || a.addr === b.addr))) {
+          flagged.add(a.id); flagged.add(b.id);
+        }
+      }
+    }
+    return flagged;
+  }, [orders]);
+
+
   const total = useMemo(() => items.reduce((sum, it) => {
     const p = products.find(pp => pp.id === it.product_id);
     return sum + (p ? Number(p.selling_price) * it.quantity : 0);
