@@ -62,9 +62,14 @@ export function useStoreChannel({ storeId, name, on = [], broadcast = {}, enable
       } else setHealth("connecting");
     });
 
-    const { data: sub } = supabase.auth.onAuthStateChange(() => {
-      supabase.removeChannel(ch);
+    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      // Only tear down on real identity transitions — TOKEN_REFRESHED fires on tab
+      // focus and would needlessly reconnect realtime + flash loading states.
+      if (event === "SIGNED_OUT" || event === "SIGNED_IN" || event === "USER_UPDATED") {
+        supabase.removeChannel(ch);
+      }
     });
+
 
     return () => {
       sub.subscription.unsubscribe();
