@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Building2, CreditCard, ShoppingCart, Users } from "lucide-react";
 import { formatNaira } from "@/lib/format";
+import SuperAdminChat from "@/components/admin/SuperAdminChat";
 
 export const Route = createFileRoute("/admin/")({
   component: AdminOverview,
