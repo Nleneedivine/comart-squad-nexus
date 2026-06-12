@@ -49,7 +49,7 @@ function OrdersIndex() {
   const load = async () => {
     if (!store) return;
     const [{ data: o }, { data: c }, { data: p }, { data: roles }] = await Promise.all([
-      supabase.from("orders").select("*, customers(name)").eq("store_id", store.id).order("created_at", { ascending: false }),
+      supabase.from("orders").select("*, customers(name, phone, full_address)").eq("store_id", store.id).order("created_at", { ascending: false }),
       supabase.from("customers").select("id, name, phone, full_address").eq("store_id", store.id).order("name"),
       supabase.from("products").select("id, name, selling_price, stock_qty").eq("store_id", store.id).eq("status", "active"),
       supabase.from("user_roles").select("user_id, role, is_suspended, profiles:user_id(id, full_name, email)").eq("store_id", store.id),
