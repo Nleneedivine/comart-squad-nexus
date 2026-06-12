@@ -1,5 +1,5 @@
 import { createFileRoute, Link, Outlet, useNavigate, useLocation } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { LayoutDashboard, Building2, CreditCard, Megaphone, ScrollText, Flag, LogOut, ShieldCheck, Plug, Activity } from "lucide-react";
@@ -27,15 +27,23 @@ function AdminShell() {
   const loc = useLocation();
   const [checking, setChecking] = useState(true);
   const [allowed, setAllowed] = useState(false);
+  // Only run the superadmin check once per user — auth-context changes (token
+  // refresh, role-row reloads) should never re-show the loading screen.
+  const checkedUserRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (loading) return;
     if (!user) { nav({ to: "/auth" }); return; }
+    if (checkedUserRef.current === user.id) return;
+    let cancelled = false;
     (async () => {
       const { data } = await supabase.from("superadmins").select("id").eq("user_id", user.id).maybeSingle();
+      if (cancelled) return;
+      checkedUserRef.current = user.id;
       setAllowed(!!data);
       setChecking(false);
     })();
+    return () => { cancelled = true; };
   }, [user, loading, nav]);
 
   if (loading || checking) {

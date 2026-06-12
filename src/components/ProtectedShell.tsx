@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/useAuth";
 import AppLayout from "./AppLayout";
@@ -27,6 +27,11 @@ export default function ProtectedShell({ children }: { children?: ReactNode }) {
   const loc = useLocation();
   const [check, setCheck] = useState<CheckState>("idle");
   const [attempts, setAttempts] = useState(0);
+  // Track whether the one-time onboarding/superadmin check has succeeded for
+  // this user. Once it has, never re-show the full-screen "Loading..." overlay
+  // on subsequent navigations or auth-context updates — that was the source of
+  // the reload flashes on every click and tab refocus.
+  const checkedForUserRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!hydrated || loading) return;
@@ -48,10 +53,18 @@ export default function ProtectedShell({ children }: { children?: ReactNode }) {
   useEffect(() => {
     if (!hydrated || loading) return;
     if (!user || loc.pathname === "/onboarding") { setCheck("ok"); return; }
+    // Skip re-running the full check (and re-showing the loading overlay) if
+    // we've already validated this user once. Only `attempts` (manual retry)
+    // or a user identity change should force a re-check.
+    const key = `${user.id}:${attempts}`;
+    if (checkedForUserRef.current === key) return;
     let cancelled = false;
+    const firstRun = checkedForUserRef.current === null || !checkedForUserRef.current.startsWith(user.id + ":");
 
     const run = async (attempt: number) => {
-      setCheck("checking");
+      // Only show the full-screen loading overlay on the very first check
+      // for this user. Subsequent re-runs (e.g. retry) flip silently.
+      if (firstRun && attempt === 0) setCheck("checking");
       try {
         // Superadmins skip onboarding and go to /admin
         const { data: sa } = await supabase.from("superadmins").select("id").eq("user_id", user.id).maybeSingle();
@@ -71,11 +84,13 @@ export default function ProtectedShell({ children }: { children?: ReactNode }) {
         // No profile row yet (handle_new_user trigger may still be running) → retry briefly
         if (!data) {
           if (attempt < 5) { setTimeout(() => run(attempt + 1), 600 * (attempt + 1)); return; }
+          checkedForUserRef.current = key;
           setCheck("ok");
           return;
         }
         const isStaffOnly = roles.length > 0 && !roles.some((r) => ["owner", "admin", "manager", "head_of_operations"].includes(r));
         if (isStaffOnly || data.onboarding_completed === false) {
+          checkedForUserRef.current = key;
           setCheck("ok");
           return;
         }
@@ -87,6 +102,7 @@ export default function ProtectedShell({ children }: { children?: ReactNode }) {
           nav({ to: "/auth" });
           return;
         }
+        checkedForUserRef.current = key;
         setCheck("ok");
       } catch (e) {
         if (cancelled) return;
@@ -96,7 +112,12 @@ export default function ProtectedShell({ children }: { children?: ReactNode }) {
     };
     run(0);
     return () => { cancelled = true; };
-  }, [user, loc.pathname, attempts, nav, hydrated, loading, roles]);
+    // NOTE: deliberately exclude `loc.pathname` and `roles` from deps — they
+    // change on every navigation / role-row refresh and would re-trigger the
+    // loading overlay on every click. The check is per-user, gated by the
+    // ref above.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, attempts, hydrated, loading]);
 
   if (!hydrated || loading || !user || check === "checking" || check === "idle") {
     return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Loading...</div>;
