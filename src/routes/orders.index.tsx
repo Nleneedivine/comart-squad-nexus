@@ -420,6 +420,29 @@ function OrdersIndex() {
                     <TableCell className="text-sm">{assignee?.name || <span className="text-muted-foreground">—</span>}</TableCell>
                     <TableCell>{o.units}</TableCell>
                     <TableCell>{formatNaira(Number(o.amount))}</TableCell>
+                    {canDelete && (
+                      <TableCell className="text-right">
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10" aria-label="Delete order">
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete order {o.order_number || o.id.slice(0, 8)}?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This permanently removes the order and its items, status history, and call attempts. This cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => deleteOrders([o.id])}>Delete</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </TableCell>
+                    )}
                   </TableRow>
                 );
               })}
