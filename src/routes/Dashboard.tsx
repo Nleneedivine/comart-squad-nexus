@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import MyPerformanceCard from "@/components/MyPerformanceCard";
 import StaffPerformanceCard from "@/components/StaffPerformanceCard";
 import LowStockCard from "@/components/LowStockCard";
+import AdminInbox from "@/components/AdminInbox";
 
 import { SentryErrorBoundary, captureError } from "@/lib/sentry";
 
