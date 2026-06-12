@@ -365,6 +365,26 @@ function OrdersIndex() {
               <Button size="sm" variant="outline" onClick={() => bulkArchive(true)}><Archive className="h-3 w-3 mr-1" />Archive</Button>
             )}
 
+            {canDelete && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button size="sm" variant="destructive"><Trash className="h-3 w-3 mr-1" />Delete</Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete {selected.size} order(s)?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This permanently removes the selected orders and their items, status history, and call attempts. This cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => deleteOrders(Array.from(selected))}>Delete</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+
             <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>Clear</Button>
           </div>
         )}
