@@ -74,6 +74,11 @@ function AdminOverview() {
           <div><div className="text-2xl font-bold text-red-600">{stats.past_due}</div><div className="text-xs text-muted-foreground">Past due</div></div>
         </div>
       </Card>
+
+      <div>
+        <h2 className="text-lg font-semibold mb-3">AI Assistant</h2>
+        <SuperAdminChat />
+      </div>
     </div>
   );
 }
