@@ -15,7 +15,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { formatNaira } from "@/lib/format";
 import { toast } from "sonner";
-import { Plus, Trash2, Archive, ArchiveRestore, UserPlus, RefreshCw, Check, ChevronsUpDown, UserCheck } from "lucide-react";
+import { Plus, Trash2, Archive, ArchiveRestore, UserPlus, RefreshCw, Check, ChevronsUpDown, UserCheck, Trash } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/orders/")({
@@ -27,7 +28,8 @@ const STATUSES = ["pending", "processing", "shipped", "delivered", "cancelled"] 
 type Mode = "existing" | "new";
 
 function OrdersIndex() {
-  const { store, user } = useAuth();
+  const { store, user, roles } = useAuth();
+  const canDelete = roles.includes("owner") || roles.includes("admin");
   const [orders, setOrders] = useState<any[]>([]);
   const [customers, setCustomers] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
@@ -199,6 +201,22 @@ function OrdersIndex() {
     toast.success(`${archive ? "Archived" : "Restored"} ${ids.length}`); setSelected(new Set()); load();
   };
 
+  const deleteOrders = async (ids: string[]) => {
+    if (!canDelete) return toast.error("Only owners/admins can delete orders");
+    if (!store || !user || ids.length === 0) return;
+    // Clean up child rows first to avoid FK violations
+    await supabase.from("order_items").delete().in("order_id", ids);
+    await supabase.from("order_status_history").delete().in("order_id", ids);
+    await supabase.from("order_call_attempts").delete().in("order_id", ids);
+    const { error } = await supabase.from("orders").delete().in("id", ids).eq("store_id", store.id);
+    if (error) return toast.error(error.message);
+    await supabase.from("activity_log").insert({ store_id: store.id, user_id: user.id, type: "order", activity: `Deleted ${ids.length} order(s)` });
+    toast.success(`Deleted ${ids.length} order(s)`);
+    setSelected(new Set());
+    load();
+  };
+
+
   // Round-robin assign all unassigned orders in current view
   const distributeRoundRobin = async () => {
     if (!store || !user) return;
@@ -347,6 +365,26 @@ function OrdersIndex() {
               <Button size="sm" variant="outline" onClick={() => bulkArchive(true)}><Archive className="h-3 w-3 mr-1" />Archive</Button>
             )}
 
+            {canDelete && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button size="sm" variant="destructive"><Trash className="h-3 w-3 mr-1" />Delete</Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete {selected.size} order(s)?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This permanently removes the selected orders and their items, status history, and call attempts. This cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => deleteOrders(Array.from(selected))}>Delete</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+
             <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>Clear</Button>
           </div>
         )}
@@ -359,10 +397,11 @@ function OrdersIndex() {
               </TableHead>
               <TableHead>Order #</TableHead><TableHead>Date</TableHead><TableHead>Customer</TableHead>
               <TableHead>Status</TableHead><TableHead>Assignee</TableHead><TableHead>Units</TableHead><TableHead>Amount</TableHead>
+              {canDelete && <TableHead className="w-10"></TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filtered.length === 0 ? <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">No orders found.</TableCell></TableRow> :
+            {filtered.length === 0 ? <TableRow><TableCell colSpan={canDelete ? 9 : 8} className="text-center py-8 text-muted-foreground">No orders found.</TableCell></TableRow> :
               filtered.map(o => {
                 const assignee = staff.find(s => s.id === o.assigned_to);
                 const isDup = duplicateIds.has(o.id);
@@ -381,6 +420,29 @@ function OrdersIndex() {
                     <TableCell className="text-sm">{assignee?.name || <span className="text-muted-foreground">—</span>}</TableCell>
                     <TableCell>{o.units}</TableCell>
                     <TableCell>{formatNaira(Number(o.amount))}</TableCell>
+                    {canDelete && (
+                      <TableCell className="text-right">
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10" aria-label="Delete order">
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete order {o.order_number || o.id.slice(0, 8)}?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This permanently removes the order and its items, status history, and call attempts. This cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => deleteOrders([o.id])}>Delete</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </TableCell>
+                    )}
                   </TableRow>
                 );
               })}
