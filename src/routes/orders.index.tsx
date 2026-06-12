@@ -201,6 +201,22 @@ function OrdersIndex() {
     toast.success(`${archive ? "Archived" : "Restored"} ${ids.length}`); setSelected(new Set()); load();
   };
 
+  const deleteOrders = async (ids: string[]) => {
+    if (!canDelete) return toast.error("Only owners/admins can delete orders");
+    if (!store || !user || ids.length === 0) return;
+    // Clean up child rows first to avoid FK violations
+    await supabase.from("order_items").delete().in("order_id", ids);
+    await supabase.from("order_status_history").delete().in("order_id", ids);
+    await supabase.from("order_call_attempts").delete().in("order_id", ids);
+    const { error } = await supabase.from("orders").delete().in("id", ids).eq("store_id", store.id);
+    if (error) return toast.error(error.message);
+    await supabase.from("activity_log").insert({ store_id: store.id, user_id: user.id, type: "order", activity: `Deleted ${ids.length} order(s)` });
+    toast.success(`Deleted ${ids.length} order(s)`);
+    setSelected(new Set());
+    load();
+  };
+
+
   // Round-robin assign all unassigned orders in current view
   const distributeRoundRobin = async () => {
     if (!store || !user) return;
