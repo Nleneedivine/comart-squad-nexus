@@ -29,7 +29,7 @@ type Mode = "existing" | "new";
 
 function OrdersIndex() {
   const { store, user, roles } = useAuth();
-  const canDelete = roles.includes("owner") || roles.includes("admin");
+  const canDelete = roles.some((r) => ["owner", "admin", "manager", "head_of_operations"].includes(r));
   const [orders, setOrders] = useState<any[]>([]);
   const [customers, setCustomers] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
