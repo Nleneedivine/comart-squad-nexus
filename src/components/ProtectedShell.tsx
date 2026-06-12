@@ -27,6 +27,11 @@ export default function ProtectedShell({ children }: { children?: ReactNode }) {
   const loc = useLocation();
   const [check, setCheck] = useState<CheckState>("idle");
   const [attempts, setAttempts] = useState(0);
+  // Track whether the one-time onboarding/superadmin check has succeeded for
+  // this user. Once it has, never re-show the full-screen "Loading..." overlay
+  // on subsequent navigations or auth-context updates — that was the source of
+  // the reload flashes on every click and tab refocus.
+  const checkedForUserRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!hydrated || loading) return;
