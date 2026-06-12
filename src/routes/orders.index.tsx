@@ -49,7 +49,7 @@ function OrdersIndex() {
   const load = async () => {
     if (!store) return;
     const [{ data: o }, { data: c }, { data: p }, { data: roles }] = await Promise.all([
-      supabase.from("orders").select("*, customers(name)").eq("store_id", store.id).order("created_at", { ascending: false }),
+      supabase.from("orders").select("*, customers(name, phone, full_address)").eq("store_id", store.id).order("created_at", { ascending: false }),
       supabase.from("customers").select("id, name, phone, full_address").eq("store_id", store.id).order("name"),
       supabase.from("products").select("id, name, selling_price, stock_qty").eq("store_id", store.id).eq("status", "active"),
       supabase.from("user_roles").select("user_id, role, is_suspended, profiles:user_id(id, full_name, email)").eq("store_id", store.id),
@@ -72,6 +72,35 @@ function OrdersIndex() {
     if (to && o.created_at > to + "T23:59:59") return false;
     return true;
   }), [orders, statusFilter, customerFilter, from, to, showArchived]);
+
+  // Duplicate detection: orders sharing customer phone OR address (case/space-insensitive)
+  // within a 24h window of each other. Builds a Set of order IDs flagged as possible duplicates.
+  const duplicateIds = useMemo(() => {
+    const norm = (s: any) => (s == null ? "" : String(s).trim().toLowerCase().replace(/\s+/g, " "));
+    const WINDOW_MS = 24 * 60 * 60 * 1000;
+    const enriched = orders.map(o => ({
+      id: o.id,
+      t: new Date(o.created_at).getTime(),
+      phone: norm(o.customers?.phone),
+      addr: norm(o.customers?.full_address),
+      name: norm(o.customers?.name || o.customer_name),
+    }));
+    const flagged = new Set<string>();
+    for (let i = 0; i < enriched.length; i++) {
+      for (let j = i + 1; j < enriched.length; j++) {
+        const a = enriched[i], b = enriched[j];
+        if (Math.abs(a.t - b.t) > WINDOW_MS) continue;
+        const phoneMatch = a.phone && a.phone === b.phone;
+        const addrMatch = a.addr && a.addr === b.addr;
+        const nameMatch = a.name && a.name === b.name;
+        if (phoneMatch || addrMatch || (nameMatch && (a.phone || a.addr) && (a.phone === b.phone || a.addr === b.addr))) {
+          flagged.add(a.id); flagged.add(b.id);
+        }
+      }
+    }
+    return flagged;
+  }, [orders]);
+
 
   const total = useMemo(() => items.reduce((sum, it) => {
     const p = products.find(pp => pp.id === it.product_id);
@@ -338,10 +367,16 @@ function OrdersIndex() {
             {filtered.length === 0 ? <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">No orders found.</TableCell></TableRow> :
               filtered.map(o => {
                 const assignee = staff.find(s => s.id === o.assigned_to);
+                const isDup = duplicateIds.has(o.id);
                 return (
-                  <TableRow key={o.id} data-state={selected.has(o.id) ? "selected" : undefined}>
+                  <TableRow key={o.id} data-state={selected.has(o.id) ? "selected" : undefined} className={isDup ? "bg-amber-50 dark:bg-amber-950/30 hover:bg-amber-100/70 dark:hover:bg-amber-950/40" : undefined}>
                     <TableCell><Checkbox checked={selected.has(o.id)} onCheckedChange={(v) => toggleOne(o.id, !!v)} /></TableCell>
-                    <TableCell className="font-mono text-xs"><Link to="/orders/$id" params={{ id: o.id }} className="hover:text-primary">{o.order_number || o.id.slice(0, 8)}</Link></TableCell>
+                    <TableCell className="font-mono text-xs">
+                      <div className="flex items-center gap-2">
+                        <Link to="/orders/$id" params={{ id: o.id }} className="hover:text-primary">{o.order_number || o.id.slice(0, 8)}</Link>
+                        {isDup && <Badge variant="outline" className="border-amber-500 text-amber-700 dark:text-amber-300 bg-amber-100/60 dark:bg-amber-950/50 text-[10px] py-0 px-1.5">Possible Duplicate</Badge>}
+                      </div>
+                    </TableCell>
                     <TableCell>{new Date(o.created_at).toLocaleDateString()}</TableCell>
                     <TableCell>{o.customers?.name || o.customer_name || "—"}</TableCell>
                     <TableCell><Badge variant="outline">{o.status}</Badge></TableCell>
