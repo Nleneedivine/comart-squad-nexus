@@ -106,8 +106,40 @@ export async function processWpFormsOrder(
       customerId = c.id;
     }
 
-    const qty = Math.max(1, Number(qtyRaw || 1));
-    const amount = Number(amountRaw || 0);
+    // Parse quantity which may be a plain number OR a descriptive string like
+    // "2 BOTTLES OF HAPPY FAMILY MANPOWER SYRUP 25,000 (BESTSELLER)".
+    // Extract leading int as units, and price-before-parens as amount.
+    let qty = 1;
+    let parsedAmountFromQty: number | null = null;
+    try {
+      if (qtyRaw != null && String(qtyRaw).trim() !== "") {
+        const raw = String(qtyRaw).trim();
+        if (/^\d+(\.\d+)?$/.test(raw)) {
+          qty = Math.max(1, Math.floor(Number(raw)));
+        } else {
+          const leading = raw.match(/^\s*(\d+)/);
+          if (leading) {
+            qty = Math.max(1, parseInt(leading[1], 10));
+          } else {
+            console.warn("[wpforms] Could not parse leading qty, defaulting to 1. Raw:", raw);
+            qty = 1;
+          }
+          // Price = last number before "(" — strip commas
+          const beforeParen = raw.split("(")[0];
+          const numMatches = beforeParen.match(/[\d,]+(?:\.\d+)?/g) || [];
+          const priceCandidates = numMatches.slice(1)
+            .map(s => Number(s.replace(/,/g, "")))
+            .filter(n => !isNaN(n) && n > 0);
+          if (priceCandidates.length > 0) {
+            parsedAmountFromQty = priceCandidates[priceCandidates.length - 1];
+          }
+        }
+      }
+    } catch (e) {
+      console.warn("[wpforms] qty parse error, defaulting to 1:", e);
+      qty = 1;
+    }
+    const amount = Number(amountRaw || 0) || parsedAmountFromQty || 0;
     const assignTo = await pickRoundRobinAssignee(storeId);
 
     const { data: order, error: oErr } = await supabaseAdmin.from("orders").insert({
