@@ -1,95 +1,54 @@
+## Super Admin AI Assistant — Plan
 
-# Platform Integrations System — Fix & Extend Plan
+A chat surface on the Super Admin dashboard (`/admin`) powered by Lovable AI (`google/gemini-3-flash-preview`) that lets you query the platform, message store admins, and perform configuration changes via tool-calling.
 
-You already have a working integrations foundation. I'll extend it instead of rebuilding.
+### Mention system
+- **`@`** — opens a popover listing **all stores** (name + owner email). Inserts `@store:<id>` token into the prompt; the AI receives the resolved store context.
+- **`/`** — opens a popover listing **all app routes/functions** (Dashboard, Orders, Inventory, Staff, Finance, Settings, Admin pages, etc.) pulled from a curated registry. Inserts `/page:<path>` token.
+- Both popovers are keyboard-navigable (↑/↓/Enter/Esc), filterable by typing.
 
-## What already exists (KEEP, do not rebuild)
+### Admin inbox (in-app)
+- New table `admin_messages` (sender_id, store_id, recipient_user_id, subject, body, parent_id, read_at, created_at).
+- Store admins see a new "Messages from Platform" panel in their dashboard with unread badge and reply.
+- Super Admin sees thread view per store.
 
-- `integration_catalog` — platform-level catalog with pricing, active flag, RLS for superadmins
-- `store_integrations` — per-tenant activation rows (status: locked/pending/active, paystack ref)
-- `webhook_deliveries` — incoming webhook log (store_id, source, status, payload, result, error)
-- `POST /api/public/wp-forms-webhook` — already parses WPForms payloads, creates customers + orders + order_items, runs round-robin assignment, logs to `webhook_deliveries`
-- `/admin/integrations` — superadmin catalog + activation approvals
-- `/integrations` — tenant marketplace
-- `initIntegrationPurchase` server fn — Paystack checkout
+### AI tools (server-side, `createServerFn` w/ super-admin guard)
+The AI chat route exposes these tools — each verifies caller is a superadmin:
+1. `list_stores` — search/filter stores
+2. `get_store_details` — full store + owner + staff + recent orders + subscription
+3. `list_store_staff` — staff of a store with status
+4. `message_store_admin` — send message to a store's owner (inserts into `admin_messages`)
+5. `list_recent_errors` — pull from `app_errors` for a store
+6. `toggle_feature_flag` — flip feature flag for a store/global
+7. `suspend_user` / `unsuspend_user` — toggle `user_roles.is_suspended`
+8. `update_subscription_status` — change plan/status
+9. `close_store` — wraps existing `superadmin_delete_store`
+10. `list_recent_orders` — last N orders for a store
+11. `broadcast_message` — create a platform broadcast
 
-## What's actually missing (BUILD)
+Each tool returns compact JSON. Mutating tools log to `platform_audit_log`.
 
-### 1. Schema extensions (migration)
-Add to `store_integrations` (don't create a duplicate `integrations` table):
-- `api_key text unique` — generated per tenant per integration
-- `settings jsonb not null default '{}'` — holds field mappings, etc.
-- `last_webhook_at timestamptz` — for "Last received"
-- `orders_imported_count int not null default 0` — increment counter
+### Files
+- **Migration**: `admin_messages` table + RLS (superadmins write, recipient + superadmins read) + `mark_admin_message_read` RPC.
+- **`src/lib/admin-ai.functions.ts`** — `superAdminChat` serverFn streaming via AI SDK with all tools; guards via `has_role('admin')` + `superadmins` table.
+- **`src/components/admin/SuperAdminChat.tsx`** — floating chat panel with AI Elements (`Conversation`, `Message`, `MessageResponse`, `PromptInput`, `Tool`), mention popovers, markdown rendering.
+- **`src/components/admin/MentionPopover.tsx`** — shared `@`/`/` popover.
+- **`src/lib/page-registry.ts`** — curated list of app routes for `/` mentions.
+- **`src/routes/admin.index.tsx`** — embed `<SuperAdminChat />`.
+- **`src/components/AdminInbox.tsx`** + tile on store admin Dashboard for incoming messages.
+- **`src/routes/api/admin-chat.ts`** — streaming route (`toUIMessageStreamResponse`) wired to Lovable AI Gateway helper.
+- **`src/lib/ai-gateway.server.ts`** — gateway provider helper (if not present).
 
-Add to `webhook_deliveries`:
-- `response jsonb` — what we sent back
-- `integration_key text` — so superadmin can filter by WPForms
+### Technical notes
+- Streaming via AI SDK `streamText` + `stepCountIs(50)` for tool loops.
+- Every tool re-verifies superadmin status server-side (defense in depth).
+- Mention tokens are resolved server-side before being passed to the model so it sees structured context, not raw `@store:uuid`.
+- Tool calls render with `<Tool>` accordion (collapsed by default) so you can audit what the AI did.
+- Confirmation step for destructive tools (`close_store`, `suspend_user`) — AI proposes, you click "Confirm".
 
-New RPC `generate_integration_api_key(_store_id, _key)` — superadmin or store admin only, rotates key.
+### Out of scope (would need follow-up)
+- Editing source code / route layouts (only data/settings can be changed).
+- Free-text search across customers (you said stores only on `@`).
+- Voice input.
 
-### 2. Extend webhook endpoint
-Keep existing `/api/public/wp-forms-webhook` (HMAC mode for store-secret path) AND add NEW endpoint `/api/public/integrations/wpforms/webhook` that:
-- Reads `x-api-key` header
-- Looks up `store_integrations` by api_key, status='active', integration_key='wpforms'
-- Rejects invalid/inactive keys (logged to webhook_deliveries with store_id null + error)
-- Applies tenant's saved field mapping from `settings.field_mapping`
-- Calls the SAME order creation + round-robin logic as the existing webhook (extract into shared helper `processWpFormsOrder` in `src/lib/wpforms.server.ts`)
-- Sets order metadata source='wpforms'
-- Increments `orders_imported_count`, sets `last_webhook_at`
-- Logs full request+response into `webhook_deliveries`
-
-Auto-assignment: existing `tg_orders_auto_assign` trigger ALREADY runs on every order insert — orders from this endpoint will be distributed identically to AI-imported orders. No new assignment engine.
-
-### 3. Tenant UI — `/integrations` WPForms card enhancements
-Only the WPForms card gets new actions (other cards untouched):
-- "Connect" → opens setup modal showing webhook URL + API key + instructions (install WPForms Pro, enable Webhooks addon, paste URL, add `x-api-key` header)
-- "Generate API Key" (rotate) button inside modal
-- "Copy" buttons for URL and key
-- Status badge (active/pending/inactive)
-- "Last webhook received" timestamp
-- "Orders imported" count
-- "Configure Fields" → opens mapping editor (WPForms field name → Comart+ field: customer_name/phone/product/quantity/address/notes/amount). Saved to `store_integrations.settings.field_mapping`
-- "Test Connection" → posts a sample payload to the endpoint with the tenant's key, shows the response
-
-### 4. Superadmin WPForms panel — `/admin/integrations`
-Append a "WPForms" stats block (existing catalog table stays):
-- Global enable/disable toggle (uses existing `integration_catalog.is_active` for key='wpforms')
-- Monthly price (already editable in existing table)
-- Active tenants count (`store_integrations` where integration_key='wpforms' and status='active')
-- Webhook traffic (count of `webhook_deliveries` source='wp-forms' last 24h / 7d)
-- Failed requests (status='failed' or 'rejected' last 24h)
-
-Seed `integration_catalog` with `wpforms` row if missing.
-
-## Technical implementation map
-
-```text
-DB migration
- ├─ ALTER store_integrations  (api_key, settings, last_webhook_at, orders_imported_count)
- ├─ ALTER webhook_deliveries  (response, integration_key)
- ├─ CREATE FUNCTION generate_integration_api_key
- └─ INSERT into integration_catalog (wpforms) if not exists
-
-New file: src/lib/wpforms.server.ts
- └─ processWpFormsOrder(storeId, payload, mapping) — extracted from existing route
-
-New file: src/routes/api/public/integrations.wpforms.webhook.ts
- └─ x-api-key auth → processWpFormsOrder → log delivery + bump counter
-
-Edit: src/routes/api/public/wp-forms-webhook.ts
- └─ Refactor to call processWpFormsOrder (no behavior change, just dedupe)
-
-Edit: src/routes/integrations.tsx
- └─ Special render path for catalog row where key='wpforms':
-     Connect modal, mapping dialog, test-connection, stats
-
-Edit: src/routes/admin.integrations.tsx
- └─ Add WPForms metrics block at top
-```
-
-## Out of scope (per "fix & extend only")
-- Won't create a duplicate `integrations` table — `store_integrations` already serves this purpose
-- Won't create a duplicate `webhook_logs` table — `webhook_deliveries` already serves this purpose
-- Won't touch existing order creation, auto-assignment, or other integration cards
-- WooCommerce / Elementor / WhatsApp Checkout cards remain catalog-only until you ask for their endpoints
+Proceed?

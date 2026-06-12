@@ -47,6 +47,60 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_messages: {
+        Row: {
+          body: string
+          created_at: string
+          from_superadmin: boolean
+          id: string
+          parent_id: string | null
+          read_at: string | null
+          recipient_user_id: string | null
+          sender_id: string | null
+          store_id: string | null
+          subject: string | null
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          from_superadmin?: boolean
+          id?: string
+          parent_id?: string | null
+          read_at?: string | null
+          recipient_user_id?: string | null
+          sender_id?: string | null
+          store_id?: string | null
+          subject?: string | null
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          from_superadmin?: boolean
+          id?: string
+          parent_id?: string | null
+          read_at?: string | null
+          recipient_user_id?: string | null
+          sender_id?: string | null
+          store_id?: string | null
+          subject?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_messages_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "admin_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admin_messages_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agent_stocks: {
         Row: {
           agent_id: string
@@ -2868,6 +2922,7 @@ export type Database = {
           table_name: string
         }[]
       }
+      mark_admin_message_read: { Args: { _id: string }; Returns: undefined }
       mark_payroll_paid: { Args: { _period_id: string }; Returns: undefined }
       receive_purchase_order_items: {
         Args: { _items: Json; _po_id: string }

@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Building2, CreditCard, ShoppingCart, Users } from "lucide-react";
 import { formatNaira } from "@/lib/format";
+import SuperAdminChat from "@/components/admin/SuperAdminChat";
 
 export const Route = createFileRoute("/admin/")({
   component: AdminOverview,
@@ -73,6 +74,11 @@ function AdminOverview() {
           <div><div className="text-2xl font-bold text-red-600">{stats.past_due}</div><div className="text-xs text-muted-foreground">Past due</div></div>
         </div>
       </Card>
+
+      <div>
+        <h2 className="text-lg font-semibold mb-3">AI Assistant</h2>
+        <SuperAdminChat />
+      </div>
     </div>
   );
 }

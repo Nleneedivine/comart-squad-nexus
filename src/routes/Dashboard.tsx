@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import MyPerformanceCard from "@/components/MyPerformanceCard";
 import StaffPerformanceCard from "@/components/StaffPerformanceCard";
 import LowStockCard from "@/components/LowStockCard";
+import AdminInbox from "@/components/AdminInbox";
 
 import { SentryErrorBoundary, captureError } from "@/lib/sentry";
 
@@ -108,6 +109,7 @@ function Dashboard() {
 
   return (
     <div className="space-y-6">
+      {isAdmin && <AdminInbox />}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Dashboard</h1>
