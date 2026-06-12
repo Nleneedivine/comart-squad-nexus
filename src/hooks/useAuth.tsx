@@ -52,10 +52,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
       // Only react to identity transitions — ignore TOKEN_REFRESHED and INITIAL_SESSION
-      // which fire on tab focus/visibility and cause unnecessary reloads + loading flashes.
+      // which fire on tab focus/visibility. Do NOT replace the session reference either,
+      // because consumers (ProtectedShell, AppLayout) depend on `user` identity and a
+      // new reference triggers full-screen "Loading..." flashes on refocus.
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") {
-        // Still keep session reference fresh (new access token) without re-fetching roles.
-        if (s) setSession(s);
         return;
       }
       setSession(s);
@@ -68,6 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setLoading(false);
       }
     });
+
 
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
