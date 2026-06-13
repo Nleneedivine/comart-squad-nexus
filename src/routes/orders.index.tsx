@@ -75,8 +75,8 @@ function OrdersIndex() {
     return true;
   }), [orders, statusFilter, customerFilter, from, to, showArchived]);
 
-  // Duplicate detection: orders sharing BOTH customer name AND phone (case/space-insensitive)
-  // within a 24h window of each other.
+  // Duplicate detection: same customer name within 24h, AND either matching phone
+  // OR matching amount (phone is often missing/placeholder like "—").
   const duplicateIds = useMemo(() => {
     const norm = (s: any) => (s == null ? "" : String(s).trim().toLowerCase().replace(/\s+/g, " "));
     const normPhone = (s: any) => norm(s).replace(/\D/g, "");
@@ -86,13 +86,17 @@ function OrdersIndex() {
       t: new Date(o.created_at).getTime(),
       phone: normPhone(o.customers?.phone),
       name: norm(o.customers?.name || o.customer_name),
+      amount: Number(o.amount) || 0,
     }));
     const flagged = new Set<string>();
     for (let i = 0; i < enriched.length; i++) {
       for (let j = i + 1; j < enriched.length; j++) {
         const a = enriched[i], b = enriched[j];
         if (Math.abs(a.t - b.t) > WINDOW_MS) continue;
-        if (a.name && a.phone && a.name === b.name && a.phone === b.phone) {
+        if (!a.name || a.name !== b.name) continue;
+        const phoneMatch = a.phone && b.phone && a.phone === b.phone;
+        const amountMatch = a.amount > 0 && a.amount === b.amount;
+        if (phoneMatch || amountMatch) {
           flagged.add(a.id); flagged.add(b.id);
         }
       }
