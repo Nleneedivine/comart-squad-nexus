@@ -30,7 +30,14 @@ function SettingsPage() {
   const { user, store, roles, refresh } = useAuth();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<any>(null);
-  const [ops, setOps] = useState<{ max_call_attempts: number; auto_assign_enabled: boolean; auto_assign_strategy: string } | null>(null);
+  const [ops, setOps] = useState<{
+    max_call_attempts: number;
+    auto_assign_enabled: boolean;
+    auto_assign_strategy: string;
+    resumption_time: string | null;
+    late_deadline: string | null;
+  } | null>(null);
+  const [weights, setWeights] = useState<{ role_id: string; user_id: string; name: string; role: string; weight: number }[]>([]);
   const [closeConfirm, setCloseConfirm] = useState("");
   const [closing, setClosing] = useState(false);
   const isAdmin = roles.some(r => ["owner","admin","manager","head_of_operations"].includes(r));
@@ -55,8 +62,23 @@ function SettingsPage() {
 
   useEffect(() => {
     if (!store || !isAdmin) return;
-    supabase.from("stores").select("max_call_attempts, auto_assign_enabled, auto_assign_strategy").eq("id", store.id).maybeSingle()
+    supabase.from("stores").select("max_call_attempts, auto_assign_enabled, auto_assign_strategy, resumption_time, late_deadline").eq("id", store.id).maybeSingle()
       .then(({ data }) => data && setOps(data as any));
+    supabase.from("user_roles")
+      .select("id, user_id, role, assignment_weight, is_suspended, profiles:user_id(full_name, email)")
+      .eq("store_id", store.id)
+      .then(({ data }) => {
+        const rows = (data || [])
+          .filter((r: any) => !r.is_suspended && ["sales_rep","order_manager","customer_care","manager","admin","owner"].includes(r.role))
+          .map((r: any) => ({
+            role_id: r.id,
+            user_id: r.user_id,
+            name: r.profiles?.full_name || r.profiles?.email || r.user_id.slice(0,8),
+            role: r.role,
+            weight: r.assignment_weight ?? 1,
+          }));
+        setWeights(rows);
+      });
   }, [store, isAdmin]);
 
   const saveOps = async () => {
@@ -65,10 +87,22 @@ function SettingsPage() {
       max_call_attempts: ops.max_call_attempts,
       auto_assign_enabled: ops.auto_assign_enabled,
       auto_assign_strategy: ops.auto_assign_strategy,
+      resumption_time: ops.resumption_time || null,
+      late_deadline: ops.late_deadline || null,
     }).eq("id", store.id);
     if (error) return toast.error(error.message);
     toast.success("Operations settings saved");
   };
+
+  const saveWeights = async () => {
+    if (!store) return;
+    for (const w of weights) {
+      const { error } = await supabase.from("user_roles").update({ assignment_weight: Math.max(0, w.weight | 0) }).eq("id", w.role_id);
+      if (error) { toast.error(error.message); return; }
+    }
+    toast.success("Weights saved");
+  };
+
 
   const lockedUntil = profile?.avatar_locked_until ? new Date(profile.avatar_locked_until) : null;
   const isLocked = lockedUntil && isAfter(lockedUntil, new Date());
