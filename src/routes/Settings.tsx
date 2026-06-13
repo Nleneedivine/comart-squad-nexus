@@ -203,15 +203,63 @@ function SettingsPage() {
                       <SelectContent>
                         <SelectItem value="least_load">Least load (fewest open orders)</SelectItem>
                         <SelectItem value="round_robin">Round robin (rotate fairly)</SelectItem>
+                        <SelectItem value="weighted">Weighted distribution</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
+
+                  {ops.auto_assign_enabled && ops.auto_assign_strategy === "weighted" && (
+                    <div className="space-y-2 border rounded-md p-3">
+                      <Label className="text-sm">Staff weights</Label>
+                      <p className="text-xs text-muted-foreground">Higher weight = receives proportionally more orders. Set 0 to exclude.</p>
+                      <div className="space-y-2 max-h-64 overflow-y-auto">
+                        {weights.length === 0 ? (
+                          <p className="text-xs text-muted-foreground">No eligible staff yet.</p>
+                        ) : weights.map((w, idx) => (
+                          <div key={w.role_id} className="flex items-center gap-2">
+                            <div className="flex-1 text-sm truncate">{w.name} <span className="text-xs text-muted-foreground">({w.role})</span></div>
+                            <Input
+                              type="number"
+                              min={0}
+                              className="w-24"
+                              value={w.weight}
+                              onChange={e => {
+                                const n = [...weights];
+                                n[idx] = { ...w, weight: Math.max(0, Number(e.target.value) || 0) };
+                                setWeights(n);
+                              }}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                      <Button size="sm" variant="outline" onClick={saveWeights}>Save weights</Button>
+                    </div>
+                  )}
+
+                  <div className="border-t pt-4 space-y-3">
+                    <div>
+                      <h3 className="font-semibold">Attendance policy</h3>
+                      <p className="text-sm text-muted-foreground">Set expected start time and the latest acceptable clock-in. Anyone clocking in after the deadline is marked Late.</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Resumption time</Label>
+                        <Input type="time" value={ops.resumption_time || ""} onChange={e => setOps({ ...ops, resumption_time: e.target.value })} />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Latest clock-in (Late after)</Label>
+                        <Input type="time" value={ops.late_deadline || ""} onChange={e => setOps({ ...ops, late_deadline: e.target.value })} />
+                      </div>
+                    </div>
+                  </div>
+
                   <Button onClick={saveOps}>Save operations settings</Button>
                 </div>
               )}
             </Card>
           </TabsContent>
         )}
+
         <TabsContent value="general">
           <Card className="p-6 text-sm text-muted-foreground">General settings will appear here.</Card>
         </TabsContent>
