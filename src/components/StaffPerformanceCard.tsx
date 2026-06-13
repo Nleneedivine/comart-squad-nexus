@@ -60,7 +60,7 @@ export default function StaffPerformanceCard() {
       setLoading(true);
       const { start, end } = rangeDates(range);
       const [{ data: members }, { data: stats }, { data: active }] = await Promise.all([
-        supabase.from("user_roles").select("user_id, is_suspended, profiles(full_name, email)").eq("store_id", store.id),
+        supabase.rpc("get_store_members_detail", { _store_id: store.id }),
         supabase.from("staff_workload_stats").select("*").eq("store_id", store.id).gte("period_start", start).lte("period_start", end),
         supabase.from("orders").select("assigned_to").eq("store_id", store.id).eq("is_archived", false).in("status", ["pending","processing","shipped"]),
       ]);
@@ -70,8 +70,8 @@ export default function StaffPerformanceCard() {
         if (map[m.user_id]) return;
         map[m.user_id] = {
           staff_id: m.user_id,
-          name: m.profiles?.full_name || m.profiles?.email || "—",
-          email: m.profiles?.email || "",
+          name: m.full_name || m.email || "—",
+          email: m.email || "",
           assigned: 0, completed: 0, cancelled: 0, expired: 0, active: 0, rate: 0,
         };
       });
