@@ -277,7 +277,7 @@ function OrdersIndex() {
             <div className="flex items-center gap-2 border rounded-md px-3 py-1.5 bg-muted/30">
               <Switch
                 checked={autoAssign.enabled}
-                onCheckedChange={(v) => updateAutoAssign({ ...autoAssign, enabled: v })}
+                onCheckedChange={(v: boolean) => updateAutoAssign({ ...autoAssign, enabled: v })}
                 aria-label="Auto-assign new orders"
               />
               <span className="text-sm font-medium">Auto-assign</span>
