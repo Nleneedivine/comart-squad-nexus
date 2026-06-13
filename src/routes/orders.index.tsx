@@ -271,11 +271,32 @@ function OrdersIndex() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div><h1 className="text-2xl font-bold">Orders</h1><p className="text-sm text-muted-foreground">Manage all orders across channels.</p></div>
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex gap-2 flex-wrap items-center">
+          {isAdmin && autoAssign && (
+            <div className="flex items-center gap-2 border rounded-md px-3 py-1.5 bg-muted/30">
+              <Switch
+                checked={autoAssign.enabled}
+                onCheckedChange={(v) => updateAutoAssign({ ...autoAssign, enabled: v })}
+                aria-label="Auto-assign new orders"
+              />
+              <span className="text-sm font-medium">Auto-assign</span>
+              {autoAssign.enabled && (
+                <Select value={autoAssign.strategy} onValueChange={(v) => updateAutoAssign({ ...autoAssign, strategy: v })}>
+                  <SelectTrigger className="h-8 w-40 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="least_load">Least load</SelectItem>
+                    <SelectItem value="round_robin">Round robin</SelectItem>
+                    <SelectItem value="weighted">Weighted</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+          )}
           <Button variant="outline" onClick={distributeRoundRobin}><UserCheck className="h-4 w-4 mr-1" />Auto-distribute</Button>
           <Button variant="outline" onClick={() => setShowArchived(v => !v)}>
             {showArchived ? <><ArchiveRestore className="h-4 w-4 mr-1" />Show Active</> : <><Archive className="h-4 w-4 mr-1" />Show Archived</>}
           </Button>
+
           <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) resetForm(); }}>
             <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-1" />Create Order</Button></DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
