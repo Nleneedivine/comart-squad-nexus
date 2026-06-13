@@ -30,6 +30,7 @@ type Mode = "existing" | "new";
 function OrdersIndex() {
   const { store, user, roles } = useAuth();
   const canDelete = roles.some((r) => ["owner", "admin", "manager", "head_of_operations"].includes(r));
+  const isAdmin = canDelete;
   const [orders, setOrders] = useState<any[]>([]);
   const [customers, setCustomers] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
@@ -47,14 +48,16 @@ function OrdersIndex() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkStatus, setBulkStatus] = useState<string>("");
   const [bulkAssignee, setBulkAssignee] = useState<string>("");
+  const [autoAssign, setAutoAssign] = useState<{ enabled: boolean; strategy: string } | null>(null);
 
   const load = async () => {
     if (!store) return;
-    const [{ data: o }, { data: c }, { data: p }, { data: roles }] = await Promise.all([
+    const [{ data: o }, { data: c }, { data: p }, { data: roles }, { data: st }] = await Promise.all([
       supabase.from("orders").select("*, customers(name, phone, full_address)").eq("store_id", store.id).order("created_at", { ascending: false }),
       supabase.from("customers").select("id, name, phone, full_address").eq("store_id", store.id).order("name"),
       supabase.from("products").select("id, name, selling_price, stock_qty").eq("store_id", store.id).eq("status", "active"),
       supabase.from("user_roles").select("user_id, role, is_suspended, profiles:user_id(id, full_name, email)").eq("store_id", store.id),
+      supabase.from("stores").select("auto_assign_enabled, auto_assign_strategy").eq("id", store.id).maybeSingle(),
     ]);
     setOrders(o || []); setCustomers(c || []); setProducts(p || []);
     const list = (roles || []).filter((r: any) => !r.is_suspended).map((r: any) => ({
@@ -62,8 +65,20 @@ function OrdersIndex() {
     }));
     const dedup = Array.from(new Map(list.map((x: any) => [x.id, x])).values());
     setStaff(dedup);
+    if (st) setAutoAssign({ enabled: !!st.auto_assign_enabled, strategy: st.auto_assign_strategy || "least_load" });
   };
   useEffect(() => { load(); }, [store]);
+
+  const updateAutoAssign = async (next: { enabled: boolean; strategy: string }) => {
+    if (!store) return;
+    setAutoAssign(next);
+    const { error } = await supabase.from("stores").update({
+      auto_assign_enabled: next.enabled, auto_assign_strategy: next.strategy,
+    }).eq("id", store.id);
+    if (error) toast.error(error.message);
+    else toast.success(next.enabled ? `Auto-assign on (${next.strategy.replace("_"," ")})` : "Auto-assign off — manual mode");
+  };
+
 
   const filtered = useMemo(() => orders.filter(o => {
     if (!showArchived && o.is_archived) return false;
