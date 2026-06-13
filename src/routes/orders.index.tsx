@@ -57,12 +57,12 @@ function OrdersIndex() {
       supabase.from("orders").select("*, customers(name, phone, full_address)").eq("store_id", store.id).order("created_at", { ascending: false }),
       supabase.from("customers").select("id, name, phone, full_address").eq("store_id", store.id).order("name"),
       supabase.from("products").select("id, name, selling_price, stock_qty").eq("store_id", store.id).eq("status", "active"),
-      supabase.from("user_roles").select("user_id, role, is_suspended, profiles:user_id(id, full_name, email)").eq("store_id", store.id),
+      supabase.rpc("get_store_members_detail", { _store_id: store.id }),
       supabase.from("stores").select("auto_assign_enabled, auto_assign_strategy").eq("id", store.id).maybeSingle(),
     ]);
     setOrders(o || []); setCustomers(c || []); setProducts(p || []);
     const list = (roles || []).filter((r: any) => !r.is_suspended).map((r: any) => ({
-      id: r.user_id, name: r.profiles?.full_name || r.profiles?.email || r.user_id.slice(0, 8), role: r.role,
+      id: r.user_id, name: r.full_name || r.email || r.user_id.slice(0, 8), role: (r.roles && r.roles[0]) || "",
     }));
     const dedup = Array.from(new Map(list.map((x: any) => [x.id, x])).values());
     setStaff(dedup);
