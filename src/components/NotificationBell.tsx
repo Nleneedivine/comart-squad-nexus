@@ -59,14 +59,29 @@ export default function NotificationBell() {
     setItems((prev) => prev.map((i) => ({ ...i, read_at: i.read_at ?? new Date().toISOString() })));
   };
 
+  const fallbackLink = (n: Notif): string | null => {
+    const k = n.kind || "";
+    if (k === "new_order" || k === "duplicate_order" || k === "duplicate") return "/orders";
+    if (k === "failed_webhook" || k === "parse_error") return "/webhooks";
+    if (k === "payment_event" || k === "wallet") return "/wallet";
+    if (k === "integration" || k === "success") return "/integrations";
+    if (k === "task") return "/tasks";
+    if (k === "chat" || k === "message") return "/chat";
+    if (k === "broadcast") return "/admin/broadcasts";
+    if (k === "attendance") return "/attendance";
+    return null;
+  };
+
   const openNotif = async (n: Notif) => {
     if (!n.read_at) {
       await supabase.from("notifications").update({ read_at: new Date().toISOString() }).eq("id", n.id);
       setItems((prev) => prev.map((i) => i.id === n.id ? { ...i, read_at: new Date().toISOString() } : i));
     }
     setOpen(false);
-    if (n.link) {
-      try { navigate({ to: n.link }); } catch { window.location.href = n.link; }
+    const target = n.link || fallbackLink(n);
+    if (target) {
+      // Use window.location for max compatibility with dynamic paths like /orders/<uuid>
+      window.location.href = target;
     }
   };
 
