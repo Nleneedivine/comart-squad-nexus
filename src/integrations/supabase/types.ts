@@ -245,7 +245,13 @@ export type Database = {
       attendance: {
         Row: {
           clock_in: string
+          clock_in_lat: number | null
+          clock_in_lng: number | null
+          clock_in_photo_url: string | null
           clock_out: string | null
+          clock_out_lat: number | null
+          clock_out_lng: number | null
+          clock_out_photo_url: string | null
           created_at: string
           id: string
           store_id: string
@@ -253,7 +259,13 @@ export type Database = {
         }
         Insert: {
           clock_in?: string
+          clock_in_lat?: number | null
+          clock_in_lng?: number | null
+          clock_in_photo_url?: string | null
           clock_out?: string | null
+          clock_out_lat?: number | null
+          clock_out_lng?: number | null
+          clock_out_photo_url?: string | null
           created_at?: string
           id?: string
           store_id: string
@@ -261,7 +273,13 @@ export type Database = {
         }
         Update: {
           clock_in?: string
+          clock_in_lat?: number | null
+          clock_in_lng?: number | null
+          clock_in_photo_url?: string | null
           clock_out?: string | null
+          clock_out_lat?: number | null
+          clock_out_lng?: number | null
+          clock_out_photo_url?: string | null
           created_at?: string
           id?: string
           store_id?: string
@@ -2266,10 +2284,12 @@ export type Database = {
           deleted_at: string | null
           description: string | null
           id: string
+          late_deadline: string | null
           logo_url: string | null
           max_call_attempts: number
           name: string
           owner_id: string
+          resumption_time: string | null
           status: Database["public"]["Enums"]["store_status"]
           suspended_at: string | null
           webhook_secret: string | null
@@ -2284,10 +2304,12 @@ export type Database = {
           deleted_at?: string | null
           description?: string | null
           id?: string
+          late_deadline?: string | null
           logo_url?: string | null
           max_call_attempts?: number
           name: string
           owner_id: string
+          resumption_time?: string | null
           status?: Database["public"]["Enums"]["store_status"]
           suspended_at?: string | null
           webhook_secret?: string | null
@@ -2302,10 +2324,12 @@ export type Database = {
           deleted_at?: string | null
           description?: string | null
           id?: string
+          late_deadline?: string | null
           logo_url?: string | null
           max_call_attempts?: number
           name?: string
           owner_id?: string
+          resumption_time?: string | null
           status?: Database["public"]["Enums"]["store_status"]
           suspended_at?: string | null
           webhook_secret?: string | null
@@ -2613,6 +2637,7 @@ export type Database = {
       }
       user_roles: {
         Row: {
+          assignment_weight: number
           created_at: string
           id: string
           is_suspended: boolean
@@ -2621,6 +2646,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          assignment_weight?: number
           created_at?: string
           id?: string
           is_suspended?: boolean
@@ -2629,6 +2655,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          assignment_weight?: number
           created_at?: string
           id?: string
           is_suspended?: boolean

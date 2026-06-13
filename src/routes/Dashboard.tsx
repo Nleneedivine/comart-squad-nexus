@@ -38,7 +38,7 @@ export const Route = createFileRoute("/Dashboard")({
 const RANGES = ["Today", "Week", "Month", "Year"] as const;
 
 function Dashboard() {
-  const { store, roles } = useAuth();
+  const { store, roles, user } = useAuth();
   const isAdmin = roles.some(r => ["owner","admin","manager","head_of_operations"].includes(r));
   const isStaff = roles.length > 0 && !isAdmin;
   const [range, setRange] = useState<typeof RANGES[number]>("Month");
@@ -53,14 +53,16 @@ function Dashboard() {
     else if (range === "Week") start.setDate(now.getDate() - 6);
     else if (range === "Month") start.setDate(now.getDate() - 29);
     else if (range === "Year") start.setMonth(now.getMonth() - 11);
-    supabase.from("orders").select("*").eq("store_id", store.id)
-      .gte("created_at", start.toISOString())
-      .order("created_at", { ascending: false }).limit(1000)
+    let q = supabase.from("orders").select("*").eq("store_id", store.id)
+      .gte("created_at", start.toISOString());
+    // Non-admin staff (sales reps etc.) only see orders assigned to them
+    if (!isAdmin && user) q = q.eq("assigned_to", user.id);
+    q.order("created_at", { ascending: false }).limit(1000)
       .then(({ data }) => setOrders(data || []));
     supabase.from("products").select("stock_qty").eq("store_id", store.id)
       .then(({ data }) => setStockUnits((data || []).reduce((s, p: any) => s + (p.stock_qty || 0), 0)));
   };
-  useEffect(() => { load(); }, [store, range]);
+  useEffect(() => { load(); }, [store, range, isAdmin, user?.id]);
 
   // Realtime: refresh KPIs/charts when orders or products change
   useEffect(() => {
@@ -70,7 +72,8 @@ function Dashboard() {
       .on("postgres_changes", { event: "*", schema: "public", table: "products", filter: `store_id=eq.${store.id}` }, () => load())
       .subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, [store, range]);
+  }, [store, range, isAdmin, user?.id]);
+
 
   const stats = useMemo(() => {
     const expected = orders.reduce((s, o) => s + Number(o.amount), 0);

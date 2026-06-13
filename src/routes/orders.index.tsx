@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -30,6 +31,7 @@ type Mode = "existing" | "new";
 function OrdersIndex() {
   const { store, user, roles } = useAuth();
   const canDelete = roles.some((r) => ["owner", "admin", "manager", "head_of_operations"].includes(r));
+  const isAdmin = canDelete;
   const [orders, setOrders] = useState<any[]>([]);
   const [customers, setCustomers] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
@@ -47,14 +49,16 @@ function OrdersIndex() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkStatus, setBulkStatus] = useState<string>("");
   const [bulkAssignee, setBulkAssignee] = useState<string>("");
+  const [autoAssign, setAutoAssign] = useState<{ enabled: boolean; strategy: string } | null>(null);
 
   const load = async () => {
     if (!store) return;
-    const [{ data: o }, { data: c }, { data: p }, { data: roles }] = await Promise.all([
+    const [{ data: o }, { data: c }, { data: p }, { data: roles }, { data: st }] = await Promise.all([
       supabase.from("orders").select("*, customers(name, phone, full_address)").eq("store_id", store.id).order("created_at", { ascending: false }),
       supabase.from("customers").select("id, name, phone, full_address").eq("store_id", store.id).order("name"),
       supabase.from("products").select("id, name, selling_price, stock_qty").eq("store_id", store.id).eq("status", "active"),
       supabase.from("user_roles").select("user_id, role, is_suspended, profiles:user_id(id, full_name, email)").eq("store_id", store.id),
+      supabase.from("stores").select("auto_assign_enabled, auto_assign_strategy").eq("id", store.id).maybeSingle(),
     ]);
     setOrders(o || []); setCustomers(c || []); setProducts(p || []);
     const list = (roles || []).filter((r: any) => !r.is_suspended).map((r: any) => ({
@@ -62,8 +66,20 @@ function OrdersIndex() {
     }));
     const dedup = Array.from(new Map(list.map((x: any) => [x.id, x])).values());
     setStaff(dedup);
+    if (st) setAutoAssign({ enabled: !!st.auto_assign_enabled, strategy: st.auto_assign_strategy || "least_load" });
   };
   useEffect(() => { load(); }, [store]);
+
+  const updateAutoAssign = async (next: { enabled: boolean; strategy: string }) => {
+    if (!store) return;
+    setAutoAssign(next);
+    const { error } = await supabase.from("stores").update({
+      auto_assign_enabled: next.enabled, auto_assign_strategy: next.strategy,
+    }).eq("id", store.id);
+    if (error) toast.error(error.message);
+    else toast.success(next.enabled ? `Auto-assign on (${next.strategy.replace("_"," ")})` : "Auto-assign off — manual mode");
+  };
+
 
   const filtered = useMemo(() => orders.filter(o => {
     if (!showArchived && o.is_archived) return false;
@@ -256,11 +272,32 @@ function OrdersIndex() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div><h1 className="text-2xl font-bold">Orders</h1><p className="text-sm text-muted-foreground">Manage all orders across channels.</p></div>
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex gap-2 flex-wrap items-center">
+          {isAdmin && autoAssign && (
+            <div className="flex items-center gap-2 border rounded-md px-3 py-1.5 bg-muted/30">
+              <Switch
+                checked={autoAssign.enabled}
+                onCheckedChange={(v: boolean) => updateAutoAssign({ ...autoAssign, enabled: v })}
+                aria-label="Auto-assign new orders"
+              />
+              <span className="text-sm font-medium">Auto-assign</span>
+              {autoAssign.enabled && (
+                <Select value={autoAssign.strategy} onValueChange={(v) => updateAutoAssign({ ...autoAssign, strategy: v })}>
+                  <SelectTrigger className="h-8 w-40 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="least_load">Least load</SelectItem>
+                    <SelectItem value="round_robin">Round robin</SelectItem>
+                    <SelectItem value="weighted">Weighted</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+          )}
           <Button variant="outline" onClick={distributeRoundRobin}><UserCheck className="h-4 w-4 mr-1" />Auto-distribute</Button>
           <Button variant="outline" onClick={() => setShowArchived(v => !v)}>
             {showArchived ? <><ArchiveRestore className="h-4 w-4 mr-1" />Show Active</> : <><Archive className="h-4 w-4 mr-1" />Show Archived</>}
           </Button>
+
           <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) resetForm(); }}>
             <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-1" />Create Order</Button></DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
