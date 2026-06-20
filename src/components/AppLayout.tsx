@@ -29,6 +29,7 @@ const NAV: Item[] = [
   { label: "My Store", to: "/StoreManagement", icon: Store },
   { label: "Orders", icon: ShoppingCart, children: [
     { label: "All Orders", to: "/orders" },
+    { label: "Call Orders", to: "/call-orders" },
     { label: "Bulk Import (AI)", to: "/orders/import" },
   ]},
   { label: "Businesses", to: "/businesses", icon: Building2 },
