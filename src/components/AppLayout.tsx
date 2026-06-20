@@ -29,6 +29,7 @@ const NAV: Item[] = [
   { label: "My Store", to: "/StoreManagement", icon: Store },
   { label: "Orders", icon: ShoppingCart, children: [
     { label: "All Orders", to: "/orders" },
+    { label: "Call Orders", to: "/call-orders" },
     { label: "Bulk Import (AI)", to: "/orders/import" },
   ]},
   { label: "Businesses", to: "/businesses", icon: Building2 },
@@ -62,6 +63,7 @@ const NAV: Item[] = [
   { label: "Chat Room", to: "/chat", icon: MessageSquare },
   { label: "Reports", icon: BarChart3, children: [
     { label: "Daily Reports", to: "/reports/daily" },
+    { label: "Call Reports", to: "/reports/calls" },
     { label: "Data Export", to: "/reports/export" },
     { label: "Store Activity Log", to: "/reports/activity" },
   ]},

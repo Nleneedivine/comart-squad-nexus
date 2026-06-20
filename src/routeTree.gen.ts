@@ -26,6 +26,7 @@ import { Route as HealthRouteImport } from './routes/health'
 import { Route as FinanceRouteImport } from './routes/finance'
 import { Route as CustomerServiceRouteImport } from './routes/customer-service'
 import { Route as ChatRouteImport } from './routes/chat'
+import { Route as CallOrdersRouteImport } from './routes/call-orders'
 import { Route as BusinessesRouteImport } from './routes/businesses'
 import { Route as BillingRouteImport } from './routes/billing'
 import { Route as AuthRouteImport } from './routes/auth'
@@ -43,6 +44,7 @@ import { Route as StoreProductsRouteImport } from './routes/store.products'
 import { Route as StoreOrdersRouteImport } from './routes/store.orders'
 import { Route as ReportsExportRouteImport } from './routes/reports.export'
 import { Route as ReportsDailyRouteImport } from './routes/reports.daily'
+import { Route as ReportsCallsRouteImport } from './routes/reports.calls'
 import { Route as ReportsActivityRouteImport } from './routes/reports.activity'
 import { Route as OrdersImportRouteImport } from './routes/orders.import'
 import { Route as OrdersIdRouteImport } from './routes/orders.$id'
@@ -157,6 +159,11 @@ const ChatRoute = ChatRouteImport.update({
   path: '/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CallOrdersRoute = CallOrdersRouteImport.update({
+  id: '/call-orders',
+  path: '/call-orders',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BusinessesRoute = BusinessesRouteImport.update({
   id: '/businesses',
   path: '/businesses',
@@ -240,6 +247,11 @@ const ReportsExportRoute = ReportsExportRouteImport.update({
 const ReportsDailyRoute = ReportsDailyRouteImport.update({
   id: '/reports/daily',
   path: '/reports/daily',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReportsCallsRoute = ReportsCallsRouteImport.update({
+  id: '/reports/calls',
+  path: '/reports/calls',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReportsActivityRoute = ReportsActivityRouteImport.update({
@@ -396,6 +408,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/billing': typeof BillingRoute
   '/businesses': typeof BusinessesRoute
+  '/call-orders': typeof CallOrdersRoute
   '/chat': typeof ChatRoute
   '/customer-service': typeof CustomerServiceRoute
   '/finance': typeof FinanceRouteWithChildren
@@ -437,6 +450,7 @@ export interface FileRoutesByFullPath {
   '/orders/$id': typeof OrdersIdRoute
   '/orders/import': typeof OrdersImportRoute
   '/reports/activity': typeof ReportsActivityRoute
+  '/reports/calls': typeof ReportsCallsRoute
   '/reports/daily': typeof ReportsDailyRoute
   '/reports/export': typeof ReportsExportRoute
   '/store/orders': typeof StoreOrdersRoute
@@ -459,6 +473,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/billing': typeof BillingRoute
   '/businesses': typeof BusinessesRoute
+  '/call-orders': typeof CallOrdersRoute
   '/chat': typeof ChatRoute
   '/customer-service': typeof CustomerServiceRoute
   '/finance': typeof FinanceRouteWithChildren
@@ -499,6 +514,7 @@ export interface FileRoutesByTo {
   '/orders/$id': typeof OrdersIdRoute
   '/orders/import': typeof OrdersImportRoute
   '/reports/activity': typeof ReportsActivityRoute
+  '/reports/calls': typeof ReportsCallsRoute
   '/reports/daily': typeof ReportsDailyRoute
   '/reports/export': typeof ReportsExportRoute
   '/store/orders': typeof StoreOrdersRoute
@@ -523,6 +539,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/billing': typeof BillingRoute
   '/businesses': typeof BusinessesRoute
+  '/call-orders': typeof CallOrdersRoute
   '/chat': typeof ChatRoute
   '/customer-service': typeof CustomerServiceRoute
   '/finance': typeof FinanceRouteWithChildren
@@ -564,6 +581,7 @@ export interface FileRoutesById {
   '/orders/$id': typeof OrdersIdRoute
   '/orders/import': typeof OrdersImportRoute
   '/reports/activity': typeof ReportsActivityRoute
+  '/reports/calls': typeof ReportsCallsRoute
   '/reports/daily': typeof ReportsDailyRoute
   '/reports/export': typeof ReportsExportRoute
   '/store/orders': typeof StoreOrdersRoute
@@ -589,6 +607,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/billing'
     | '/businesses'
+    | '/call-orders'
     | '/chat'
     | '/customer-service'
     | '/finance'
@@ -630,6 +649,7 @@ export interface FileRouteTypes {
     | '/orders/$id'
     | '/orders/import'
     | '/reports/activity'
+    | '/reports/calls'
     | '/reports/daily'
     | '/reports/export'
     | '/store/orders'
@@ -652,6 +672,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/billing'
     | '/businesses'
+    | '/call-orders'
     | '/chat'
     | '/customer-service'
     | '/finance'
@@ -692,6 +713,7 @@ export interface FileRouteTypes {
     | '/orders/$id'
     | '/orders/import'
     | '/reports/activity'
+    | '/reports/calls'
     | '/reports/daily'
     | '/reports/export'
     | '/store/orders'
@@ -715,6 +737,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/billing'
     | '/businesses'
+    | '/call-orders'
     | '/chat'
     | '/customer-service'
     | '/finance'
@@ -756,6 +779,7 @@ export interface FileRouteTypes {
     | '/orders/$id'
     | '/orders/import'
     | '/reports/activity'
+    | '/reports/calls'
     | '/reports/daily'
     | '/reports/export'
     | '/store/orders'
@@ -780,6 +804,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   BillingRoute: typeof BillingRoute
   BusinessesRoute: typeof BusinessesRoute
+  CallOrdersRoute: typeof CallOrdersRoute
   ChatRoute: typeof ChatRoute
   CustomerServiceRoute: typeof CustomerServiceRoute
   FinanceRoute: typeof FinanceRouteWithChildren
@@ -810,6 +835,7 @@ export interface RootRouteChildren {
   MarketingTemplatesRoute: typeof MarketingTemplatesRoute
   OrderFormIdRoute: typeof OrderFormIdRoute
   ReportsActivityRoute: typeof ReportsActivityRoute
+  ReportsCallsRoute: typeof ReportsCallsRoute
   ReportsDailyRoute: typeof ReportsDailyRoute
   ReportsExportRoute: typeof ReportsExportRoute
   StoreOrdersRoute: typeof StoreOrdersRoute
@@ -941,6 +967,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ChatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/call-orders': {
+      id: '/call-orders'
+      path: '/call-orders'
+      fullPath: '/call-orders'
+      preLoaderRoute: typeof CallOrdersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/businesses': {
       id: '/businesses'
       path: '/businesses'
@@ -1058,6 +1091,13 @@ declare module '@tanstack/react-router' {
       path: '/reports/daily'
       fullPath: '/reports/daily'
       preLoaderRoute: typeof ReportsDailyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reports/calls': {
+      id: '/reports/calls'
+      path: '/reports/calls'
+      fullPath: '/reports/calls'
+      preLoaderRoute: typeof ReportsCallsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reports/activity': {
@@ -1334,6 +1374,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   BillingRoute: BillingRoute,
   BusinessesRoute: BusinessesRoute,
+  CallOrdersRoute: CallOrdersRoute,
   ChatRoute: ChatRoute,
   CustomerServiceRoute: CustomerServiceRoute,
   FinanceRoute: FinanceRouteWithChildren,
@@ -1364,6 +1405,7 @@ const rootRouteChildren: RootRouteChildren = {
   MarketingTemplatesRoute: MarketingTemplatesRoute,
   OrderFormIdRoute: OrderFormIdRoute,
   ReportsActivityRoute: ReportsActivityRoute,
+  ReportsCallsRoute: ReportsCallsRoute,
   ReportsDailyRoute: ReportsDailyRoute,
   ReportsExportRoute: ReportsExportRoute,
   StoreOrdersRoute: StoreOrdersRoute,
@@ -1377,13 +1419,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

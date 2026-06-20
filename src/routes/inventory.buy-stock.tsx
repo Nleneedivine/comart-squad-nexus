@@ -62,6 +62,33 @@ function BuyStock() {
     setOpen(false); setItems([{ product_id: "", quantity: 1, amount: 0 }]); setNotes(""); load();
   };
 
+  const remove = async (p: any) => {
+    if (!store) return;
+    if (!confirm("Delete this purchase? Its quantities will be subtracted back out of the Stock Record.")) return;
+    // Load items if not already on the row
+    const items = p.purchase_items as { product_name: string; quantity: number; product_id?: string }[] | undefined;
+    const { data: fullItems } = items?.length
+      ? { data: items as any[] }
+      : await supabase.from("purchase_items").select("product_id, product_name, quantity").eq("purchase_id", p.id);
+    for (const it of (fullItems || [])) {
+      if (!it.product_id) continue;
+      const { data: prod } = await supabase.from("products").select("id, stock_qty").eq("id", it.product_id).maybeSingle();
+      if (!prod) continue;
+      const newBalance = Math.max(0, (prod.stock_qty || 0) - (it.quantity || 0));
+      await supabase.from("products").update({ stock_qty: newBalance }).eq("id", prod.id);
+      await supabase.from("stock_movements").insert({
+        store_id: store.id, product_id: prod.id, product_name: it.product_name,
+        type: "adjustment", qty_change: -(it.quantity || 0), balance: newBalance,
+        reference: `Purchase reversal ${p.id.slice(0,8)}`,
+      });
+    }
+    await supabase.from("purchase_items").delete().eq("purchase_id", p.id);
+    const { error } = await supabase.from("purchases").delete().eq("id", p.id);
+    if (error) return toast.error(error.message);
+    toast.success("Purchase deleted and stock adjusted");
+    load();
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
@@ -100,15 +127,18 @@ function BuyStock() {
       <Card className="p-4">
         <h2 className="font-semibold mb-3 px-2">Purchase History</h2>
         <Table>
-          <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Products</TableHead><TableHead>Total</TableHead><TableHead>Notes</TableHead></TableRow></TableHeader>
+          <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Products</TableHead><TableHead>Total</TableHead><TableHead>Notes</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
           <TableBody>
-            {purchases.length === 0 ? <TableRow><TableCell colSpan={4} className="text-center py-8 text-muted-foreground">No purchases yet.</TableCell></TableRow> :
+            {purchases.length === 0 ? <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">No purchases yet.</TableCell></TableRow> :
               purchases.map(p => (
                 <TableRow key={p.id}>
                   <TableCell>{new Date(p.purchase_date).toLocaleDateString()}</TableCell>
                   <TableCell className="text-sm">{(p.purchase_items || []).map((i: any) => `${i.product_name} (${i.quantity})`).join(", ") || "—"}</TableCell>
                   <TableCell className="font-medium">{formatNaira(Number(p.total_amount))}</TableCell>
                   <TableCell className="text-xs text-muted-foreground">{p.notes || "—"}</TableCell>
+                  <TableCell className="text-right">
+                    <Button size="icon" variant="ghost" onClick={() => remove(p)} title="Delete purchase"><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                  </TableCell>
                 </TableRow>
               ))}
           </TableBody>
