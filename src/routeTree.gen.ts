@@ -26,6 +26,7 @@ import { Route as HealthRouteImport } from './routes/health'
 import { Route as FinanceRouteImport } from './routes/finance'
 import { Route as CustomerServiceRouteImport } from './routes/customer-service'
 import { Route as ChatRouteImport } from './routes/chat'
+import { Route as CallOrdersRouteImport } from './routes/call-orders'
 import { Route as BusinessesRouteImport } from './routes/businesses'
 import { Route as BillingRouteImport } from './routes/billing'
 import { Route as AuthRouteImport } from './routes/auth'
@@ -155,6 +156,11 @@ const CustomerServiceRoute = CustomerServiceRouteImport.update({
 const ChatRoute = ChatRouteImport.update({
   id: '/chat',
   path: '/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CallOrdersRoute = CallOrdersRouteImport.update({
+  id: '/call-orders',
+  path: '/call-orders',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BusinessesRoute = BusinessesRouteImport.update({
@@ -396,6 +402,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/billing': typeof BillingRoute
   '/businesses': typeof BusinessesRoute
+  '/call-orders': typeof CallOrdersRoute
   '/chat': typeof ChatRoute
   '/customer-service': typeof CustomerServiceRoute
   '/finance': typeof FinanceRouteWithChildren
@@ -459,6 +466,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/billing': typeof BillingRoute
   '/businesses': typeof BusinessesRoute
+  '/call-orders': typeof CallOrdersRoute
   '/chat': typeof ChatRoute
   '/customer-service': typeof CustomerServiceRoute
   '/finance': typeof FinanceRouteWithChildren
@@ -523,6 +531,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/billing': typeof BillingRoute
   '/businesses': typeof BusinessesRoute
+  '/call-orders': typeof CallOrdersRoute
   '/chat': typeof ChatRoute
   '/customer-service': typeof CustomerServiceRoute
   '/finance': typeof FinanceRouteWithChildren
@@ -589,6 +598,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/billing'
     | '/businesses'
+    | '/call-orders'
     | '/chat'
     | '/customer-service'
     | '/finance'
@@ -652,6 +662,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/billing'
     | '/businesses'
+    | '/call-orders'
     | '/chat'
     | '/customer-service'
     | '/finance'
@@ -715,6 +726,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/billing'
     | '/businesses'
+    | '/call-orders'
     | '/chat'
     | '/customer-service'
     | '/finance'
@@ -780,6 +792,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   BillingRoute: typeof BillingRoute
   BusinessesRoute: typeof BusinessesRoute
+  CallOrdersRoute: typeof CallOrdersRoute
   ChatRoute: typeof ChatRoute
   CustomerServiceRoute: typeof CustomerServiceRoute
   FinanceRoute: typeof FinanceRouteWithChildren
@@ -939,6 +952,13 @@ declare module '@tanstack/react-router' {
       path: '/chat'
       fullPath: '/chat'
       preLoaderRoute: typeof ChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/call-orders': {
+      id: '/call-orders'
+      path: '/call-orders'
+      fullPath: '/call-orders'
+      preLoaderRoute: typeof CallOrdersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/businesses': {
@@ -1334,6 +1354,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   BillingRoute: BillingRoute,
   BusinessesRoute: BusinessesRoute,
+  CallOrdersRoute: CallOrdersRoute,
   ChatRoute: ChatRoute,
   CustomerServiceRoute: CustomerServiceRoute,
   FinanceRoute: FinanceRouteWithChildren,
