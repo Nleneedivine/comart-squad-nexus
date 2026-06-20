@@ -62,6 +62,33 @@ function BuyStock() {
     setOpen(false); setItems([{ product_id: "", quantity: 1, amount: 0 }]); setNotes(""); load();
   };
 
+  const remove = async (p: any) => {
+    if (!store) return;
+    if (!confirm("Delete this purchase? Its quantities will be subtracted back out of the Stock Record.")) return;
+    // Load items if not already on the row
+    const items = p.purchase_items as { product_name: string; quantity: number; product_id?: string }[] | undefined;
+    const { data: fullItems } = items?.length
+      ? { data: items as any[] }
+      : await supabase.from("purchase_items").select("product_id, product_name, quantity").eq("purchase_id", p.id);
+    for (const it of (fullItems || [])) {
+      if (!it.product_id) continue;
+      const { data: prod } = await supabase.from("products").select("id, stock_qty").eq("id", it.product_id).maybeSingle();
+      if (!prod) continue;
+      const newBalance = Math.max(0, (prod.stock_qty || 0) - (it.quantity || 0));
+      await supabase.from("products").update({ stock_qty: newBalance }).eq("id", prod.id);
+      await supabase.from("stock_movements").insert({
+        store_id: store.id, product_id: prod.id, product_name: it.product_name,
+        type: "adjustment", qty_change: -(it.quantity || 0), balance: newBalance,
+        reference: `Purchase reversal ${p.id.slice(0,8)}`,
+      });
+    }
+    await supabase.from("purchase_items").delete().eq("purchase_id", p.id);
+    const { error } = await supabase.from("purchases").delete().eq("id", p.id);
+    if (error) return toast.error(error.message);
+    toast.success("Purchase deleted and stock adjusted");
+    load();
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">

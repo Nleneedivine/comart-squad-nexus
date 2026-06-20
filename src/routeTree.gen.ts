@@ -44,6 +44,7 @@ import { Route as StoreProductsRouteImport } from './routes/store.products'
 import { Route as StoreOrdersRouteImport } from './routes/store.orders'
 import { Route as ReportsExportRouteImport } from './routes/reports.export'
 import { Route as ReportsDailyRouteImport } from './routes/reports.daily'
+import { Route as ReportsCallsRouteImport } from './routes/reports.calls'
 import { Route as ReportsActivityRouteImport } from './routes/reports.activity'
 import { Route as OrdersImportRouteImport } from './routes/orders.import'
 import { Route as OrdersIdRouteImport } from './routes/orders.$id'
@@ -248,6 +249,11 @@ const ReportsDailyRoute = ReportsDailyRouteImport.update({
   path: '/reports/daily',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ReportsCallsRoute = ReportsCallsRouteImport.update({
+  id: '/reports/calls',
+  path: '/reports/calls',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ReportsActivityRoute = ReportsActivityRouteImport.update({
   id: '/reports/activity',
   path: '/reports/activity',
@@ -444,6 +450,7 @@ export interface FileRoutesByFullPath {
   '/orders/$id': typeof OrdersIdRoute
   '/orders/import': typeof OrdersImportRoute
   '/reports/activity': typeof ReportsActivityRoute
+  '/reports/calls': typeof ReportsCallsRoute
   '/reports/daily': typeof ReportsDailyRoute
   '/reports/export': typeof ReportsExportRoute
   '/store/orders': typeof StoreOrdersRoute
@@ -507,6 +514,7 @@ export interface FileRoutesByTo {
   '/orders/$id': typeof OrdersIdRoute
   '/orders/import': typeof OrdersImportRoute
   '/reports/activity': typeof ReportsActivityRoute
+  '/reports/calls': typeof ReportsCallsRoute
   '/reports/daily': typeof ReportsDailyRoute
   '/reports/export': typeof ReportsExportRoute
   '/store/orders': typeof StoreOrdersRoute
@@ -573,6 +581,7 @@ export interface FileRoutesById {
   '/orders/$id': typeof OrdersIdRoute
   '/orders/import': typeof OrdersImportRoute
   '/reports/activity': typeof ReportsActivityRoute
+  '/reports/calls': typeof ReportsCallsRoute
   '/reports/daily': typeof ReportsDailyRoute
   '/reports/export': typeof ReportsExportRoute
   '/store/orders': typeof StoreOrdersRoute
@@ -640,6 +649,7 @@ export interface FileRouteTypes {
     | '/orders/$id'
     | '/orders/import'
     | '/reports/activity'
+    | '/reports/calls'
     | '/reports/daily'
     | '/reports/export'
     | '/store/orders'
@@ -703,6 +713,7 @@ export interface FileRouteTypes {
     | '/orders/$id'
     | '/orders/import'
     | '/reports/activity'
+    | '/reports/calls'
     | '/reports/daily'
     | '/reports/export'
     | '/store/orders'
@@ -768,6 +779,7 @@ export interface FileRouteTypes {
     | '/orders/$id'
     | '/orders/import'
     | '/reports/activity'
+    | '/reports/calls'
     | '/reports/daily'
     | '/reports/export'
     | '/store/orders'
@@ -823,6 +835,7 @@ export interface RootRouteChildren {
   MarketingTemplatesRoute: typeof MarketingTemplatesRoute
   OrderFormIdRoute: typeof OrderFormIdRoute
   ReportsActivityRoute: typeof ReportsActivityRoute
+  ReportsCallsRoute: typeof ReportsCallsRoute
   ReportsDailyRoute: typeof ReportsDailyRoute
   ReportsExportRoute: typeof ReportsExportRoute
   StoreOrdersRoute: typeof StoreOrdersRoute
@@ -1078,6 +1091,13 @@ declare module '@tanstack/react-router' {
       path: '/reports/daily'
       fullPath: '/reports/daily'
       preLoaderRoute: typeof ReportsDailyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reports/calls': {
+      id: '/reports/calls'
+      path: '/reports/calls'
+      fullPath: '/reports/calls'
+      preLoaderRoute: typeof ReportsCallsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reports/activity': {
@@ -1385,6 +1405,7 @@ const rootRouteChildren: RootRouteChildren = {
   MarketingTemplatesRoute: MarketingTemplatesRoute,
   OrderFormIdRoute: OrderFormIdRoute,
   ReportsActivityRoute: ReportsActivityRoute,
+  ReportsCallsRoute: ReportsCallsRoute,
   ReportsDailyRoute: ReportsDailyRoute,
   ReportsExportRoute: ReportsExportRoute,
   StoreOrdersRoute: StoreOrdersRoute,
