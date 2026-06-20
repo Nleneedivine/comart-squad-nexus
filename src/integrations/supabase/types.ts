@@ -369,6 +369,78 @@ export type Database = {
           },
         ]
       }
+      call_orders: {
+        Row: {
+          agent_id: string | null
+          agent_name: string | null
+          agent_user_id: string | null
+          amount_remitted: number
+          bottles_paid: number
+          bottles_sold: number
+          call_received: boolean
+          call_valid: boolean
+          created_at: string
+          created_by: string | null
+          id: string
+          notes: string | null
+          order_date: string
+          status: Database["public"]["Enums"]["call_order_status"]
+          store_id: string
+          updated_at: string
+        }
+        Insert: {
+          agent_id?: string | null
+          agent_name?: string | null
+          agent_user_id?: string | null
+          amount_remitted?: number
+          bottles_paid?: number
+          bottles_sold?: number
+          call_received?: boolean
+          call_valid?: boolean
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          order_date?: string
+          status?: Database["public"]["Enums"]["call_order_status"]
+          store_id: string
+          updated_at?: string
+        }
+        Update: {
+          agent_id?: string | null
+          agent_name?: string | null
+          agent_user_id?: string | null
+          amount_remitted?: number
+          bottles_paid?: number
+          bottles_sold?: number
+          call_received?: boolean
+          call_valid?: boolean
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          order_date?: string
+          status?: Database["public"]["Enums"]["call_order_status"]
+          store_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "call_orders_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "call_orders_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_group_members: {
         Row: {
           added_at: string
@@ -3004,6 +3076,12 @@ export type Database = {
         | "logistics_manager"
         | "accountant"
         | "head_of_operations"
+      call_order_status:
+        | "confirmed"
+        | "delivered"
+        | "rescheduled"
+        | "dead"
+        | "cancelled"
       finance_type: "income" | "expense"
       order_status:
         | "pending"
@@ -3154,6 +3232,13 @@ export const Constants = {
         "logistics_manager",
         "accountant",
         "head_of_operations",
+      ],
+      call_order_status: [
+        "confirmed",
+        "delivered",
+        "rescheduled",
+        "dead",
+        "cancelled",
       ],
       finance_type: ["income", "expense"],
       order_status: [
