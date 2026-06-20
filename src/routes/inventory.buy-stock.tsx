@@ -127,15 +127,18 @@ function BuyStock() {
       <Card className="p-4">
         <h2 className="font-semibold mb-3 px-2">Purchase History</h2>
         <Table>
-          <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Products</TableHead><TableHead>Total</TableHead><TableHead>Notes</TableHead></TableRow></TableHeader>
+          <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Products</TableHead><TableHead>Total</TableHead><TableHead>Notes</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
           <TableBody>
-            {purchases.length === 0 ? <TableRow><TableCell colSpan={4} className="text-center py-8 text-muted-foreground">No purchases yet.</TableCell></TableRow> :
+            {purchases.length === 0 ? <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">No purchases yet.</TableCell></TableRow> :
               purchases.map(p => (
                 <TableRow key={p.id}>
                   <TableCell>{new Date(p.purchase_date).toLocaleDateString()}</TableCell>
                   <TableCell className="text-sm">{(p.purchase_items || []).map((i: any) => `${i.product_name} (${i.quantity})`).join(", ") || "—"}</TableCell>
                   <TableCell className="font-medium">{formatNaira(Number(p.total_amount))}</TableCell>
                   <TableCell className="text-xs text-muted-foreground">{p.notes || "—"}</TableCell>
+                  <TableCell className="text-right">
+                    <Button size="icon" variant="ghost" onClick={() => remove(p)} title="Delete purchase"><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                  </TableCell>
                 </TableRow>
               ))}
           </TableBody>
