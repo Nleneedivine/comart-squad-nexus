@@ -63,6 +63,7 @@ const NAV: Item[] = [
   { label: "Chat Room", to: "/chat", icon: MessageSquare },
   { label: "Reports", icon: BarChart3, children: [
     { label: "Daily Reports", to: "/reports/daily" },
+    { label: "Call Reports", to: "/reports/calls" },
     { label: "Data Export", to: "/reports/export" },
     { label: "Store Activity Log", to: "/reports/activity" },
   ]},
