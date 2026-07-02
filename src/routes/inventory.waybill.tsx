@@ -11,7 +11,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Printer } from "lucide-react";
+import { Plus, Printer, Trash2 } from "lucide-react";
+
+const ADMIN_ROLES = ["owner", "admin", "manager", "head_of_operations"];
 
 export const Route = createFileRoute("/inventory/waybill")({
   head: () => ({ meta: [{ title: "Waybill — Comart+" }, { name: "description", content: "Generate and print waybill documents." }] }),
@@ -19,9 +21,17 @@ export const Route = createFileRoute("/inventory/waybill")({
 });
 
 function Waybill() {
-  const { store } = useAuth();
+  const { store, roles } = useAuth();
   const [rows, setRows] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
+  const isAdmin = roles.some(r => ADMIN_ROLES.includes(r));
+
+  const remove = async (w: any) => {
+    if (!confirm(`Delete waybill ${w.waybill_number}?`)) return;
+    const { error } = await supabase.from("waybills").delete().eq("id", w.id);
+    if (error) return toast.error(error.message);
+    toast.success("Waybill deleted"); load();
+  };
   const [form, setForm] = useState<any>({ waybill_number: "WB-" + Date.now().toString(36).toUpperCase(), recipient_name: "", recipient_phone: "", recipient_address: "", destination: "", items_text: "", dispatched_by: "", dispatch_date: new Date().toISOString().slice(0, 10), notes: "" });
 
   const load = async () => {
@@ -103,7 +113,12 @@ function Waybill() {
                   <TableCell>{w.recipient_name}</TableCell>
                   <TableCell>{w.destination || "—"}</TableCell>
                   <TableCell>{(w.items || []).length}</TableCell>
-                  <TableCell><Button size="sm" variant="outline" onClick={() => print(w)}><Printer className="h-3 w-3 mr-1" />Print</Button></TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-1">
+                      <Button size="sm" variant="outline" onClick={() => print(w)}><Printer className="h-3 w-3 mr-1" />Print</Button>
+                      {isAdmin && <Button size="icon" variant="ghost" onClick={() => remove(w)} title="Delete waybill"><Trash2 className="h-4 w-4 text-destructive" /></Button>}
+                    </div>
+                  </TableCell>
                 </TableRow>
               ))}
           </TableBody>

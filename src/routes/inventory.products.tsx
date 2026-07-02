@@ -13,7 +13,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { formatNaira } from "@/lib/format";
 import { toast } from "sonner";
-import { Plus, Pencil, AlertTriangle } from "lucide-react";
+import { Plus, Pencil, AlertTriangle, Trash2 } from "lucide-react";
+
+const ADMIN_ROLES = ["owner", "admin", "manager", "head_of_operations"];
 
 export const Route = createFileRoute("/inventory/products")({
   head: () => ({ meta: [{ title: "Inventory Products — Comart+" }, { name: "description", content: "Manage your inventory product catalog and reorder points." }] }),
@@ -23,7 +25,8 @@ export const Route = createFileRoute("/inventory/products")({
 const blank = { name: "", sku: "", category: "", buying_price: 0, selling_price: 0, stock_qty: 0, reorder_point: 0, status: "active" };
 
 function InventoryProducts() {
-  const { store } = useAuth();
+  const { store, roles } = useAuth();
+  const isAdmin = roles.some(r => ADMIN_ROLES.includes(r));
   const [rows, setRows] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
@@ -60,6 +63,13 @@ function InventoryProducts() {
       toast.success("Product added");
     }
     setOpen(false); setEditId(null); setForm(blank); load();
+  };
+
+  const remove = async (p: any) => {
+    if (!confirm(`Delete "${p.name}"? This removes the product from your catalog. Related stock movement history is kept.`)) return;
+    const { error } = await supabase.from("products").delete().eq("id", p.id);
+    if (error) return toast.error(error.message);
+    toast.success("Product deleted"); load();
   };
 
   const lowCount = rows.filter(p => Number(p.stock_qty) <= Number(p.reorder_point || 0)).length;
@@ -120,7 +130,12 @@ function InventoryProducts() {
                     <TableCell><Badge variant={low ? "destructive" : "secondary"}>{p.stock_qty}{low && " · Low"}</Badge></TableCell>
                     <TableCell className="text-xs">{p.reorder_point || 0}</TableCell>
                     <TableCell><Badge variant={p.status === "active" ? "default" : "outline"}>{p.status}</Badge></TableCell>
-                    <TableCell><Button variant="ghost" size="icon" onClick={() => startEdit(p)}><Pencil className="h-3.5 w-3.5" /></Button></TableCell>
+                    <TableCell>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => startEdit(p)}><Pencil className="h-3.5 w-3.5" /></Button>
+                        {isAdmin && <Button variant="ghost" size="icon" onClick={() => remove(p)} title="Delete product"><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>}
+                      </div>
+                    </TableCell>
                   </TableRow>
                 );
               })}
