@@ -13,7 +13,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { formatNaira } from "@/lib/format";
 import { toast } from "sonner";
-import { Plus, Pencil, AlertTriangle } from "lucide-react";
+import { Plus, Pencil, AlertTriangle, Trash2 } from "lucide-react";
+
+const ADMIN_ROLES = ["owner", "admin", "manager", "head_of_operations"];
 
 export const Route = createFileRoute("/inventory/products")({
   head: () => ({ meta: [{ title: "Inventory Products — Comart+" }, { name: "description", content: "Manage your inventory product catalog and reorder points." }] }),
@@ -23,7 +25,8 @@ export const Route = createFileRoute("/inventory/products")({
 const blank = { name: "", sku: "", category: "", buying_price: 0, selling_price: 0, stock_qty: 0, reorder_point: 0, status: "active" };
 
 function InventoryProducts() {
-  const { store } = useAuth();
+  const { store, roles } = useAuth();
+  const isAdmin = roles.some(r => ADMIN_ROLES.includes(r));
   const [rows, setRows] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
