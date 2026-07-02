@@ -130,7 +130,12 @@ function InventoryProducts() {
                     <TableCell><Badge variant={low ? "destructive" : "secondary"}>{p.stock_qty}{low && " · Low"}</Badge></TableCell>
                     <TableCell className="text-xs">{p.reorder_point || 0}</TableCell>
                     <TableCell><Badge variant={p.status === "active" ? "default" : "outline"}>{p.status}</Badge></TableCell>
-                    <TableCell><Button variant="ghost" size="icon" onClick={() => startEdit(p)}><Pencil className="h-3.5 w-3.5" /></Button></TableCell>
+                    <TableCell>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => startEdit(p)}><Pencil className="h-3.5 w-3.5" /></Button>
+                        {isAdmin && <Button variant="ghost" size="icon" onClick={() => remove(p)} title="Delete product"><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>}
+                      </div>
+                    </TableCell>
                   </TableRow>
                 );
               })}
