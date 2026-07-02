@@ -65,6 +65,13 @@ function InventoryProducts() {
     setOpen(false); setEditId(null); setForm(blank); load();
   };
 
+  const remove = async (p: any) => {
+    if (!confirm(`Delete "${p.name}"? This removes the product from your catalog. Related stock movement history is kept.`)) return;
+    const { error } = await supabase.from("products").delete().eq("id", p.id);
+    if (error) return toast.error(error.message);
+    toast.success("Product deleted"); load();
+  };
+
   const lowCount = rows.filter(p => Number(p.stock_qty) <= Number(p.reorder_point || 0)).length;
 
   return (
