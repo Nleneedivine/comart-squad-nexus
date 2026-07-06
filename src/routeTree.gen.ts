@@ -77,6 +77,7 @@ import { Route as ApiPublicPaystackWebhookRouteImport } from './routes/api/publi
 import { Route as ApiPublicBillingWebhookRouteImport } from './routes/api/public/billing-webhook'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
+import { Route as ApiPublicWhatsappWebhookRouteImport } from './routes/api/public/whatsapp.webhook'
 import { Route as ApiPublicIntegrationsWpformsWebhookRouteImport } from './routes/api/public/integrations.wpforms.webhook'
 
 const WebhooksRoute = WebhooksRouteImport.update({
@@ -423,6 +424,12 @@ const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
   path: '/.lovable/oauth/consent',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicWhatsappWebhookRoute =
+  ApiPublicWhatsappWebhookRouteImport.update({
+    id: '/api/public/whatsapp/webhook',
+    path: '/api/public/whatsapp/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicIntegrationsWpformsWebhookRoute =
   ApiPublicIntegrationsWpformsWebhookRouteImport.update({
     id: '/api/public/integrations/wpforms/webhook',
@@ -499,6 +506,7 @@ export interface FileRoutesByFullPath {
   '/api/public/billing-webhook': typeof ApiPublicBillingWebhookRoute
   '/api/public/paystack-webhook': typeof ApiPublicPaystackWebhookRoute
   '/api/public/wp-forms-webhook': typeof ApiPublicWpFormsWebhookRoute
+  '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/api/public/integrations/wpforms/webhook': typeof ApiPublicIntegrationsWpformsWebhookRoute
 }
 export interface FileRoutesByTo {
@@ -568,6 +576,7 @@ export interface FileRoutesByTo {
   '/api/public/billing-webhook': typeof ApiPublicBillingWebhookRoute
   '/api/public/paystack-webhook': typeof ApiPublicPaystackWebhookRoute
   '/api/public/wp-forms-webhook': typeof ApiPublicWpFormsWebhookRoute
+  '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/api/public/integrations/wpforms/webhook': typeof ApiPublicIntegrationsWpformsWebhookRoute
 }
 export interface FileRoutesById {
@@ -640,6 +649,7 @@ export interface FileRoutesById {
   '/api/public/billing-webhook': typeof ApiPublicBillingWebhookRoute
   '/api/public/paystack-webhook': typeof ApiPublicPaystackWebhookRoute
   '/api/public/wp-forms-webhook': typeof ApiPublicWpFormsWebhookRoute
+  '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/api/public/integrations/wpforms/webhook': typeof ApiPublicIntegrationsWpformsWebhookRoute
 }
 export interface FileRouteTypes {
@@ -713,6 +723,7 @@ export interface FileRouteTypes {
     | '/api/public/billing-webhook'
     | '/api/public/paystack-webhook'
     | '/api/public/wp-forms-webhook'
+    | '/api/public/whatsapp/webhook'
     | '/api/public/integrations/wpforms/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -782,6 +793,7 @@ export interface FileRouteTypes {
     | '/api/public/billing-webhook'
     | '/api/public/paystack-webhook'
     | '/api/public/wp-forms-webhook'
+    | '/api/public/whatsapp/webhook'
     | '/api/public/integrations/wpforms/webhook'
   id:
     | '__root__'
@@ -853,6 +865,7 @@ export interface FileRouteTypes {
     | '/api/public/billing-webhook'
     | '/api/public/paystack-webhook'
     | '/api/public/wp-forms-webhook'
+    | '/api/public/whatsapp/webhook'
     | '/api/public/integrations/wpforms/webhook'
   fileRoutesById: FileRoutesById
 }
@@ -911,6 +924,7 @@ export interface RootRouteChildren {
   ApiPublicBillingWebhookRoute: typeof ApiPublicBillingWebhookRoute
   ApiPublicPaystackWebhookRoute: typeof ApiPublicPaystackWebhookRoute
   ApiPublicWpFormsWebhookRoute: typeof ApiPublicWpFormsWebhookRoute
+  ApiPublicWhatsappWebhookRoute: typeof ApiPublicWhatsappWebhookRoute
   ApiPublicIntegrationsWpformsWebhookRoute: typeof ApiPublicIntegrationsWpformsWebhookRoute
 }
 
@@ -1392,6 +1406,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DotlovableOauthConsentRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/whatsapp/webhook': {
+      id: '/api/public/whatsapp/webhook'
+      path: '/api/public/whatsapp/webhook'
+      fullPath: '/api/public/whatsapp/webhook'
+      preLoaderRoute: typeof ApiPublicWhatsappWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/integrations/wpforms/webhook': {
       id: '/api/public/integrations/wpforms/webhook'
       path: '/api/public/integrations/wpforms/webhook'
@@ -1522,6 +1543,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicBillingWebhookRoute: ApiPublicBillingWebhookRoute,
   ApiPublicPaystackWebhookRoute: ApiPublicPaystackWebhookRoute,
   ApiPublicWpFormsWebhookRoute: ApiPublicWpFormsWebhookRoute,
+  ApiPublicWhatsappWebhookRoute: ApiPublicWhatsappWebhookRoute,
   ApiPublicIntegrationsWpformsWebhookRoute:
     ApiPublicIntegrationsWpformsWebhookRoute,
 }
