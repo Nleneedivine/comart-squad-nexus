@@ -51,7 +51,7 @@ function AuthPage() {
         const { error } = await supabase.auth.signUp({
           email, password,
           options: {
-            emailRedirectTo: window.location.origin + "/Dashboard",
+            emailRedirectTo: window.location.origin + (nextPath ?? "/Dashboard"),
             data: { full_name: fullName, store_name: storeName || "My Store" },
           },
         });
@@ -67,7 +67,8 @@ function AuthPage() {
   };
 
   const google = async () => {
-    const r = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin + "/Dashboard" });
+    const r = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin + (nextPath ?? "/Dashboard") });
+
     if (r.error) toast.error("Google sign-in failed");
   };
 
