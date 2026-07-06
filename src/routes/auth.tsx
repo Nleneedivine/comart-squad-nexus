@@ -11,12 +11,21 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({ meta: [{ title: "Sign in — Comart+" }, { name: "description", content: "Sign in or create your Comart+ account." }] }),
+  validateSearch: (s: Record<string, unknown>) => ({ next: typeof s.next === "string" ? s.next : "" }),
   component: AuthPage,
 });
+
+function safeNext(next: string): string | null {
+  if (!next || !next.startsWith("/") || next.startsWith("//")) return null;
+  return next;
+}
+
 
 function AuthPage() {
   const navigate = useNavigate();
   const { user, loading, hydrated, roles } = useAuth();
+  const { next } = Route.useSearch();
+  const nextPath = safeNext(next);
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -27,10 +36,12 @@ function AuthPage() {
   useEffect(() => {
     if (!hydrated || loading) return;
     if (user) {
+      if (nextPath) { window.location.assign(nextPath); return; }
       const isStaff = roles.length > 0 && !roles.some(r => ["owner","admin","manager","head_of_operations"].includes(r));
       navigate({ to: isStaff ? "/staff-portal" : "/Dashboard" });
     }
-  }, [user, loading, hydrated, roles, navigate]);
+  }, [user, loading, hydrated, roles, navigate, nextPath]);
+
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,7 +51,7 @@ function AuthPage() {
         const { error } = await supabase.auth.signUp({
           email, password,
           options: {
-            emailRedirectTo: window.location.origin + "/Dashboard",
+            emailRedirectTo: window.location.origin + (nextPath ?? "/Dashboard"),
             data: { full_name: fullName, store_name: storeName || "My Store" },
           },
         });
@@ -56,7 +67,8 @@ function AuthPage() {
   };
 
   const google = async () => {
-    const r = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin + "/Dashboard" });
+    const r = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin + (nextPath ?? "/Dashboard") });
+
     if (r.error) toast.error("Google sign-in failed");
   };
 

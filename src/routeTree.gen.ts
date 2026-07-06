@@ -21,6 +21,7 @@ import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PayrollRouteImport } from './routes/payroll'
 import { Route as OrdersRouteImport } from './routes/orders'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
+import { Route as McpRouteImport } from './routes/mcp'
 import { Route as IntegrationsRouteImport } from './routes/integrations'
 import { Route as HealthRouteImport } from './routes/health'
 import { Route as FinanceRouteImport } from './routes/finance'
@@ -69,9 +70,13 @@ import { Route as AdminIntegrationsRouteImport } from './routes/admin.integratio
 import { Route as AdminFlagsRouteImport } from './routes/admin.flags'
 import { Route as AdminBroadcastsRouteImport } from './routes/admin.broadcasts'
 import { Route as AdminAuditRouteImport } from './routes/admin.audit'
+import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
+import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as ApiPublicWpFormsWebhookRouteImport } from './routes/api/public/wp-forms-webhook'
 import { Route as ApiPublicPaystackWebhookRouteImport } from './routes/api/public/paystack-webhook'
 import { Route as ApiPublicBillingWebhookRouteImport } from './routes/api/public/billing-webhook'
+import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
+import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as ApiPublicIntegrationsWpformsWebhookRouteImport } from './routes/api/public/integrations.wpforms.webhook'
 
 const WebhooksRoute = WebhooksRouteImport.update({
@@ -132,6 +137,11 @@ const OrdersRoute = OrdersRouteImport.update({
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const McpRoute = McpRouteImport.update({
+  id: '/mcp',
+  path: '/mcp',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IntegrationsRoute = IntegrationsRouteImport.update({
@@ -374,6 +384,18 @@ const AdminAuditRoute = AdminAuditRouteImport.update({
   path: '/audit',
   getParentRoute: () => AdminRoute,
 } as any)
+const Char91DotwellKnownChar93OauthProtectedResourceRoute =
+  Char91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
+    id: '/.well-known/oauth-protected-resource',
+    path: '/.well-known/oauth-protected-resource',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const Char91DotmcpChar93ListToolsRoute =
+  Char91DotmcpChar93ListToolsRouteImport.update({
+    id: '/.mcp/list-tools',
+    path: '/.mcp/list-tools',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicWpFormsWebhookRoute = ApiPublicWpFormsWebhookRouteImport.update({
   id: '/api/public/wp-forms-webhook',
   path: '/api/public/wp-forms-webhook',
@@ -388,6 +410,17 @@ const ApiPublicPaystackWebhookRoute =
 const ApiPublicBillingWebhookRoute = ApiPublicBillingWebhookRouteImport.update({
   id: '/api/public/billing-webhook',
   path: '/api/public/billing-webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const Char91DotmcpChar93InvokeToolToolRoute =
+  Char91DotmcpChar93InvokeToolToolRouteImport.update({
+    id: '/.mcp/invoke-tool/$tool',
+    path: '/.mcp/invoke-tool/$tool',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
+  id: '/.lovable/oauth/consent',
+  path: '/.lovable/oauth/consent',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicIntegrationsWpformsWebhookRoute =
@@ -414,6 +447,7 @@ export interface FileRoutesByFullPath {
   '/finance': typeof FinanceRouteWithChildren
   '/health': typeof HealthRoute
   '/integrations': typeof IntegrationsRoute
+  '/mcp': typeof McpRoute
   '/onboarding': typeof OnboardingRoute
   '/orders': typeof OrdersRouteWithChildren
   '/payroll': typeof PayrollRoute
@@ -426,6 +460,8 @@ export interface FileRoutesByFullPath {
   '/tasks': typeof TasksRoute
   '/wallet': typeof WalletRoute
   '/webhooks': typeof WebhooksRouteWithChildren
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/admin/audit': typeof AdminAuditRoute
   '/admin/broadcasts': typeof AdminBroadcastsRoute
   '/admin/flags': typeof AdminFlagsRoute
@@ -458,6 +494,8 @@ export interface FileRoutesByFullPath {
   '/webhooks/setup': typeof WebhooksSetupRoute
   '/admin/': typeof AdminIndexRoute
   '/orders/': typeof OrdersIndexRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/public/billing-webhook': typeof ApiPublicBillingWebhookRoute
   '/api/public/paystack-webhook': typeof ApiPublicPaystackWebhookRoute
   '/api/public/wp-forms-webhook': typeof ApiPublicWpFormsWebhookRoute
@@ -479,6 +517,7 @@ export interface FileRoutesByTo {
   '/finance': typeof FinanceRouteWithChildren
   '/health': typeof HealthRoute
   '/integrations': typeof IntegrationsRoute
+  '/mcp': typeof McpRoute
   '/onboarding': typeof OnboardingRoute
   '/payroll': typeof PayrollRoute
   '/pricing': typeof PricingRoute
@@ -490,6 +529,8 @@ export interface FileRoutesByTo {
   '/tasks': typeof TasksRoute
   '/wallet': typeof WalletRoute
   '/webhooks': typeof WebhooksRouteWithChildren
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/admin/audit': typeof AdminAuditRoute
   '/admin/broadcasts': typeof AdminBroadcastsRoute
   '/admin/flags': typeof AdminFlagsRoute
@@ -522,6 +563,8 @@ export interface FileRoutesByTo {
   '/webhooks/setup': typeof WebhooksSetupRoute
   '/admin': typeof AdminIndexRoute
   '/orders': typeof OrdersIndexRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/public/billing-webhook': typeof ApiPublicBillingWebhookRoute
   '/api/public/paystack-webhook': typeof ApiPublicPaystackWebhookRoute
   '/api/public/wp-forms-webhook': typeof ApiPublicWpFormsWebhookRoute
@@ -545,6 +588,7 @@ export interface FileRoutesById {
   '/finance': typeof FinanceRouteWithChildren
   '/health': typeof HealthRoute
   '/integrations': typeof IntegrationsRoute
+  '/mcp': typeof McpRoute
   '/onboarding': typeof OnboardingRoute
   '/orders': typeof OrdersRouteWithChildren
   '/payroll': typeof PayrollRoute
@@ -557,6 +601,8 @@ export interface FileRoutesById {
   '/tasks': typeof TasksRoute
   '/wallet': typeof WalletRoute
   '/webhooks': typeof WebhooksRouteWithChildren
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/admin/audit': typeof AdminAuditRoute
   '/admin/broadcasts': typeof AdminBroadcastsRoute
   '/admin/flags': typeof AdminFlagsRoute
@@ -589,6 +635,8 @@ export interface FileRoutesById {
   '/webhooks/setup': typeof WebhooksSetupRoute
   '/admin/': typeof AdminIndexRoute
   '/orders/': typeof OrdersIndexRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/public/billing-webhook': typeof ApiPublicBillingWebhookRoute
   '/api/public/paystack-webhook': typeof ApiPublicPaystackWebhookRoute
   '/api/public/wp-forms-webhook': typeof ApiPublicWpFormsWebhookRoute
@@ -613,6 +661,7 @@ export interface FileRouteTypes {
     | '/finance'
     | '/health'
     | '/integrations'
+    | '/mcp'
     | '/onboarding'
     | '/orders'
     | '/payroll'
@@ -625,6 +674,8 @@ export interface FileRouteTypes {
     | '/tasks'
     | '/wallet'
     | '/webhooks'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
     | '/admin/audit'
     | '/admin/broadcasts'
     | '/admin/flags'
@@ -657,6 +708,8 @@ export interface FileRouteTypes {
     | '/webhooks/setup'
     | '/admin/'
     | '/orders/'
+    | '/.lovable/oauth/consent'
+    | '/.mcp/invoke-tool/$tool'
     | '/api/public/billing-webhook'
     | '/api/public/paystack-webhook'
     | '/api/public/wp-forms-webhook'
@@ -678,6 +731,7 @@ export interface FileRouteTypes {
     | '/finance'
     | '/health'
     | '/integrations'
+    | '/mcp'
     | '/onboarding'
     | '/payroll'
     | '/pricing'
@@ -689,6 +743,8 @@ export interface FileRouteTypes {
     | '/tasks'
     | '/wallet'
     | '/webhooks'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
     | '/admin/audit'
     | '/admin/broadcasts'
     | '/admin/flags'
@@ -721,6 +777,8 @@ export interface FileRouteTypes {
     | '/webhooks/setup'
     | '/admin'
     | '/orders'
+    | '/.lovable/oauth/consent'
+    | '/.mcp/invoke-tool/$tool'
     | '/api/public/billing-webhook'
     | '/api/public/paystack-webhook'
     | '/api/public/wp-forms-webhook'
@@ -743,6 +801,7 @@ export interface FileRouteTypes {
     | '/finance'
     | '/health'
     | '/integrations'
+    | '/mcp'
     | '/onboarding'
     | '/orders'
     | '/payroll'
@@ -755,6 +814,8 @@ export interface FileRouteTypes {
     | '/tasks'
     | '/wallet'
     | '/webhooks'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
     | '/admin/audit'
     | '/admin/broadcasts'
     | '/admin/flags'
@@ -787,6 +848,8 @@ export interface FileRouteTypes {
     | '/webhooks/setup'
     | '/admin/'
     | '/orders/'
+    | '/.lovable/oauth/consent'
+    | '/.mcp/invoke-tool/$tool'
     | '/api/public/billing-webhook'
     | '/api/public/paystack-webhook'
     | '/api/public/wp-forms-webhook'
@@ -810,6 +873,7 @@ export interface RootRouteChildren {
   FinanceRoute: typeof FinanceRouteWithChildren
   HealthRoute: typeof HealthRoute
   IntegrationsRoute: typeof IntegrationsRoute
+  McpRoute: typeof McpRoute
   OnboardingRoute: typeof OnboardingRoute
   OrdersRoute: typeof OrdersRouteWithChildren
   PayrollRoute: typeof PayrollRoute
@@ -822,6 +886,8 @@ export interface RootRouteChildren {
   TasksRoute: typeof TasksRoute
   WalletRoute: typeof WalletRoute
   WebhooksRoute: typeof WebhooksRouteWithChildren
+  Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
+  Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   CustomersIdRoute: typeof CustomersIdRoute
   FSlugRoute: typeof FSlugRoute
   InventoryAgentStockRoute: typeof InventoryAgentStockRoute
@@ -840,6 +906,8 @@ export interface RootRouteChildren {
   ReportsExportRoute: typeof ReportsExportRoute
   StoreOrdersRoute: typeof StoreOrdersRoute
   StoreProductsRoute: typeof StoreProductsRoute
+  DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
+  Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiPublicBillingWebhookRoute: typeof ApiPublicBillingWebhookRoute
   ApiPublicPaystackWebhookRoute: typeof ApiPublicPaystackWebhookRoute
   ApiPublicWpFormsWebhookRoute: typeof ApiPublicWpFormsWebhookRoute
@@ -930,6 +998,13 @@ declare module '@tanstack/react-router' {
       path: '/onboarding'
       fullPath: '/onboarding'
       preLoaderRoute: typeof OnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mcp': {
+      id: '/mcp'
+      path: '/mcp'
+      fullPath: '/mcp'
+      preLoaderRoute: typeof McpRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/integrations': {
@@ -1268,6 +1343,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAuditRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/.well-known/oauth-protected-resource': {
+      id: '/.well-known/oauth-protected-resource'
+      path: '/.well-known/oauth-protected-resource'
+      fullPath: '/.well-known/oauth-protected-resource'
+      preLoaderRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.mcp/list-tools': {
+      id: '/.mcp/list-tools'
+      path: '/.mcp/list-tools'
+      fullPath: '/.mcp/list-tools'
+      preLoaderRoute: typeof Char91DotmcpChar93ListToolsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/wp-forms-webhook': {
       id: '/api/public/wp-forms-webhook'
       path: '/api/public/wp-forms-webhook'
@@ -1287,6 +1376,20 @@ declare module '@tanstack/react-router' {
       path: '/api/public/billing-webhook'
       fullPath: '/api/public/billing-webhook'
       preLoaderRoute: typeof ApiPublicBillingWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.mcp/invoke-tool/$tool': {
+      id: '/.mcp/invoke-tool/$tool'
+      path: '/.mcp/invoke-tool/$tool'
+      fullPath: '/.mcp/invoke-tool/$tool'
+      preLoaderRoute: typeof Char91DotmcpChar93InvokeToolToolRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.lovable/oauth/consent': {
+      id: '/.lovable/oauth/consent'
+      path: '/.lovable/oauth/consent'
+      fullPath: '/.lovable/oauth/consent'
+      preLoaderRoute: typeof DotlovableOauthConsentRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/integrations/wpforms/webhook': {
@@ -1380,6 +1483,7 @@ const rootRouteChildren: RootRouteChildren = {
   FinanceRoute: FinanceRouteWithChildren,
   HealthRoute: HealthRoute,
   IntegrationsRoute: IntegrationsRoute,
+  McpRoute: McpRoute,
   OnboardingRoute: OnboardingRoute,
   OrdersRoute: OrdersRouteWithChildren,
   PayrollRoute: PayrollRoute,
@@ -1392,6 +1496,9 @@ const rootRouteChildren: RootRouteChildren = {
   TasksRoute: TasksRoute,
   WalletRoute: WalletRoute,
   WebhooksRoute: WebhooksRouteWithChildren,
+  Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
+  Char91DotwellKnownChar93OauthProtectedResourceRoute:
+    Char91DotwellKnownChar93OauthProtectedResourceRoute,
   CustomersIdRoute: CustomersIdRoute,
   FSlugRoute: FSlugRoute,
   InventoryAgentStockRoute: InventoryAgentStockRoute,
@@ -1410,6 +1517,8 @@ const rootRouteChildren: RootRouteChildren = {
   ReportsExportRoute: ReportsExportRoute,
   StoreOrdersRoute: StoreOrdersRoute,
   StoreProductsRoute: StoreProductsRoute,
+  DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
+  Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiPublicBillingWebhookRoute: ApiPublicBillingWebhookRoute,
   ApiPublicPaystackWebhookRoute: ApiPublicPaystackWebhookRoute,
   ApiPublicWpFormsWebhookRoute: ApiPublicWpFormsWebhookRoute,
@@ -1419,3 +1528,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
