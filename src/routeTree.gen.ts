@@ -76,6 +76,7 @@ import { Route as ApiPublicWpFormsWebhookRouteImport } from './routes/api/public
 import { Route as ApiPublicPaystackWebhookRouteImport } from './routes/api/public/paystack-webhook'
 import { Route as ApiPublicBillingWebhookRouteImport } from './routes/api/public/billing-webhook'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
+import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as ApiPublicIntegrationsWpformsWebhookRouteImport } from './routes/api/public/integrations.wpforms.webhook'
 
 const WebhooksRoute = WebhooksRouteImport.update({
@@ -417,6 +418,11 @@ const Char91DotmcpChar93InvokeToolToolRoute =
     path: '/.mcp/invoke-tool/$tool',
     getParentRoute: () => rootRouteImport,
   } as any)
+const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
+  id: '/.lovable/oauth/consent',
+  path: '/.lovable/oauth/consent',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicIntegrationsWpformsWebhookRoute =
   ApiPublicIntegrationsWpformsWebhookRouteImport.update({
     id: '/api/public/integrations/wpforms/webhook',
@@ -488,6 +494,7 @@ export interface FileRoutesByFullPath {
   '/webhooks/setup': typeof WebhooksSetupRoute
   '/admin/': typeof AdminIndexRoute
   '/orders/': typeof OrdersIndexRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/public/billing-webhook': typeof ApiPublicBillingWebhookRoute
   '/api/public/paystack-webhook': typeof ApiPublicPaystackWebhookRoute
@@ -556,6 +563,7 @@ export interface FileRoutesByTo {
   '/webhooks/setup': typeof WebhooksSetupRoute
   '/admin': typeof AdminIndexRoute
   '/orders': typeof OrdersIndexRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/public/billing-webhook': typeof ApiPublicBillingWebhookRoute
   '/api/public/paystack-webhook': typeof ApiPublicPaystackWebhookRoute
@@ -627,6 +635,7 @@ export interface FileRoutesById {
   '/webhooks/setup': typeof WebhooksSetupRoute
   '/admin/': typeof AdminIndexRoute
   '/orders/': typeof OrdersIndexRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/public/billing-webhook': typeof ApiPublicBillingWebhookRoute
   '/api/public/paystack-webhook': typeof ApiPublicPaystackWebhookRoute
@@ -699,6 +708,7 @@ export interface FileRouteTypes {
     | '/webhooks/setup'
     | '/admin/'
     | '/orders/'
+    | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/api/public/billing-webhook'
     | '/api/public/paystack-webhook'
@@ -767,6 +777,7 @@ export interface FileRouteTypes {
     | '/webhooks/setup'
     | '/admin'
     | '/orders'
+    | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/api/public/billing-webhook'
     | '/api/public/paystack-webhook'
@@ -837,6 +848,7 @@ export interface FileRouteTypes {
     | '/webhooks/setup'
     | '/admin/'
     | '/orders/'
+    | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/api/public/billing-webhook'
     | '/api/public/paystack-webhook'
@@ -894,6 +906,7 @@ export interface RootRouteChildren {
   ReportsExportRoute: typeof ReportsExportRoute
   StoreOrdersRoute: typeof StoreOrdersRoute
   StoreProductsRoute: typeof StoreProductsRoute
+  DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiPublicBillingWebhookRoute: typeof ApiPublicBillingWebhookRoute
   ApiPublicPaystackWebhookRoute: typeof ApiPublicPaystackWebhookRoute
@@ -1372,6 +1385,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Char91DotmcpChar93InvokeToolToolRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/.lovable/oauth/consent': {
+      id: '/.lovable/oauth/consent'
+      path: '/.lovable/oauth/consent'
+      fullPath: '/.lovable/oauth/consent'
+      preLoaderRoute: typeof DotlovableOauthConsentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/integrations/wpforms/webhook': {
       id: '/api/public/integrations/wpforms/webhook'
       path: '/api/public/integrations/wpforms/webhook'
@@ -1497,6 +1517,7 @@ const rootRouteChildren: RootRouteChildren = {
   ReportsExportRoute: ReportsExportRoute,
   StoreOrdersRoute: StoreOrdersRoute,
   StoreProductsRoute: StoreProductsRoute,
+  DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiPublicBillingWebhookRoute: ApiPublicBillingWebhookRoute,
   ApiPublicPaystackWebhookRoute: ApiPublicPaystackWebhookRoute,
