@@ -11,8 +11,15 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({ meta: [{ title: "Sign in — Comart+" }, { name: "description", content: "Sign in or create your Comart+ account." }] }),
+  validateSearch: (s: Record<string, unknown>) => ({ next: typeof s.next === "string" ? s.next : "" }),
   component: AuthPage,
 });
+
+function safeNext(next: string): string | null {
+  if (!next || !next.startsWith("/") || next.startsWith("//")) return null;
+  return next;
+}
+
 
 function AuthPage() {
   const navigate = useNavigate();
