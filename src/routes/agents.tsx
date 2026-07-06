@@ -1,18 +1,22 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import ProtectedShell from "@/components/ProtectedShell";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { formatNaira } from "@/lib/format";
 import { toast } from "sonner";
-import { Plus, Users } from "lucide-react";
+import { Plus, Users, Trash2 } from "lucide-react";
+import { softDeleteAgent } from "@/lib/whatsapp.functions";
+
 
 export const Route = createFileRoute("/agents")({
   head: () => ({ meta: [{ title: "Agents — Comart+" }, { name: "description", content: "Manage sales agents and performance." }] }),
@@ -20,16 +24,23 @@ export const Route = createFileRoute("/agents")({
 });
 
 function Agents() {
-  const { store } = useAuth();
+  const { store, roles } = useAuth();
+  const isAdmin = roles.some(r => ["owner", "admin", "manager", "head_of_operations"].includes(r));
   const [rows, setRows] = useState<any[]>([]);
   const [perf, setPerf] = useState<Record<string, { orders: number; revenue: number }>>({});
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<any>({ name: "", phone: "", email: "", commission_pct: "5", area: "" });
+  const [toDelete, setToDelete] = useState<any>(null);
+  const [reassignTo, setReassignTo] = useState<string>("");
+  const [needsReassign, setNeedsReassign] = useState<{ count: number } | null>(null);
+  const [busy, setBusy] = useState(false);
+  const delFn = useServerFn(softDeleteAgent);
 
   const load = async () => {
     if (!store) return;
-    const { data: a } = await supabase.from("agents").select("*").eq("store_id", store.id).order("created_at", { ascending: false });
+    const { data: a } = await supabase.from("agents").select("*").eq("store_id", store.id).is("deleted_at", null).order("created_at", { ascending: false });
     setRows(a || []);
+
     const { data: stocks } = await supabase.from("agent_stocks").select("agent_id, quantity").eq("store_id", store.id);
     const map: Record<string, { orders: number; revenue: number }> = {};
     (stocks || []).forEach(s => {
@@ -83,9 +94,9 @@ function Agents() {
 
       <Card className="p-4">
         <Table>
-          <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Phone</TableHead><TableHead>Email</TableHead><TableHead>Area</TableHead><TableHead>Commission</TableHead><TableHead>Allocations</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
+          <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Phone</TableHead><TableHead>Email</TableHead><TableHead>Area</TableHead><TableHead>Commission</TableHead><TableHead>Allocations</TableHead><TableHead>Status</TableHead>{isAdmin && <TableHead className="w-16"></TableHead>}</TableRow></TableHeader>
           <TableBody>
-            {rows.length === 0 ? <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">No agents yet.</TableCell></TableRow> :
+            {rows.length === 0 ? <TableRow><TableCell colSpan={isAdmin ? 8 : 7} className="text-center py-8 text-muted-foreground">No agents yet.</TableCell></TableRow> :
               rows.map(a => (
                 <TableRow key={a.id}>
                   <TableCell className="font-medium">{a.name}</TableCell>
@@ -95,11 +106,52 @@ function Agents() {
                   <TableCell>{a.commission_pct}%</TableCell>
                   <TableCell>{perf[a.id]?.orders || 0}</TableCell>
                   <TableCell><Badge variant={a.status === "active" ? "default" : "secondary"}>{a.status}</Badge></TableCell>
+                  {isAdmin && (
+                    <TableCell>
+                      <Button size="icon" variant="ghost" onClick={() => { setToDelete(a); setNeedsReassign(null); setReassignTo(""); }}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))}
           </TableBody>
         </Table>
       </Card>
+
+      <Dialog open={!!toDelete} onOpenChange={o => !o && setToDelete(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Remove this agent?</DialogTitle></DialogHeader>
+          {!needsReassign ? (
+            <p className="text-sm text-muted-foreground">This will remove <b>{toDelete?.name}</b> from your store. This action cannot be undone.</p>
+          ) : (
+            <div className="space-y-2">
+              <p className="text-sm">Reassign <b>{needsReassign.count}</b> active stock allocation(s) to:</p>
+              <Select value={reassignTo} onValueChange={setReassignTo}>
+                <SelectTrigger><SelectValue placeholder="Select agent" /></SelectTrigger>
+                <SelectContent>
+                  {rows.filter(x => x.id !== toDelete?.id).map(x => <SelectItem key={x.id} value={x.id}>{x.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setToDelete(null)}>Cancel</Button>
+            <Button variant="destructive" disabled={busy || (!!needsReassign && !reassignTo)} onClick={async () => {
+              if (!store || !toDelete) return;
+              setBusy(true);
+              try {
+                const r: any = await delFn({ data: { agent_id: toDelete.id, store_id: store.id, reassign_to: reassignTo || undefined } });
+                if (r.needs_reassign) { setNeedsReassign({ count: r.active_count }); return; }
+                toast.success("Agent removed successfully.");
+                setToDelete(null); load();
+              } catch (e: any) { toast.error(e.message); }
+              finally { setBusy(false); }
+            }}>Delete Agent</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
+
 }

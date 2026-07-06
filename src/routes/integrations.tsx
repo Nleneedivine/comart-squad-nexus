@@ -10,9 +10,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Search, Plug, Lock, Sparkles, CheckCircle2, Copy, RefreshCw, Settings2, PlayCircle, FileText, AlertCircle, Clock } from "lucide-react";
+import { Search, Plug, Lock, Sparkles, CheckCircle2, Copy, RefreshCw, Settings2, PlayCircle, FileText, AlertCircle, Clock, MessageSquare, ArrowRight } from "lucide-react";
 import { initIntegrationPurchase } from "@/lib/integrations.functions";
 import { Label } from "@/components/ui/label";
+import { Link } from "@tanstack/react-router";
+
+
 
 export const Route = createFileRoute("/integrations")({
   head: () => ({ meta: [{ title: "Integrations — Comart+" }, { name: "description", content: "Connect Comart+ to other tools and services." }] }),
@@ -169,6 +172,19 @@ function Integrations() {
         <h1 className="text-2xl font-bold flex items-center gap-2"><Plug className="h-6 w-6 text-primary" />Integrations</h1>
         <p className="text-muted-foreground text-sm mt-1">Extend Comart+ with platform integrations. Paid integrations activate once payment is received.</p>
       </div>
+
+      <Card className="p-5 border-green-500/30 bg-gradient-to-br from-green-500/5 to-transparent">
+        <div className="flex items-start gap-4">
+          <div className="h-12 w-12 rounded-lg bg-green-600 flex items-center justify-center text-white shrink-0"><MessageSquare className="h-6 w-6" /></div>
+          <div className="flex-1 min-w-0">
+            <div className="font-semibold flex items-center gap-2">WhatsApp Business <Badge variant="outline" className="text-[10px]">Meta Cloud API</Badge></div>
+            <p className="text-sm text-muted-foreground mt-0.5">Connect WhatsApp to message customers directly — order updates, support, cart reminders, and more.</p>
+          </div>
+          <Button asChild><Link to="/integrations/whatsapp">Configure<ArrowRight className="h-4 w-4 ml-1" /></Link></Button>
+        </div>
+      </Card>
+
+
 
       <Card className="p-4">
         <div className="relative max-w-md">

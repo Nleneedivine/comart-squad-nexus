@@ -154,6 +154,7 @@ export type Database = {
           area: string | null
           commission_pct: number
           created_at: string
+          deleted_at: string | null
           email: string | null
           id: string
           name: string
@@ -166,6 +167,7 @@ export type Database = {
           area?: string | null
           commission_pct?: number
           created_at?: string
+          deleted_at?: string | null
           email?: string | null
           id?: string
           name: string
@@ -178,6 +180,7 @@ export type Database = {
           area?: string | null
           commission_pct?: number
           created_at?: string
+          deleted_at?: string | null
           email?: string | null
           id?: string
           name?: string
@@ -2947,6 +2950,213 @@ export type Database = {
           topic?: string
         }
         Relationships: []
+      }
+      whatsapp_integrations: {
+        Row: {
+          access_token_encrypted: string | null
+          created_at: string
+          display_phone_number: string | null
+          id: string
+          last_error: string | null
+          last_tested_at: string | null
+          phone_number_id: string | null
+          status: string
+          store_id: string
+          updated_at: string
+          verified_name: string | null
+          waba_id: string | null
+          webhook_verify_token: string | null
+        }
+        Insert: {
+          access_token_encrypted?: string | null
+          created_at?: string
+          display_phone_number?: string | null
+          id?: string
+          last_error?: string | null
+          last_tested_at?: string | null
+          phone_number_id?: string | null
+          status?: string
+          store_id: string
+          updated_at?: string
+          verified_name?: string | null
+          waba_id?: string | null
+          webhook_verify_token?: string | null
+        }
+        Update: {
+          access_token_encrypted?: string | null
+          created_at?: string
+          display_phone_number?: string | null
+          id?: string
+          last_error?: string | null
+          last_tested_at?: string | null
+          phone_number_id?: string | null
+          status?: string
+          store_id?: string
+          updated_at?: string
+          verified_name?: string | null
+          waba_id?: string | null
+          webhook_verify_token?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_integrations_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: true
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_message_logs: {
+        Row: {
+          created_at: string
+          direction: string
+          error: string | null
+          from_phone: string | null
+          id: string
+          message_body: string | null
+          payload: Json | null
+          status: string
+          store_id: string
+          template_id: string | null
+          to_phone: string | null
+          updated_at: string
+          use_case: string | null
+          wa_message_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          direction?: string
+          error?: string | null
+          from_phone?: string | null
+          id?: string
+          message_body?: string | null
+          payload?: Json | null
+          status?: string
+          store_id: string
+          template_id?: string | null
+          to_phone?: string | null
+          updated_at?: string
+          use_case?: string | null
+          wa_message_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          direction?: string
+          error?: string | null
+          from_phone?: string | null
+          id?: string
+          message_body?: string | null
+          payload?: Json | null
+          status?: string
+          store_id?: string
+          template_id?: string | null
+          to_phone?: string | null
+          updated_at?: string
+          use_case?: string | null
+          wa_message_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_message_logs_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_message_logs_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_templates: {
+        Row: {
+          body: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_default: boolean
+          language: string
+          name: string
+          store_id: string
+          updated_at: string
+          use_case: string
+          variables: string[]
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_default?: boolean
+          language?: string
+          name: string
+          store_id: string
+          updated_at?: string
+          use_case: string
+          variables?: string[]
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_default?: boolean
+          language?: string
+          name?: string
+          store_id?: string
+          updated_at?: string
+          use_case?: string
+          variables?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_templates_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_use_cases: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          store_id: string
+          updated_at: string
+          use_case: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          store_id: string
+          updated_at?: string
+          use_case: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          store_id?: string
+          updated_at?: string
+          use_case?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_use_cases_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
