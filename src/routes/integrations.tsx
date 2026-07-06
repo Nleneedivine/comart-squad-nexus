@@ -173,6 +173,19 @@ function Integrations() {
         <p className="text-muted-foreground text-sm mt-1">Extend Comart+ with platform integrations. Paid integrations activate once payment is received.</p>
       </div>
 
+      <Card className="p-5 border-green-500/30 bg-gradient-to-br from-green-500/5 to-transparent">
+        <div className="flex items-start gap-4">
+          <div className="h-12 w-12 rounded-lg bg-green-600 flex items-center justify-center text-white shrink-0"><MessageSquare className="h-6 w-6" /></div>
+          <div className="flex-1 min-w-0">
+            <div className="font-semibold flex items-center gap-2">WhatsApp Business <Badge variant="outline" className="text-[10px]">Meta Cloud API</Badge></div>
+            <p className="text-sm text-muted-foreground mt-0.5">Connect WhatsApp to message customers directly — order updates, support, cart reminders, and more.</p>
+          </div>
+          <Button asChild><Link to="/integrations/whatsapp">Configure<ArrowRight className="h-4 w-4 ml-1" /></Link></Button>
+        </div>
+      </Card>
+
+
+
       <Card className="p-4">
         <div className="relative max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
