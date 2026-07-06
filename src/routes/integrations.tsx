@@ -10,9 +10,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Search, Plug, Lock, Sparkles, CheckCircle2, Copy, RefreshCw, Settings2, PlayCircle, FileText, AlertCircle, Clock } from "lucide-react";
+import { Search, Plug, Lock, Sparkles, CheckCircle2, Copy, RefreshCw, Settings2, PlayCircle, FileText, AlertCircle, Clock, MessageSquare, ArrowRight } from "lucide-react";
 import { initIntegrationPurchase } from "@/lib/integrations.functions";
 import { Label } from "@/components/ui/label";
+import { Link } from "@tanstack/react-router";
+
+
 
 export const Route = createFileRoute("/integrations")({
   head: () => ({ meta: [{ title: "Integrations — Comart+" }, { name: "description", content: "Connect Comart+ to other tools and services." }] }),
