@@ -59,6 +59,7 @@ import { Route as InventoryProductsRouteImport } from './routes/inventory.produc
 import { Route as InventoryFaultyRouteImport } from './routes/inventory.faulty'
 import { Route as InventoryBuyStockRouteImport } from './routes/inventory.buy-stock'
 import { Route as InventoryAgentStockRouteImport } from './routes/inventory.agent-stock'
+import { Route as IntegrationsWhatsappRouteImport } from './routes/integrations.whatsapp'
 import { Route as FinanceRefundsRouteImport } from './routes/finance.refunds'
 import { Route as FinanceCommissionsRouteImport } from './routes/finance.commissions'
 import { Route as FSlugRouteImport } from './routes/f.$slug'
@@ -330,6 +331,11 @@ const InventoryAgentStockRoute = InventoryAgentStockRouteImport.update({
   path: '/inventory/agent-stock',
   getParentRoute: () => rootRouteImport,
 } as any)
+const IntegrationsWhatsappRoute = IntegrationsWhatsappRouteImport.update({
+  id: '/whatsapp',
+  path: '/whatsapp',
+  getParentRoute: () => IntegrationsRoute,
+} as any)
 const FinanceRefundsRoute = FinanceRefundsRouteImport.update({
   id: '/refunds',
   path: '/refunds',
@@ -453,7 +459,7 @@ export interface FileRoutesByFullPath {
   '/customer-service': typeof CustomerServiceRoute
   '/finance': typeof FinanceRouteWithChildren
   '/health': typeof HealthRoute
-  '/integrations': typeof IntegrationsRoute
+  '/integrations': typeof IntegrationsRouteWithChildren
   '/mcp': typeof McpRoute
   '/onboarding': typeof OnboardingRoute
   '/orders': typeof OrdersRouteWithChildren
@@ -480,6 +486,7 @@ export interface FileRoutesByFullPath {
   '/f/$slug': typeof FSlugRoute
   '/finance/commissions': typeof FinanceCommissionsRoute
   '/finance/refunds': typeof FinanceRefundsRoute
+  '/integrations/whatsapp': typeof IntegrationsWhatsappRoute
   '/inventory/agent-stock': typeof InventoryAgentStockRoute
   '/inventory/buy-stock': typeof InventoryBuyStockRoute
   '/inventory/faulty': typeof InventoryFaultyRoute
@@ -524,7 +531,7 @@ export interface FileRoutesByTo {
   '/customer-service': typeof CustomerServiceRoute
   '/finance': typeof FinanceRouteWithChildren
   '/health': typeof HealthRoute
-  '/integrations': typeof IntegrationsRoute
+  '/integrations': typeof IntegrationsRouteWithChildren
   '/mcp': typeof McpRoute
   '/onboarding': typeof OnboardingRoute
   '/payroll': typeof PayrollRoute
@@ -550,6 +557,7 @@ export interface FileRoutesByTo {
   '/f/$slug': typeof FSlugRoute
   '/finance/commissions': typeof FinanceCommissionsRoute
   '/finance/refunds': typeof FinanceRefundsRoute
+  '/integrations/whatsapp': typeof IntegrationsWhatsappRoute
   '/inventory/agent-stock': typeof InventoryAgentStockRoute
   '/inventory/buy-stock': typeof InventoryBuyStockRoute
   '/inventory/faulty': typeof InventoryFaultyRoute
@@ -596,7 +604,7 @@ export interface FileRoutesById {
   '/customer-service': typeof CustomerServiceRoute
   '/finance': typeof FinanceRouteWithChildren
   '/health': typeof HealthRoute
-  '/integrations': typeof IntegrationsRoute
+  '/integrations': typeof IntegrationsRouteWithChildren
   '/mcp': typeof McpRoute
   '/onboarding': typeof OnboardingRoute
   '/orders': typeof OrdersRouteWithChildren
@@ -623,6 +631,7 @@ export interface FileRoutesById {
   '/f/$slug': typeof FSlugRoute
   '/finance/commissions': typeof FinanceCommissionsRoute
   '/finance/refunds': typeof FinanceRefundsRoute
+  '/integrations/whatsapp': typeof IntegrationsWhatsappRoute
   '/inventory/agent-stock': typeof InventoryAgentStockRoute
   '/inventory/buy-stock': typeof InventoryBuyStockRoute
   '/inventory/faulty': typeof InventoryFaultyRoute
@@ -697,6 +706,7 @@ export interface FileRouteTypes {
     | '/f/$slug'
     | '/finance/commissions'
     | '/finance/refunds'
+    | '/integrations/whatsapp'
     | '/inventory/agent-stock'
     | '/inventory/buy-stock'
     | '/inventory/faulty'
@@ -767,6 +777,7 @@ export interface FileRouteTypes {
     | '/f/$slug'
     | '/finance/commissions'
     | '/finance/refunds'
+    | '/integrations/whatsapp'
     | '/inventory/agent-stock'
     | '/inventory/buy-stock'
     | '/inventory/faulty'
@@ -839,6 +850,7 @@ export interface FileRouteTypes {
     | '/f/$slug'
     | '/finance/commissions'
     | '/finance/refunds'
+    | '/integrations/whatsapp'
     | '/inventory/agent-stock'
     | '/inventory/buy-stock'
     | '/inventory/faulty'
@@ -885,7 +897,7 @@ export interface RootRouteChildren {
   CustomerServiceRoute: typeof CustomerServiceRoute
   FinanceRoute: typeof FinanceRouteWithChildren
   HealthRoute: typeof HealthRoute
-  IntegrationsRoute: typeof IntegrationsRoute
+  IntegrationsRoute: typeof IntegrationsRouteWithChildren
   McpRoute: typeof McpRoute
   OnboardingRoute: typeof OnboardingRoute
   OrdersRoute: typeof OrdersRouteWithChildren
@@ -1280,6 +1292,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InventoryAgentStockRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/integrations/whatsapp': {
+      id: '/integrations/whatsapp'
+      path: '/whatsapp'
+      fullPath: '/integrations/whatsapp'
+      preLoaderRoute: typeof IntegrationsWhatsappRouteImport
+      parentRoute: typeof IntegrationsRoute
+    }
     '/finance/refunds': {
       id: '/finance/refunds'
       path: '/refunds'
@@ -1460,6 +1479,18 @@ const FinanceRouteChildren: FinanceRouteChildren = {
 const FinanceRouteWithChildren =
   FinanceRoute._addFileChildren(FinanceRouteChildren)
 
+interface IntegrationsRouteChildren {
+  IntegrationsWhatsappRoute: typeof IntegrationsWhatsappRoute
+}
+
+const IntegrationsRouteChildren: IntegrationsRouteChildren = {
+  IntegrationsWhatsappRoute: IntegrationsWhatsappRoute,
+}
+
+const IntegrationsRouteWithChildren = IntegrationsRoute._addFileChildren(
+  IntegrationsRouteChildren,
+)
+
 interface OrdersRouteChildren {
   OrdersIdRoute: typeof OrdersIdRoute
   OrdersImportRoute: typeof OrdersImportRoute
@@ -1503,7 +1534,7 @@ const rootRouteChildren: RootRouteChildren = {
   CustomerServiceRoute: CustomerServiceRoute,
   FinanceRoute: FinanceRouteWithChildren,
   HealthRoute: HealthRoute,
-  IntegrationsRoute: IntegrationsRoute,
+  IntegrationsRoute: IntegrationsRouteWithChildren,
   McpRoute: McpRoute,
   OnboardingRoute: OnboardingRoute,
   OrdersRoute: OrdersRouteWithChildren,
