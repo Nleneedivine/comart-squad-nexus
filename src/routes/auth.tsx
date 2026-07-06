@@ -24,6 +24,8 @@ function safeNext(next: string): string | null {
 function AuthPage() {
   const navigate = useNavigate();
   const { user, loading, hydrated, roles } = useAuth();
+  const { next } = Route.useSearch();
+  const nextPath = safeNext(next);
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -34,10 +36,12 @@ function AuthPage() {
   useEffect(() => {
     if (!hydrated || loading) return;
     if (user) {
+      if (nextPath) { window.location.assign(nextPath); return; }
       const isStaff = roles.length > 0 && !roles.some(r => ["owner","admin","manager","head_of_operations"].includes(r));
       navigate({ to: isStaff ? "/staff-portal" : "/Dashboard" });
     }
-  }, [user, loading, hydrated, roles, navigate]);
+  }, [user, loading, hydrated, roles, navigate, nextPath]);
+
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
