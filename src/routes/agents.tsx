@@ -24,16 +24,23 @@ export const Route = createFileRoute("/agents")({
 });
 
 function Agents() {
-  const { store } = useAuth();
+  const { store, roles } = useAuth();
+  const isAdmin = roles.some(r => ["owner", "admin", "manager", "head_of_operations"].includes(r));
   const [rows, setRows] = useState<any[]>([]);
   const [perf, setPerf] = useState<Record<string, { orders: number; revenue: number }>>({});
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<any>({ name: "", phone: "", email: "", commission_pct: "5", area: "" });
+  const [toDelete, setToDelete] = useState<any>(null);
+  const [reassignTo, setReassignTo] = useState<string>("");
+  const [needsReassign, setNeedsReassign] = useState<{ count: number } | null>(null);
+  const [busy, setBusy] = useState(false);
+  const delFn = useServerFn(softDeleteAgent);
 
   const load = async () => {
     if (!store) return;
-    const { data: a } = await supabase.from("agents").select("*").eq("store_id", store.id).order("created_at", { ascending: false });
+    const { data: a } = await supabase.from("agents").select("*").eq("store_id", store.id).is("deleted_at", null).order("created_at", { ascending: false });
     setRows(a || []);
+
     const { data: stocks } = await supabase.from("agent_stocks").select("agent_id, quantity").eq("store_id", store.id);
     const map: Record<string, { orders: number; revenue: number }> = {};
     (stocks || []).forEach(s => {
