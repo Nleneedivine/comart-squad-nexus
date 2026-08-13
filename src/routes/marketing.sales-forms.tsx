@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useRowSelection, SelectAllHead, SelectCell, DeleteRowButton, BulkDeleteBar, deleteRows } from "@/components/BulkDelete";
 import { Plus, Copy, FileText, CheckCircle2, XCircle } from "lucide-react";
 
 export const Route = createFileRoute("/marketing/sales-forms")({
@@ -123,6 +124,7 @@ function SalesForms() {
                 <div className="flex items-center gap-2">
                   <Switch checked={f.status === "active"} onCheckedChange={() => toggle(f)} />
                   <Badge variant={f.status === "active" ? "default" : "secondary"}>{f.status}</Badge>
+                  <DeleteRowButton label="Delete this sales form? Submissions stay in your records." onConfirm={async () => { if (await deleteRows("sales_forms", [f.id])) load(); }} />
                 </div>
               </div>
               <div className="flex items-center gap-2 text-xs">

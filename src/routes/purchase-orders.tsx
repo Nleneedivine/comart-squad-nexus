@@ -15,6 +15,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { formatNaira } from "@/lib/format";
 import { toast } from "sonner";
+import { useRowSelection, SelectAllHead, SelectCell, DeleteRowButton, BulkDeleteBar, deleteRows } from "@/components/BulkDelete";
 import { Plus, ClipboardList, CheckCircle2, XCircle, Trash2, Package, FileText } from "lucide-react";
 import { captureError } from "@/lib/sentry";
 
@@ -53,6 +54,7 @@ function PurchaseOrders() {
     setPos(po || []); setSuppliers(s || []); setProducts(p || []);
   };
   useEffect(() => { load(); }, [store]);
+  const sel = useRowSelection(pos);
 
   const loadDetail = async (id: string) => {
     const { data } = await supabase.from("purchase_order_items").select("*").eq("purchase_order_id", id).order("created_at");
@@ -133,27 +135,35 @@ function PurchaseOrders() {
   const cnt = (st: string) => pos.filter(p => p.status === st).length;
 
   const renderTable = (data: any[]) => (
+    <>
+    <BulkDeleteBar table="purchase_orders" ids={sel.ids} onDone={() => { sel.clear(); load(); }} noun="purchase orders" />
     <Table>
       <TableHeader><TableRow>
+        <SelectAllHead checked={sel.allChecked} onToggle={sel.toggleAll} />
         <TableHead>PO #</TableHead><TableHead>Supplier</TableHead><TableHead>Date</TableHead>
         <TableHead>Expected</TableHead><TableHead className="text-right">Total</TableHead>
         <TableHead>Status</TableHead><TableHead></TableHead>
       </TableRow></TableHeader>
       <TableBody>
-        {data.length === 0 ? <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">No purchase orders.</TableCell></TableRow> :
+        {data.length === 0 ? <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">No purchase orders.</TableCell></TableRow> :
           data.map(p => (
             <TableRow key={p.id} className="cursor-pointer" onClick={() => setDetailId(p.id)}>
+              <TableCell className="w-8" onClick={(e) => e.stopPropagation()}><SelectCell checked={sel.isSelected(p.id)} onToggle={() => sel.toggle(p.id)} /></TableCell>
               <TableCell className="font-mono text-xs">{p.po_number}</TableCell>
               <TableCell>{suppliers.find(s => s.id === p.supplier_id)?.name || "—"}</TableCell>
               <TableCell className="text-xs">{new Date(p.created_at).toLocaleDateString()}</TableCell>
               <TableCell className="text-xs">{p.expected_date || "—"}</TableCell>
               <TableCell className="text-right font-medium">{formatNaira(Number(p.total))}</TableCell>
               <TableCell><Badge className={STATUS_COLORS[p.status]}>{p.status.replace("_", " ")}</Badge></TableCell>
-              <TableCell><Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); setDetailId(p.id); }}>View</Button></TableCell>
+              <TableCell className="whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); setDetailId(p.id); }}>View</Button>
+                <DeleteRowButton label="Delete this purchase order and its items?" onConfirm={async () => { await supabase.from("purchase_order_items").delete().eq("purchase_order_id", p.id); if (await deleteRows("purchase_orders", [p.id])) { sel.clear(); setDetailId(null); load(); } }} />
+              </TableCell>
             </TableRow>
           ))}
       </TableBody>
     </Table>
+    </>
   );
 
   return (
