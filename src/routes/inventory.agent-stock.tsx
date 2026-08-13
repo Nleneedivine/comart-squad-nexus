@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useRowSelection, SelectAllHead, SelectCell, DeleteRowButton, BulkDeleteBar, deleteRows } from "@/components/BulkDelete";
 import { Plus } from "lucide-react";
 
 export const Route = createFileRoute("/inventory/agent-stock")({
@@ -38,6 +39,7 @@ function AgentStock() {
     setProducts(p || []);
   };
   useEffect(() => { load(); }, [store]);
+  const sel = useRowSelection(rows);
 
   const save = async () => {
     if (!store) return;
@@ -86,16 +88,19 @@ function AgentStock() {
       </div>
 
       <Card className="p-4">
+        <BulkDeleteBar table="agent_stocks" ids={sel.ids} onDone={() => { sel.clear(); load(); }} noun="allocations" />
         <Table>
-          <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Agent</TableHead><TableHead>Product</TableHead><TableHead>Quantity</TableHead></TableRow></TableHeader>
+          <TableHeader><TableRow><SelectAllHead checked={sel.allChecked} onToggle={sel.toggleAll} /><TableHead>Date</TableHead><TableHead>Agent</TableHead><TableHead>Product</TableHead><TableHead>Quantity</TableHead><TableHead className="w-12 text-right">Actions</TableHead></TableRow></TableHeader>
           <TableBody>
-            {rows.length === 0 ? <TableRow><TableCell colSpan={4} className="text-center py-8 text-muted-foreground">No allocations yet.</TableCell></TableRow> :
+            {rows.length === 0 ? <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No allocations yet.</TableCell></TableRow> :
               rows.map(r => (
                 <TableRow key={r.id}>
+                  <SelectCell checked={sel.isSelected(r.id)} onToggle={() => sel.toggle(r.id)} />
                   <TableCell>{new Date(r.allocated_at).toLocaleDateString()}</TableCell>
                   <TableCell>{r.agent_name || "—"}</TableCell>
                   <TableCell>{r.product_name}</TableCell>
                   <TableCell>{r.quantity}</TableCell>
+                  <TableCell className="text-right"><DeleteRowButton label="Delete this allocation?" onConfirm={async () => { if (await deleteRows("agent_stocks", [r.id])) { sel.clear(); load(); } }} /></TableCell>
                 </TableRow>
               ))}
           </TableBody>
