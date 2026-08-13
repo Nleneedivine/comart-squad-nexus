@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useRowSelection, SelectAllHead, SelectCell, DeleteRowButton, BulkDeleteBar, deleteRows } from "@/components/BulkDelete";
 import { Plus } from "lucide-react";
 
 export const Route = createFileRoute("/businesses")({
@@ -30,6 +31,7 @@ function Businesses() {
     setRows(data || []);
   };
   useEffect(() => { load(); }, [store]);
+  const sel = useRowSelection(rows);
 
   const save = async () => {
     if (!store) return;
@@ -66,17 +68,20 @@ function Businesses() {
       </div>
 
       <Card className="p-4">
+        <BulkDeleteBar table="businesses" ids={sel.ids} onDone={() => { sel.clear(); load(); }} noun="businesses" />
         <Table>
-          <TableHeader><TableRow><TableHead>Business</TableHead><TableHead>Contact</TableHead><TableHead>Phone</TableHead><TableHead>Email</TableHead><TableHead>Category</TableHead></TableRow></TableHeader>
+          <TableHeader><TableRow><SelectAllHead checked={sel.allChecked} onToggle={sel.toggleAll} /><TableHead>Business</TableHead><TableHead>Contact</TableHead><TableHead>Phone</TableHead><TableHead>Email</TableHead><TableHead>Category</TableHead><TableHead className="w-12 text-right">Actions</TableHead></TableRow></TableHeader>
           <TableBody>
-            {rows.length === 0 ? <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">No businesses yet.</TableCell></TableRow> :
+            {rows.length === 0 ? <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">No businesses yet.</TableCell></TableRow> :
               rows.map(b => (
                 <TableRow key={b.id}>
+                  <SelectCell checked={sel.isSelected(b.id)} onToggle={() => sel.toggle(b.id)} />
                   <TableCell className="font-medium">{b.business_name}</TableCell>
                   <TableCell>{b.contact_person || "—"}</TableCell>
                   <TableCell>{b.phone || "—"}</TableCell>
                   <TableCell>{b.email || "—"}</TableCell>
                   <TableCell>{b.category || "—"}</TableCell>
+                  <TableCell className="text-right"><DeleteRowButton label="Delete this business?" onConfirm={async () => { if (await deleteRows("businesses", [b.id])) { sel.clear(); load(); } }} /></TableCell>
                 </TableRow>
               ))}
           </TableBody>

@@ -14,6 +14,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { formatNaira } from "@/lib/format";
 import { toast } from "sonner";
+import { useRowSelection, SelectAllHead, SelectCell, DeleteRowButton, BulkDeleteBar, deleteRows } from "@/components/BulkDelete";
 import { Plus, Truck, Phone, Mail, Banknote, Edit2 } from "lucide-react";
 
 export const Route = createFileRoute("/suppliers")({
@@ -43,6 +44,8 @@ function Suppliers() {
     setRows(s || []); setPayments(p || []); setPos(po || []);
   };
   useEffect(() => { load(); }, [store]);
+  const sel = useRowSelection(rows);
+  const paySel = useRowSelection(payments);
 
   const save = async () => {
     if (!store) return;
@@ -149,19 +152,22 @@ function Suppliers() {
         </TabsList>
         <TabsContent value="list">
           <Card className="p-4">
+            <BulkDeleteBar table="suppliers" ids={sel.ids} onDone={() => { sel.clear(); load(); }} noun="suppliers" />
             <Table>
               <TableHeader><TableRow>
+                <SelectAllHead checked={sel.allChecked} onToggle={sel.toggleAll} />
                 <TableHead>Name</TableHead><TableHead>Contact</TableHead><TableHead>Category</TableHead>
                 <TableHead className="text-right">Orders</TableHead><TableHead className="text-right">Ordered</TableHead>
                 <TableHead className="text-right">Paid</TableHead><TableHead className="text-right">Balance</TableHead>
                 <TableHead></TableHead>
               </TableRow></TableHeader>
               <TableBody>
-                {rows.length === 0 ? <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">No suppliers yet.</TableCell></TableRow> :
+                {rows.length === 0 ? <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">No suppliers yet.</TableCell></TableRow> :
                   rows.map(s => {
                     const st = stats(s.id);
                     return (
                       <TableRow key={s.id}>
+                        <SelectCell checked={sel.isSelected(s.id)} onToggle={() => sel.toggle(s.id)} />
                         <TableCell><div className="font-medium">{s.name}</div>{s.contact_person && <div className="text-xs text-muted-foreground">{s.contact_person}</div>}</TableCell>
                         <TableCell className="text-xs">
                           {s.phone && <div className="flex items-center gap-1"><Phone className="h-3 w-3" />{s.phone}</div>}
@@ -172,7 +178,7 @@ function Suppliers() {
                         <TableCell className="text-right">{formatNaira(st.totalOrdered)}</TableCell>
                         <TableCell className="text-right text-emerald-500">{formatNaira(st.totalPaid)}</TableCell>
                         <TableCell className={"text-right font-semibold " + (st.balance > 0 ? "text-rose-500" : "text-foreground")}>{formatNaira(st.balance)}</TableCell>
-                        <TableCell>{isAdmin && <Button size="sm" variant="ghost" onClick={() => startEdit(s)}><Edit2 className="h-3 w-3" /></Button>}</TableCell>
+                        <TableCell className="text-right whitespace-nowrap">{isAdmin && <Button size="sm" variant="ghost" onClick={() => startEdit(s)}><Edit2 className="h-3 w-3" /></Button>}<DeleteRowButton label="Delete this supplier?" onConfirm={async () => { if (await deleteRows("suppliers", [s.id])) { sel.clear(); load(); } }} /></TableCell>
                       </TableRow>
                     );
                   })}
@@ -182,20 +188,24 @@ function Suppliers() {
         </TabsContent>
         <TabsContent value="payments">
           <Card className="p-4">
+            <BulkDeleteBar table="supplier_payments" ids={paySel.ids} onDone={() => { paySel.clear(); load(); }} noun="payments" />
             <Table>
               <TableHeader><TableRow>
+                <SelectAllHead checked={paySel.allChecked} onToggle={paySel.toggleAll} />
                 <TableHead>Date</TableHead><TableHead>Supplier</TableHead><TableHead>Reference</TableHead>
-                <TableHead>Notes</TableHead><TableHead className="text-right">Amount</TableHead>
+                <TableHead>Notes</TableHead><TableHead className="text-right">Amount</TableHead><TableHead className="w-12 text-right">Actions</TableHead>
               </TableRow></TableHeader>
               <TableBody>
-                {payments.length === 0 ? <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">No payments yet.</TableCell></TableRow> :
+                {payments.length === 0 ? <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">No payments yet.</TableCell></TableRow> :
                   payments.map(p => (
                     <TableRow key={p.id}>
+                      <SelectCell checked={paySel.isSelected(p.id)} onToggle={() => paySel.toggle(p.id)} />
                       <TableCell className="text-xs">{new Date(p.paid_at).toLocaleDateString()}</TableCell>
                       <TableCell>{rows.find(r => r.id === p.supplier_id)?.name || "—"}</TableCell>
                       <TableCell className="text-xs">{p.reference || "—"}</TableCell>
                       <TableCell className="text-xs max-w-xs truncate">{p.notes || "—"}</TableCell>
                       <TableCell className="text-right font-medium">{formatNaira(Number(p.amount))}</TableCell>
+                      <TableCell className="text-right"><DeleteRowButton label="Delete this supplier payment?" onConfirm={async () => { if (await deleteRows("supplier_payments", [p.id])) { paySel.clear(); load(); } }} /></TableCell>
                     </TableRow>
                   ))}
               </TableBody>

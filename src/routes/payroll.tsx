@@ -20,6 +20,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatNaira } from "@/lib/format";
 import { downloadCSV } from "@/lib/export";
 import { toast } from "sonner";
+import { useRowSelection, SelectAllHead, SelectCell, DeleteRowButton, BulkDeleteBar, deleteRows } from "@/components/BulkDelete";
 import {
   Banknote, Plus, Play, CheckCircle2, FileSpreadsheet, Users as UsersIcon,
   Calendar, Edit2, Printer,
@@ -74,6 +75,7 @@ function Payroll() {
   };
 
   useEffect(() => { load(); }, [store]);
+  const sel = useRowSelection(periods);
   useEffect(() => { if (activePeriod) loadPayslips(activePeriod.id); else setPayslips([]); }, [activePeriod]);
 
   const createPeriod = async () => {
@@ -226,15 +228,18 @@ function Payroll() {
 
         <TabsContent value="periods" className="space-y-4">
           <Card className="p-4">
+            <BulkDeleteBar table="payroll_periods" ids={sel.ids} onDone={() => { sel.clear(); load(); }} noun="periods" />
             <Table>
               <TableHeader><TableRow>
+                <SelectAllHead checked={sel.allChecked} onToggle={sel.toggleAll} />
                 <TableHead>Period</TableHead><TableHead>Range</TableHead><TableHead>Status</TableHead>
                 <TableHead className="text-right">Staff</TableHead><TableHead className="text-right">Total</TableHead><TableHead></TableHead>
               </TableRow></TableHeader>
               <TableBody>
-                {periods.length === 0 ? <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No payroll periods yet.</TableCell></TableRow> :
+                {periods.length === 0 ? <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">No payroll periods yet.</TableCell></TableRow> :
                   periods.map(p => (
                     <TableRow key={p.id}>
+                      <SelectCell checked={sel.isSelected(p.id)} onToggle={() => sel.toggle(p.id)} />
                       <TableCell className="font-medium">{p.name}</TableCell>
                       <TableCell className="text-xs">{p.period_start} → {p.period_end}</TableCell>
                       <TableCell><Badge className={STATUS_TONES[p.status]}>{p.status}</Badge></TableCell>

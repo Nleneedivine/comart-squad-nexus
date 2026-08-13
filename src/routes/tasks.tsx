@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useRowSelection, SelectAllHead, SelectCell, DeleteRowButton, BulkDeleteBar, deleteRows } from "@/components/BulkDelete";
 import { CheckCircle2, Clock, Plus } from "lucide-react";
 
 export const Route = createFileRoute("/tasks")({
@@ -83,7 +84,12 @@ function Tasks() {
         </div>
       </div>
       <div className="flex items-center justify-between">
-        <Badge variant={t.status === "done" ? "default" : "secondary"}>{t.status}</Badge>
+        <div className="flex items-center gap-1">
+          <Badge variant={t.status === "done" ? "default" : "secondary"}>{t.status}</Badge>
+          {(isAdmin || t.assigned_by === user?.id) && (
+            <DeleteRowButton label="Delete this task?" onConfirm={async () => { if (await deleteRows("tasks", [t.id])) load(); }} />
+          )}
+        </div>
         {t.assigned_to === user?.id && t.status !== "done" && (
           <div className="flex gap-1">
             {t.status === "pending" && <Button size="sm" variant="outline" onClick={() => updateStatus(t.id, "in_progress")}><Clock className="h-3 w-3 mr-1" />Start</Button>}

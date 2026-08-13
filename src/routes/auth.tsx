@@ -11,7 +11,7 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({ meta: [{ title: "Sign in — Comart+" }, { name: "description", content: "Sign in or create your Comart+ account." }] }),
-  validateSearch: (s: Record<string, unknown>) => ({ next: typeof s.next === "string" ? s.next : "" }),
+  validateSearch: (s: Record<string, unknown>): { next?: string } => ({ next: typeof s.next === "string" ? s.next : undefined }),
   component: AuthPage,
 });
 
@@ -25,7 +25,7 @@ function AuthPage() {
   const navigate = useNavigate();
   const { user, loading, hydrated, roles } = useAuth();
   const { next } = Route.useSearch();
-  const nextPath = safeNext(next);
+  const nextPath = safeNext(next ?? "");
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

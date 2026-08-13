@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { NIGERIAN_STATES } from "@/lib/nigeria";
 import { formatNaira } from "@/lib/format";
 import { toast } from "sonner";
+import { useRowSelection, SelectAllHead, SelectCell, DeleteRowButton, BulkDeleteBar, deleteRows } from "@/components/BulkDelete";
 import { Users, MapPin, Plus } from "lucide-react";
 
 export const Route = createFileRoute("/customer-service")({
@@ -48,6 +49,7 @@ function Customers() {
     setStats(map);
   };
   useEffect(() => { load(); }, [store]);
+  const sel = useRowSelection(filtered);
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
@@ -117,17 +119,19 @@ function Customers() {
 
       <Card className="p-4">
         <Input placeholder="Search by name, phone or email..." value={search} onChange={e => setSearch(e.target.value)} className="mb-4 max-w-sm" />
+        <BulkDeleteBar table="customers" ids={sel.ids} onDone={() => { sel.clear(); load(); }} noun="customers" />
         <Table>
           <TableHeader>
-            <TableRow><TableHead>Customer</TableHead><TableHead>Contact</TableHead><TableHead>State</TableHead><TableHead>City</TableHead><TableHead>Total Orders</TableHead><TableHead>Total Spent</TableHead><TableHead>Last Order</TableHead></TableRow>
+            <TableRow><SelectAllHead checked={sel.allChecked} onToggle={sel.toggleAll} /><TableHead>Customer</TableHead><TableHead>Contact</TableHead><TableHead>State</TableHead><TableHead>City</TableHead><TableHead>Total Orders</TableHead><TableHead>Total Spent</TableHead><TableHead>Last Order</TableHead><TableHead className="w-12 text-right">Actions</TableHead></TableRow>
           </TableHeader>
           <TableBody>
             {filtered.length === 0 ? (
-              <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">No customers yet.</TableCell></TableRow>
+              <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-8">No customers yet.</TableCell></TableRow>
             ) : filtered.map(c => {
               const s = stats[c.id] || { orders: 0, spent: 0, last: null };
               return (
                 <TableRow key={c.id}>
+                  <SelectCell checked={sel.isSelected(c.id)} onToggle={() => sel.toggle(c.id)} />
                   <TableCell className="font-medium"><Link to="/customers/$id" params={{ id: c.id }} className="hover:text-primary">{c.name}</Link></TableCell>
                   <TableCell>{c.phone}{c.email && <div className="text-xs text-muted-foreground">{c.email}</div>}</TableCell>
                   <TableCell>{c.state || "—"}</TableCell>
@@ -135,6 +139,7 @@ function Customers() {
                   <TableCell>{s.orders}</TableCell>
                   <TableCell>{formatNaira(s.spent)}</TableCell>
                   <TableCell>{s.last ? new Date(s.last).toLocaleDateString() : "—"}</TableCell>
+                  <TableCell className="text-right"><DeleteRowButton label="Delete this customer?" onConfirm={async () => { if (await deleteRows("customers", [c.id])) { sel.clear(); load(); } }} /></TableCell>
                 </TableRow>
               );
             })}
