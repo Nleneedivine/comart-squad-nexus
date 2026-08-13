@@ -25,7 +25,7 @@ function AuthPage() {
   const navigate = useNavigate();
   const { user, loading, hydrated, roles } = useAuth();
   const { next } = Route.useSearch();
-  const nextPath = safeNext(next);
+  const nextPath = safeNext(next ?? "");
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
