@@ -14,6 +14,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { formatNaira } from "@/lib/format";
 import { toast } from "sonner";
+import { useRowSelection, SelectAllHead, SelectCell, DeleteRowButton, BulkDeleteBar, deleteRows } from "@/components/BulkDelete";
 import { Plus, Download, TrendingUp, TrendingDown, Wallet as WalletIcon, FileText } from "lucide-react";
 
 export const Route = createFileRoute("/finance")({
@@ -45,6 +46,7 @@ function Finance() {
     setRows(data || []);
   };
   useEffect(() => { load(); }, [store, from, to, typeFilter]);
+  const sel = useRowSelection(rows);
 
   const totals = useMemo(() => {
     const inc = rows.filter(r => r.type === "income").reduce((s, r) => s + Number(r.amount), 0);
@@ -137,12 +139,14 @@ function Finance() {
       </Card>
 
       <Card className="p-4">
+        <BulkDeleteBar table="finance_records" ids={sel.ids} onDone={() => { sel.clear(); load(); }} noun="records" />
         <Table>
-          <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Type</TableHead><TableHead>Category</TableHead><TableHead>Description</TableHead><TableHead>Source</TableHead><TableHead className="text-right">Amount</TableHead></TableRow></TableHeader>
+          <TableHeader><TableRow><SelectAllHead checked={sel.allChecked} onToggle={sel.toggleAll} /><TableHead>Date</TableHead><TableHead>Type</TableHead><TableHead>Category</TableHead><TableHead>Description</TableHead><TableHead>Source</TableHead><TableHead className="text-right">Amount</TableHead><TableHead className="w-12 text-right">Actions</TableHead></TableRow></TableHeader>
           <TableBody>
-            {rows.length === 0 ? <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No records yet.</TableCell></TableRow> :
+            {rows.length === 0 ? <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">No records yet.</TableCell></TableRow> :
               rows.map(r => (
                 <TableRow key={r.id}>
+                  <SelectCell checked={sel.isSelected(r.id)} onToggle={() => sel.toggle(r.id)} />
                   <TableCell>{r.record_date}</TableCell>
                   <TableCell><Badge variant={r.type === "income" ? "default" : "secondary"}>{r.type}</Badge></TableCell>
                   <TableCell>{r.category || "—"}</TableCell>
@@ -151,6 +155,7 @@ function Finance() {
                   <TableCell className={"text-right font-medium " + (r.type === "income" ? "text-emerald-500" : "text-rose-500")}>
                     {r.type === "income" ? "+" : "−"}{formatNaira(Number(r.amount))}
                   </TableCell>
+                  <TableCell className="text-right"><DeleteRowButton label="Delete this financial record?" onConfirm={async () => { if (await deleteRows("finance_records", [r.id])) { sel.clear(); load(); } }} /></TableCell>
                 </TableRow>
               ))}
           </TableBody>
