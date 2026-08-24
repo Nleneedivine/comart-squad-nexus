@@ -9,6 +9,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Trash2 } from "lucide-react";
+import { useRowSelection, SelectAllHead, SelectCell, BulkDeleteBar } from "@/components/BulkDelete";
+
 
 export const Route = createFileRoute("/inventory/stock-record")({
   head: () => ({ meta: [{ title: "Stock Record — Comart+" }, { name: "description", content: "Full stock movement log." }] }),
