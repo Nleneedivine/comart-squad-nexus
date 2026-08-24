@@ -57,6 +57,8 @@ const blank = () => ({
 function CallOrders() {
   const { store, user } = useAuth();
   const [rows, setRows] = useState<Row[]>([]);
+  const sel = useRowSelection(rows);
+
   const [staff, setStaff] = useState<{ user_id: string; full_name: string | null }[]>([]);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Row | null>(null);
@@ -189,17 +191,21 @@ function CallOrders() {
 
       <Card className="p-4">
         <h2 className="font-semibold mb-3 px-2">Order Log</h2>
+        <BulkDeleteBar table="call_orders" ids={sel.ids} noun="orders" onDone={() => { sel.clear(); load(); }} />
         <Table>
           <TableHeader><TableRow>
+            <SelectAllHead checked={sel.allChecked} onToggle={sel.toggleAll} />
             <TableHead>Date</TableHead><TableHead>Agent</TableHead><TableHead>Call</TableHead><TableHead>Valid</TableHead>
             <TableHead>Status</TableHead><TableHead className="text-right">Sold</TableHead><TableHead className="text-right">Paid</TableHead>
             <TableHead className="text-right">Remitted</TableHead><TableHead className="text-right">Actions</TableHead>
           </TableRow></TableHeader>
           <TableBody>
-            {rows.length === 0 ? <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">No orders yet.</TableCell></TableRow> :
+            {rows.length === 0 ? <TableRow><TableCell colSpan={10} className="text-center py-8 text-muted-foreground">No orders yet.</TableCell></TableRow> :
               rows.map(r => (
                 <TableRow key={r.id}>
+                  <SelectCell checked={sel.isSelected(r.id)} onToggle={() => sel.toggle(r.id)} />
                   <TableCell>{new Date(r.order_date).toLocaleDateString()}</TableCell>
+
                   <TableCell>{r.agent_name || "—"}</TableCell>
                   <TableCell>{r.call_received ? "Yes" : "No"}</TableCell>
                   <TableCell>{r.call_valid ? "Yes" : "No"}</TableCell>
