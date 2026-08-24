@@ -14,6 +14,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatNaira } from "@/lib/format";
 import { toast } from "sonner";
 import { Plus, Pencil, AlertTriangle, Trash2 } from "lucide-react";
+import { useRowSelection, SelectAllHead, SelectCell, BulkDeleteBar } from "@/components/BulkDelete";
+
 
 const ADMIN_ROLES = ["owner", "admin", "manager", "head_of_operations"];
 

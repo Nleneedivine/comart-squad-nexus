@@ -12,6 +12,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Plus, Printer, Trash2 } from "lucide-react";
+import { useRowSelection, SelectAllHead, SelectCell, BulkDeleteBar } from "@/components/BulkDelete";
+
 
 const ADMIN_ROLES = ["owner", "admin", "manager", "head_of_operations"];
 
