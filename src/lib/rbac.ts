@@ -14,17 +14,20 @@ const ROLE_ROUTES: Record<string, string[]> = {
   admin: ["*"],
   manager: ["*"],
   head_of_operations: ["*"],
-  sales_rep: ["/orders", "/customer-service", "/store/orders", "/store/products"],
+  // Call/sales reps work out of My Workspace only — no orders module,
+  // no customers, inventory, procurement, finance or wallet.
+  sales_rep: [],
   hr: ["/staff", "/payroll", "/attendance"],
   inventory_manager: [
     "/inventory/products", "/inventory/buy-stock", "/inventory/stock-record",
     "/inventory/faulty", "/inventory/agent-stock", "/inventory/waybill",
     "/businesses", "/store/products", "/suppliers", "/purchase-orders",
   ],
-  marketer: ["/marketing/sales-forms", "/agents", "/customer-service"],
-  order_manager: ["/orders", "/store/orders", "/customer-service", "/inventory/waybill"],
-  customer_care: ["/customer-service", "/orders"],
-  logistics_manager: ["/inventory/waybill", "/orders", "/inventory/agent-stock"],
+  marketer: ["/marketing/sales-forms", "/agents"],
+  order_manager: ["/orders", "/call-orders", "/store/orders", "/customer-service", "/inventory/waybill"],
+  customer_care: ["/customer-service"],
+  logistics_manager: ["/inventory/waybill", "/inventory/agent-stock"],
+
   accountant: [
     "/finance", "/finance/commissions", "/finance/refunds",
     "/wallet", "/reports/export", "/reports/activity", "/reports/daily",
