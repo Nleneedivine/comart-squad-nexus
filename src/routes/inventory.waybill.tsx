@@ -102,13 +102,16 @@ function Waybill() {
       </div>
 
       <Card className="p-4">
+        {isAdmin && <BulkDeleteBar table="waybills" ids={sel.ids} noun="waybills" onDone={() => { sel.clear(); load(); }} />}
         <Table>
-          <TableHeader><TableRow><TableHead>Waybill #</TableHead><TableHead>Date</TableHead><TableHead>Recipient</TableHead><TableHead>Destination</TableHead><TableHead>Items</TableHead><TableHead /></TableRow></TableHeader>
+          <TableHeader><TableRow>{isAdmin && <SelectAllHead checked={sel.allChecked} onToggle={sel.toggleAll} />}<TableHead>Waybill #</TableHead><TableHead>Date</TableHead><TableHead>Recipient</TableHead><TableHead>Destination</TableHead><TableHead>Items</TableHead><TableHead /></TableRow></TableHeader>
           <TableBody>
-            {rows.length === 0 ? <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No waybills yet.</TableCell></TableRow> :
+            {rows.length === 0 ? <TableRow><TableCell colSpan={isAdmin ? 7 : 6} className="text-center py-8 text-muted-foreground">No waybills yet.</TableCell></TableRow> :
               rows.map(w => (
                 <TableRow key={w.id}>
+                  {isAdmin && <SelectCell checked={sel.isSelected(w.id)} onToggle={() => sel.toggle(w.id)} />}
                   <TableCell className="font-mono text-xs">{w.waybill_number}</TableCell>
+
                   <TableCell>{new Date(w.dispatch_date).toLocaleDateString()}</TableCell>
                   <TableCell>{w.recipient_name}</TableCell>
                   <TableCell>{w.destination || "—"}</TableCell>

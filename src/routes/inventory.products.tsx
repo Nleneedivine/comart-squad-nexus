@@ -114,15 +114,18 @@ function InventoryProducts() {
       </div>
 
       <Card className="p-4">
+        {isAdmin && <BulkDeleteBar table="products" ids={sel.ids} noun="products" onDone={() => { sel.clear(); load(); }} />}
         <Table>
-          <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>SKU</TableHead><TableHead>Category</TableHead><TableHead>Buying</TableHead><TableHead>Selling</TableHead><TableHead>Stock</TableHead><TableHead>Reorder ≤</TableHead><TableHead>Status</TableHead><TableHead></TableHead></TableRow></TableHeader>
+          <TableHeader><TableRow>{isAdmin && <SelectAllHead checked={sel.allChecked} onToggle={sel.toggleAll} />}<TableHead>Name</TableHead><TableHead>SKU</TableHead><TableHead>Category</TableHead><TableHead>Buying</TableHead><TableHead>Selling</TableHead><TableHead>Stock</TableHead><TableHead>Reorder ≤</TableHead><TableHead>Status</TableHead><TableHead></TableHead></TableRow></TableHeader>
           <TableBody>
-            {rows.length === 0 ? <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">No products yet.</TableCell></TableRow> :
+            {rows.length === 0 ? <TableRow><TableCell colSpan={isAdmin ? 10 : 9} className="text-center py-8 text-muted-foreground">No products yet.</TableCell></TableRow> :
               rows.map(p => {
                 const low = Number(p.stock_qty) <= Number(p.reorder_point || 0);
                 return (
                   <TableRow key={p.id}>
+                    {isAdmin && <SelectCell checked={sel.isSelected(p.id)} onToggle={() => sel.toggle(p.id)} />}
                     <TableCell className="font-medium">{p.name}</TableCell>
+
                     <TableCell className="text-xs">{p.sku || "—"}</TableCell>
                     <TableCell>{p.category || "—"}</TableCell>
                     <TableCell>{formatNaira(Number(p.buying_price))}</TableCell>
