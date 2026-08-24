@@ -23,7 +23,7 @@ import { toast } from "sonner";
 import { useRowSelection, SelectAllHead, SelectCell, DeleteRowButton, BulkDeleteBar, deleteRows } from "@/components/BulkDelete";
 import {
   Banknote, Plus, Play, CheckCircle2, FileSpreadsheet, Users as UsersIcon,
-  Calendar, Edit2, Printer,
+  Calendar, Edit2, Printer, Trash2,
 } from "lucide-react";
 
 export const Route = createFileRoute("/payroll")({
