@@ -30,6 +30,8 @@ function InventoryProducts() {
   const { store, roles } = useAuth();
   const isAdmin = roles.some(r => ADMIN_ROLES.includes(r));
   const [rows, setRows] = useState<any[]>([]);
+  const sel = useRowSelection(rows);
+
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<any>(blank);

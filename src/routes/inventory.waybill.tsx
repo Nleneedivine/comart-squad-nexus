@@ -25,6 +25,8 @@ export const Route = createFileRoute("/inventory/waybill")({
 function Waybill() {
   const { store, roles } = useAuth();
   const [rows, setRows] = useState<any[]>([]);
+  const sel = useRowSelection(rows);
+
   const [open, setOpen] = useState(false);
   const isAdmin = roles.some(r => ADMIN_ROLES.includes(r));
 
