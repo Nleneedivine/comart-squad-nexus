@@ -49,12 +49,13 @@ function Customers() {
     setStats(map);
   };
   useEffect(() => { load(); }, [store]);
-  const sel = useRowSelection(filtered);
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
     return rows.filter(r => !q || r.name?.toLowerCase().includes(q) || r.phone?.toLowerCase().includes(q) || r.email?.toLowerCase().includes(q));
   }, [rows, search]);
+  const sel = useRowSelection(filtered);
+
 
   const totalCustomers = rows.length;
   const statesCovered = new Set(rows.map(r => r.state).filter(Boolean)).size;

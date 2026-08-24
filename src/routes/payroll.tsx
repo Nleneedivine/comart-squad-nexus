@@ -23,7 +23,7 @@ import { toast } from "sonner";
 import { useRowSelection, SelectAllHead, SelectCell, DeleteRowButton, BulkDeleteBar, deleteRows } from "@/components/BulkDelete";
 import {
   Banknote, Plus, Play, CheckCircle2, FileSpreadsheet, Users as UsersIcon,
-  Calendar, Edit2, Printer,
+  Calendar, Edit2, Printer, Trash2,
 } from "lucide-react";
 
 export const Route = createFileRoute("/payroll")({
@@ -280,7 +280,17 @@ function Payroll() {
                                           <TableCell className="flex gap-1">
                                             {p.status !== "paid" && <Button size="sm" variant="ghost" onClick={() => setEditPS({ ...ps })}><Edit2 className="h-3 w-3" /></Button>}
                                             <Button size="sm" variant="ghost" onClick={() => printPayslip(ps)}><Printer className="h-3 w-3" /></Button>
+                                            {p.status !== "paid" && (
+                                              <Button size="sm" variant="ghost" title="Delete payslip" onClick={async () => {
+                                                if (!confirm(`Delete payslip for ${ps.staff_name || "this staff"}?`)) return;
+                                                const { error } = await supabase.from("payslips").delete().eq("id", ps.id);
+                                                if (error) return toast.error(error.message);
+                                                toast.success("Payslip deleted");
+                                                loadPayslips(p.id);
+                                              }}><Trash2 className="h-3 w-3 text-destructive" /></Button>
+                                            )}
                                           </TableCell>
+
                                         </TableRow>
                                       ))}
                                   </TableBody>
