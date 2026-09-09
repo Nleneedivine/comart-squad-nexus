@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1788947229750,
+      "tag": "0000_grant_delete_and_delete_policies",
+      "breakpoints": true
+    }
+  ]
+}
