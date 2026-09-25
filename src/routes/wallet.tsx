@@ -16,7 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatNaira } from "@/lib/format";
 import { toast } from "sonner";
 import { Eye, EyeOff, ArrowUpRight, ArrowDownLeft, Settings as SettingsIcon, AlertTriangle, Search } from "lucide-react";
-import { initFundWallet, verifyFunding, requestWithdrawal, setWalletPin } from "@/lib/paystack.functions";
+import { initFundWallet, verifyFunding, requestWithdrawal, setWalletPin, ensureWalletForCurrentStore } from "@/lib/paystack.functions";
 
 export const Route = createFileRoute("/wallet")({
   head: () => ({ meta: [{ title: "Wallet — Comart+" }, { name: "description", content: "Wallet powered by Paystack." }] }),
@@ -40,12 +40,7 @@ function Wallet() {
 
   const load = async () => {
     if (!store) return;
-    const { data: w } = await supabase.from("wallets").select("id,store_id,balance,bank_name,bank_account_number,bank_account_name,created_at,updated_at").eq("store_id", store.id).maybeSingle();
-    let walletRow = w;
-    if (!walletRow) {
-      const { data: created } = await supabase.from("wallets").insert({ store_id: store.id }).select("id,store_id,balance,bank_name,bank_account_number,bank_account_name,created_at,updated_at").single();
-      walletRow = created;
-    }
+    const walletRow = await ensureWalletForCurrentStore();
     setWallet(walletRow);
     setBank({
       bank_name: walletRow?.bank_name || "",
