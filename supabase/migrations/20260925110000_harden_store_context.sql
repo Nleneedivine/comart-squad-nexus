@@ -66,3 +66,32 @@ SELECT ur.user_id, MIN(ur.store_id)
 FROM public.user_roles ur
 GROUP BY ur.user_id
 ON CONFLICT (user_id) DO NOTHING;
+
+-- Remove the legacy email-based privilege escalation. Super-admin status must
+-- be managed explicitly, not inferred from an email address in a signup trigger.
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  new_store_id UUID;
+BEGIN
+  INSERT INTO public.profiles (id, email, full_name)
+  VALUES (
+    NEW.id,
+    NEW.email,
+    COALESCE(NEW.raw_user_meta_data->>'full_name', split_part(NEW.email, '@', 1))
+  );
+
+  INSERT INTO public.stores (name, owner_id)
+  VALUES (COALESCE(NEW.raw_user_meta_data->>'store_name', 'My Store'), NEW.id)
+  RETURNING id INTO new_store_id;
+
+  INSERT INTO public.user_roles (user_id, store_id, role)
+  VALUES (NEW.id, new_store_id, 'owner');
+
+  RETURN NEW;
+END;
+$$;
