@@ -178,3 +178,13 @@ DROP POLICY IF EXISTS "admins manage wallet_tx" ON public.wallet_transactions;
 
 -- Existing transaction history remains readable by store members.
 -- New financial mutations must go through audited server-side RPCs.
+
+-- Preserve the application's existing accountant wallet access while making
+-- the new permission check explicit.
+INSERT INTO public.role_permissions(role, permission_key)
+VALUES
+ ('accountant', 'wallet.view'),
+ ('accountant', 'wallet.fund'),
+ ('accountant', 'wallet.withdraw'),
+ ('accountant', 'wallet.manage')
+ON CONFLICT DO NOTHING;
