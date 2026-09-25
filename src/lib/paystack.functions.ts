@@ -112,6 +112,20 @@ export const verifyFunding = createServerFn({ method: "POST" })
     return { ok: false, message: r.data.gateway_response || "Failed" };
   });
 
+export const setWalletPin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ pin: z.string().regex(/^\d{4,6}$/) }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { userId, supabase } = context;
+    const { data: pref } = await supabase.from("user_store_preferences")
+      .select("active_store_id").eq("user_id", userId).maybeSingle();
+    const storeId = pref?.active_store_id;
+    if (!storeId) throw new Error("No active store");
+    const { error } = await supabase.rpc("set_wallet_pin", { _store_id: storeId, _pin: data.pin });
+    if (error) throw error;
+    return { ok: true };
+  });
+
 export const requestWithdrawal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({
