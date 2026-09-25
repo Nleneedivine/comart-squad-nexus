@@ -16,7 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatNaira } from "@/lib/format";
 import { toast } from "sonner";
 import { Eye, EyeOff, ArrowUpRight, ArrowDownLeft, Settings as SettingsIcon, AlertTriangle, Search } from "lucide-react";
-import { initFundWallet, verifyFunding, requestWithdrawal } from "@/lib/paystack.functions";
+import { initFundWallet, verifyFunding, requestWithdrawal, setWalletPin, ensureWalletForCurrentStore } from "@/lib/paystack.functions";
 
 export const Route = createFileRoute("/wallet")({
   head: () => ({ meta: [{ title: "Wallet — Comart+" }, { name: "description", content: "Wallet powered by Paystack." }] }),
@@ -40,12 +40,7 @@ function Wallet() {
 
   const load = async () => {
     if (!store) return;
-    const { data: w } = await supabase.from("wallets").select("*").eq("store_id", store.id).maybeSingle();
-    let walletRow = w;
-    if (!walletRow) {
-      const { data: created } = await supabase.from("wallets").insert({ store_id: store.id }).select().single();
-      walletRow = created;
-    }
+    const walletRow = await ensureWalletForCurrentStore();
     setWallet(walletRow);
     setBank({
       bank_name: walletRow?.bank_name || "",
@@ -100,15 +95,17 @@ function Wallet() {
   const withdraw = async () => {
     const amt = Number(amount);
     if (!amt || amt <= 0) return toast.error("Enter amount");
-    if (!wallet?.pin_hash) return toast.error("Set a wallet PIN first (Wallet Settings)");
     if (!/^\d{4,6}$/.test(wdPin)) return toast.error("Enter your PIN");
-    const enc = new TextEncoder().encode(wdPin);
-    const buf = await crypto.subtle.digest("SHA-256", enc);
-    const hex = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
-    if (hex !== wallet.pin_hash) return toast.error("Incorrect PIN");
     try {
-      await requestWithdrawal({ data: { amount: amt } });
-      toast.success("Withdrawal requested"); setWdOpen(false); setAmount(""); setWdPin(""); load();
+      await requestWithdrawal({
+        data: {
+          amount: amt,
+          pin: wdPin,
+          idempotency_key: crypto.randomUUID(),
+        },
+      });
+      toast.success("Withdrawal requested");
+      setWdOpen(false); setAmount(""); setWdPin(""); load();
     } catch (e: any) { toast.error(e.message); }
   };
 
@@ -121,13 +118,12 @@ function Wallet() {
 
   const savePin = async () => {
     if (!/^\d{4,6}$/.test(pin)) return toast.error("PIN must be 4-6 digits");
-    // store hash via web crypto
-    const enc = new TextEncoder().encode(pin);
-    const buf = await crypto.subtle.digest("SHA-256", enc);
-    const hex = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
-    const { error } = await supabase.from("wallets").update({ pin_hash: hex }).eq("id", wallet.id);
-    if (error) return toast.error(error.message);
-    toast.success("PIN set"); setPinOpen(false); setPin("");
+    try {
+      await setWalletPin({ data: { pin } });
+      toast.success("PIN set");
+      setPinOpen(false); setPin("");
+      load();
+    } catch (e: any) { toast.error(e.message); }
   };
 
   const noBank = wallet && !wallet.bank_account_number;
@@ -179,7 +175,7 @@ function Wallet() {
               <div className="space-y-3">
                 <p className="text-xs text-muted-foreground">To: {wallet?.bank_name} • {wallet?.bank_account_number}</p>
                 <div className="space-y-1.5"><Label>Amount (₦)</Label><Input type="number" value={amount} onChange={e => setAmount(e.target.value)} /></div>
-                <div className="space-y-1.5"><Label>Wallet PIN</Label><Input type="password" inputMode="numeric" maxLength={6} value={wdPin} onChange={e => setWdPin(e.target.value)} placeholder={wallet?.pin_hash ? "Enter PIN" : "Set a PIN first via Wallet Settings"} /></div>
+                <div className="space-y-1.5"><Label>Wallet PIN</Label><Input type="password" inputMode="numeric" maxLength={6} value={wdPin} onChange={e => setWdPin(e.target.value)} placeholder="Enter PIN" /></div>
                 <Button onClick={withdraw} className="w-full">Request Withdrawal</Button>
               </div>
             </DialogContent>

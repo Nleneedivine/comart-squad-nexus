@@ -32,10 +32,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .from("user_roles")
         .select("role, store_id, stores(id, name)")
         .eq("user_id", uid);
+
       if (roleRows && roleRows.length > 0) {
-        const first = roleRows[0] as any;
+        const { data: preference } = await supabase
+          .from("user_store_preferences")
+          .select("active_store_id")
+          .eq("user_id", uid)
+          .maybeSingle();
+
+        const activeStoreId = preference?.active_store_id ?? roleRows[0].store_id;
+        const activeRows = roleRows.filter((r: any) => r.store_id === activeStoreId);
+        const effectiveRows = activeRows.length > 0 ? activeRows : [roleRows[0]];
+        const first = effectiveRows[0] as any;
         const storeInfo = first.stores ? { id: first.stores.id, name: first.stores.name } : null;
-        const roleList = roleRows.map((r: any) => r.role);
+        const roleList = effectiveRows.map((r: any) => r.role);
+
         setStore(storeInfo);
         setRoles(roleList);
         setSentryUser({ userId: uid, storeId: storeInfo?.id, role: roleList[0] });
