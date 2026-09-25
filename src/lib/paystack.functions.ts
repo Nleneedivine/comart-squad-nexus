@@ -52,6 +52,27 @@ async function ensureWallet(storeId: string) {
   return created;
 }
 
+export const ensureWalletForCurrentStore = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { userId } = context;
+    const { data: pref } = await context.supabase.from("user_store_preferences")
+      .select("active_store_id").eq("user_id", userId).maybeSingle();
+    const storeId = pref?.active_store_id;
+    if (!storeId) throw new Error("No active store");
+    if (!await context.supabase.rpc("has_permission", {
+      _user_id: userId, _store_id: storeId, _permission: "wallet.view"
+    }).then(r => r.data)) throw new Error("Not authorized");
+
+    const wallet = await ensureWallet(storeId);
+    return {
+      id: wallet.id, store_id: wallet.store_id, balance: wallet.balance,
+      bank_name: wallet.bank_name, bank_account_number: wallet.bank_account_number,
+      bank_account_name: wallet.bank_account_name, created_at: wallet.created_at,
+      updated_at: wallet.updated_at,
+    };
+  });
+
 export const initFundWallet = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ amount: z.number().positive().max(10_000_000), email: z.string().email() }).parse(d))
