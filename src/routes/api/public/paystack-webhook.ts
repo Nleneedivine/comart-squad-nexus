@@ -57,7 +57,11 @@ export const Route = createFileRoute("/api/public/paystack-webhook")({
         const storeId = event?.data?.metadata?.store_id || null;
 
         try {
-          if (\n            topic === "charge.success" &&\n            reference &&\n            event?.data?.metadata?.kind !== "integration_purchase"\n          ) {
+          if (
+            topic === "charge.success" &&
+            reference &&
+            event?.data?.metadata?.kind !== "integration_purchase"
+          ) {
             const { data: tx } = await supabaseAdmin
               .from("wallet_transactions")
               .select("*")
