@@ -1,0 +1,53 @@
+name: Staging database validation
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-and-test:
+    name: Apply migrations and run staging security tests
+    runs-on: ubuntu-latest
+    environment: staging
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.STAGING_DB_PASSWORD }}
+      STAGING_PROJECT_ID: ${{ secrets.STAGING_PROJECT_ID }}
+      STAGING_DB_URL: ${{ secrets.STAGING_DB_URL }}
+      STAGING_APP_URL: ${{ secrets.STAGING_APP_URL }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Validate staging secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in SUPABASE_ACCESS_TOKEN SUPABASE_DB_PASSWORD STAGING_PROJECT_ID STAGING_DB_URL; do
+            if [ -z "${!name:-}" ]; then
+              echo "Missing required staging secret: $name"
+              exit 1
+            fi
+          done
+
+      - name: Preview pending migrations
+        run: supabase link --project-ref "$STAGING_PROJECT_ID" && supabase db push --dry-run
+
+      - name: Apply migrations
+        run: supabase db push
+
+      - name: Run tenant-isolation regression suite
+        run: |
+          set -euo pipefail
+          psql "$STAGING_DB_URL" -v ON_ERROR_STOP=1 -f supabase/tests/tenant_isolation.sql
+
+      - name: Smoke-test staging app
+        if: env.STAGING_APP_URL != ''
+        run: curl --fail --silent --show-error --location --max-time 20 "$STAGING_APP_URL/" >/dev/null

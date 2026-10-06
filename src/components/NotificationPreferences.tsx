@@ -22,21 +22,37 @@ export default function NotificationPreferences() {
 
   useEffect(() => {
     if (!user) return;
-    supabase.from("notification_preferences").select("*").eq("user_id", user.id).then(({ data }) => {
-      const m: Record<string, Pref> = {};
-      NOTIF_TYPES.forEach(t => { m[t.key] = { notif_type: t.key, in_app: true, toast: true, email: false }; });
-      (data ?? []).forEach((r: any) => { m[r.notif_type] = r; });
-      setPrefs(m); setLoading(false);
-    });
+    supabase
+      .from("notification_preferences")
+      .select("*")
+      .eq("user_id", user.id)
+      .then(({ data }) => {
+        const m: Record<string, Pref> = {};
+        NOTIF_TYPES.forEach((t) => {
+          m[t.key] = { notif_type: t.key, in_app: true, toast: true, email: false };
+        });
+        (data ?? []).forEach((r: any) => {
+          m[r.notif_type] = r;
+        });
+        setPrefs(m);
+        setLoading(false);
+      });
   }, [user]);
 
   const update = async (type: string, patch: Partial<Pref>) => {
     if (!user) return;
     const next = { ...prefs[type], ...patch };
     setPrefs((p) => ({ ...p, [type]: next }));
-    const { error } = await supabase.from("notification_preferences").upsert({
-      user_id: user.id, notif_type: type, in_app: next.in_app, toast: next.toast, email: next.email,
-    }, { onConflict: "user_id,notif_type" });
+    const { error } = await supabase.from("notification_preferences").upsert(
+      {
+        user_id: user.id,
+        notif_type: type,
+        in_app: next.in_app,
+        toast: next.toast,
+        email: next.email,
+      },
+      { onConflict: "user_id,notif_type" },
+    );
     if (error) toast.error(error.message);
   };
 
@@ -45,17 +61,38 @@ export default function NotificationPreferences() {
   return (
     <Card className="overflow-hidden">
       <div className="grid grid-cols-[1fr_70px_70px_70px] items-center gap-2 px-4 py-3 bg-muted/40 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-        <div>Type</div><div className="text-center">In-app</div><div className="text-center">Toast</div><div className="text-center">Email</div>
+        <div>Type</div>
+        <div className="text-center">In-app</div>
+        <div className="text-center">Toast</div>
+        <div className="text-center">Email</div>
       </div>
       {NOTIF_TYPES.map((t) => (
-        <div key={t.key} className="grid grid-cols-[1fr_70px_70px_70px] items-center gap-2 px-4 py-3 border-t">
+        <div
+          key={t.key}
+          className="grid grid-cols-[1fr_70px_70px_70px] items-center gap-2 px-4 py-3 border-t"
+        >
           <div>
             <div className="font-medium text-sm">{t.label}</div>
             <div className="text-xs text-muted-foreground">{t.description}</div>
           </div>
-          <div className="flex justify-center"><Switch checked={prefs[t.key]?.in_app ?? true} onCheckedChange={(v) => update(t.key, { in_app: v })} /></div>
-          <div className="flex justify-center"><Switch checked={prefs[t.key]?.toast ?? true} onCheckedChange={(v) => update(t.key, { toast: v })} /></div>
-          <div className="flex justify-center"><Switch checked={prefs[t.key]?.email ?? false} onCheckedChange={(v) => update(t.key, { email: v })} /></div>
+          <div className="flex justify-center">
+            <Switch
+              checked={prefs[t.key]?.in_app ?? true}
+              onCheckedChange={(v) => update(t.key, { in_app: v })}
+            />
+          </div>
+          <div className="flex justify-center">
+            <Switch
+              checked={prefs[t.key]?.toast ?? true}
+              onCheckedChange={(v) => update(t.key, { toast: v })}
+            />
+          </div>
+          <div className="flex justify-center">
+            <Switch
+              checked={prefs[t.key]?.email ?? false}
+              onCheckedChange={(v) => update(t.key, { email: v })}
+            />
+          </div>
         </div>
       ))}
       <div className="px-4 py-3 text-xs text-muted-foreground border-t bg-muted/20">

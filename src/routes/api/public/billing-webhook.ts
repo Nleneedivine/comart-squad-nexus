@@ -20,13 +20,26 @@ const READABLE: Record<string, string> = {
   "charge.failed": "Payment failed",
 };
 
-async function logActivity(storeId: string | null, topic: string, status: string, summary: string, payload: any, durationMs: number) {
+async function logActivity(
+  storeId: string | null,
+  topic: string,
+  status: string,
+  summary: string,
+  payload: any,
+  durationMs: number,
+) {
   if (!storeId) return;
   await supabaseAdmin.from("webhook_logs").insert({
-    store_id: storeId, topic, status, summary, payload, duration_ms: durationMs,
+    store_id: storeId,
+    topic,
+    status,
+    summary,
+    payload,
+    duration_ms: durationMs,
   });
   await supabaseAdmin.from("activity_log").insert({
-    store_id: storeId, type: "billing",
+    store_id: storeId,
+    type: "billing",
     activity: `${READABLE[topic] || topic}: ${summary}`,
     metadata: { topic, status, payload_ref: payload?.data?.reference ?? null },
   });
@@ -64,22 +77,47 @@ export const Route = createFileRoute("/api/public/billing-webhook")({
           if (topic === "charge.success" && storeId) {
             const periodEnd = new Date();
             periodEnd.setMonth(periodEnd.getMonth() + 1);
-            await supabaseAdmin.from("subscriptions").update({
-              status: "active", trial_ends_at: null,
-              current_period_end: periodEnd.toISOString(),
-              next_billing_at: periodEnd.toISOString(),
-            }).eq("store_id", storeId);
+            await supabaseAdmin
+              .from("subscriptions")
+              .update({
+                status: "active",
+                trial_ends_at: null,
+                current_period_end: periodEnd.toISOString(),
+                next_billing_at: periodEnd.toISOString(),
+              })
+              .eq("store_id", storeId);
           } else if (topic === "invoice.payment_failed" && storeId) {
-            await supabaseAdmin.from("subscriptions").update({ status: "past_due" }).eq("store_id", storeId);
-          } else if ((topic === "subscription.disable" || topic === "subscription.not_renew") && storeId) {
-            await supabaseAdmin.from("subscriptions").update({ status: "cancelled" }).eq("store_id", storeId);
+            await supabaseAdmin
+              .from("subscriptions")
+              .update({ status: "past_due" })
+              .eq("store_id", storeId);
+          } else if (
+            (topic === "subscription.disable" || topic === "subscription.not_renew") &&
+            storeId
+          ) {
+            await supabaseAdmin
+              .from("subscriptions")
+              .update({ status: "cancelled" })
+              .eq("store_id", storeId);
           }
 
-          const summary = data?.reference ? `ref ${data.reference}` : data?.customer?.email || "event received";
+          const summary = data?.reference
+            ? `ref ${data.reference}`
+            : data?.customer?.email || "event received";
           await logActivity(storeId, topic, "successful", summary, event, Date.now() - start);
-          return new Response(JSON.stringify({ ok: true }), { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } });
+          return new Response(JSON.stringify({ ok: true }), {
+            status: 200,
+            headers: { "Content-Type": "application/json", ...corsHeaders },
+          });
         } catch (e: any) {
-          await logActivity(storeId, topic, "failed", e?.message || "Error", event, Date.now() - start);
+          await logActivity(
+            storeId,
+            topic,
+            "failed",
+            e?.message || "Error",
+            event,
+            Date.now() - start,
+          );
           await captureServerException(e, {
             tags: { route: "billing-webhook", topic, kind: "webhook" },
             extra: { storeId, event_type: topic, reference: data?.reference ?? null },
@@ -87,7 +125,10 @@ export const Route = createFileRoute("/api/public/billing-webhook")({
             request: { url: request.url, method: request.method },
             fingerprint: ["billing-webhook", topic],
           });
-          return new Response(JSON.stringify({ ok: false, error: e?.message }), { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } });
+          return new Response(JSON.stringify({ ok: false, error: e?.message }), {
+            status: 500,
+            headers: { "Content-Type": "application/json", ...corsHeaders },
+          });
         }
       },
     },

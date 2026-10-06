@@ -2,7 +2,12 @@
 export type AppPage = { path: string; label: string; group: string; description?: string };
 
 export const APP_PAGES: AppPage[] = [
-  { path: "/Dashboard", label: "Dashboard", group: "Core", description: "Store dashboard overview" },
+  {
+    path: "/Dashboard",
+    label: "Dashboard",
+    group: "Core",
+    description: "Store dashboard overview",
+  },
   { path: "/orders", label: "Orders", group: "Sales" },
   { path: "/orders/import", label: "Orders Import", group: "Sales" },
   { path: "/customers", label: "Customers", group: "Sales" },

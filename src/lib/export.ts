@@ -22,7 +22,7 @@ export function downloadPDF(title: string, headers: string[], rows: any[][]) {
   doc.text(title, 14, 14);
   autoTable(doc, {
     head: [headers],
-    body: rows.map(r => r.map(c => c == null ? "" : String(c))),
+    body: rows.map((r) => r.map((c) => (c == null ? "" : String(c)))),
     startY: 20,
     styles: { fontSize: 8 },
     headStyles: { fillColor: [37, 99, 235] },
@@ -33,6 +33,8 @@ export function downloadPDF(title: string, headers: string[], rows: any[][]) {
 function triggerDownload(blob: Blob, name: string) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  a.href = url; a.download = name; a.click();
+  a.href = url;
+  a.download = name;
+  a.click();
   URL.revokeObjectURL(url);
 }

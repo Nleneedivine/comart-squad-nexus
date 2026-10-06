@@ -12,7 +12,8 @@ function supabaseForUser(ctx: ToolContext) {
 export default defineTool({
   name: "check_low_stock",
   title: "Check low stock",
-  description: "List products at or below their low-stock threshold for the signed-in user's store.",
+  description:
+    "List products at or below their low-stock threshold for the signed-in user's store.",
   inputSchema: {},
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async (_input, ctx) => {
@@ -26,7 +27,8 @@ export default defineTool({
       .order("stock_qty", { ascending: true });
     if (error) return { content: [{ type: "text", text: error.message }], isError: true };
     const low = (data ?? []).filter(
-      (p: any) => typeof p.low_stock_threshold === "number" && (p.stock_qty ?? 0) <= p.low_stock_threshold,
+      (p: any) =>
+        typeof p.low_stock_threshold === "number" && (p.stock_qty ?? 0) <= p.low_stock_threshold,
     );
     return {
       content: [{ type: "text", text: JSON.stringify(low, null, 2) }],

@@ -16,10 +16,29 @@ export const suggestTodos = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
 
     const [todosR, tasksR, ordersR, goalsR] = await Promise.all([
-      supabase.from("todos").select("title,priority,due_date,completed").eq("user_id", userId).eq("completed", false).limit(30),
-      supabase.from("tasks").select("title,priority,deadline,status").eq("assigned_to", userId).neq("status", "completed").limit(30),
-      supabase.from("orders").select("customer_name,amount,status,created_at").eq("assigned_to", userId).in("status", ["pending","processing","shipped"]).limit(30),
-      supabase.from("goals").select("title,target_value,current_value,unit,deadline,status").eq("status", "active").limit(15),
+      supabase
+        .from("todos")
+        .select("title,priority,due_date,completed")
+        .eq("user_id", userId)
+        .eq("completed", false)
+        .limit(30),
+      supabase
+        .from("tasks")
+        .select("title,priority,deadline,status")
+        .eq("assigned_to", userId)
+        .neq("status", "completed")
+        .limit(30),
+      supabase
+        .from("orders")
+        .select("customer_name,amount,status,created_at")
+        .eq("assigned_to", userId)
+        .in("status", ["pending", "processing", "shipped"])
+        .limit(30),
+      supabase
+        .from("goals")
+        .select("title,target_value,current_value,unit,deadline,status")
+        .eq("status", "active")
+        .limit(15),
     ]);
 
     const ctx = {
@@ -48,7 +67,11 @@ export const suggestTodos = createServerFn({ method: "POST" })
     const json = await res.json();
     const content = json.choices?.[0]?.message?.content || "{}";
     let parsed: any = {};
-    try { parsed = JSON.parse(content); } catch { throw new Error("AI returned invalid JSON"); }
+    try {
+      parsed = JSON.parse(content);
+    } catch {
+      throw new Error("AI returned invalid JSON");
+    }
     const items = Array.isArray(parsed.items) ? parsed.items : [];
     return { items };
   });

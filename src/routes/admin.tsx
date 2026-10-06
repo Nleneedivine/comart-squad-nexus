@@ -2,11 +2,24 @@ import { createFileRoute, Link, Outlet, useNavigate, useLocation } from "@tansta
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { LayoutDashboard, Building2, CreditCard, Megaphone, ScrollText, Flag, LogOut, ShieldCheck, Plug, Activity } from "lucide-react";
+import {
+  LayoutDashboard,
+  Building2,
+  CreditCard,
+  Megaphone,
+  ScrollText,
+  Flag,
+  LogOut,
+  ShieldCheck,
+  Plug,
+  Activity,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/admin")({
-  head: () => ({ meta: [{ title: "Superadmin — Comart+" }, { name: "robots", content: "noindex" }] }),
+  head: () => ({
+    meta: [{ title: "Superadmin — Comart+" }, { name: "robots", content: "noindex" }],
+  }),
   component: AdminShell,
 });
 
@@ -33,21 +46,34 @@ function AdminShell() {
 
   useEffect(() => {
     if (loading) return;
-    if (!user) { nav({ to: "/auth" }); return; }
+    if (!user) {
+      nav({ to: "/auth" });
+      return;
+    }
     if (checkedUserRef.current === user.id) return;
     let cancelled = false;
     (async () => {
-      const { data } = await supabase.from("superadmins").select("id").eq("user_id", user.id).maybeSingle();
+      const { data } = await supabase
+        .from("superadmins")
+        .select("id")
+        .eq("user_id", user.id)
+        .maybeSingle();
       if (cancelled) return;
       checkedUserRef.current = user.id;
       setAllowed(!!data);
       setChecking(false);
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [user, loading, nav]);
 
   if (loading || checking) {
-    return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Loading…</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center text-muted-foreground">
+        Loading…
+      </div>
+    );
   }
   if (!allowed) {
     return (
@@ -56,7 +82,12 @@ function AdminShell() {
           <ShieldCheck className="mx-auto h-10 w-10 text-muted-foreground" />
           <h1 className="text-2xl font-bold">Restricted area</h1>
           <p className="text-muted-foreground">You do not have superadmin access.</p>
-          <Link to="/Dashboard" className="inline-flex rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground">Back to dashboard</Link>
+          <Link
+            to="/Dashboard"
+            className="inline-flex rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground"
+          >
+            Back to dashboard
+          </Link>
         </div>
       </div>
     );
@@ -74,10 +105,14 @@ function AdminShell() {
             const active = n.exact ? loc.pathname === n.to : loc.pathname.startsWith(n.to);
             const Icon = n.icon;
             return (
-              <Link key={n.to} to={n.to} className={cn(
-                "flex items-center gap-3 rounded-md px-3 py-2 text-sm",
-                active ? "bg-primary text-primary-foreground" : "hover:bg-accent"
-              )}>
+              <Link
+                key={n.to}
+                to={n.to}
+                className={cn(
+                  "flex items-center gap-3 rounded-md px-3 py-2 text-sm",
+                  active ? "bg-primary text-primary-foreground" : "hover:bg-accent",
+                )}
+              >
                 <Icon className="h-4 w-4" /> {n.label}
               </Link>
             );
@@ -85,7 +120,10 @@ function AdminShell() {
         </nav>
         <div className="p-3 border-t">
           <button
-            onClick={async () => { await supabase.auth.signOut(); nav({ to: "/auth" }); }}
+            onClick={async () => {
+              await supabase.auth.signOut();
+              nav({ to: "/auth" });
+            }}
             className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
           >
             <LogOut className="h-4 w-4" /> Sign out

@@ -2,9 +2,18 @@
 // Owner / admin see everything; other roles get a curated subset.
 
 export type Role =
-  | "owner" | "admin" | "manager" | "head_of_operations"
-  | "sales_rep" | "hr" | "inventory_manager" | "marketer"
-  | "order_manager" | "customer_care" | "logistics_manager" | "accountant";
+  | "owner"
+  | "admin"
+  | "manager"
+  | "head_of_operations"
+  | "sales_rep"
+  | "hr"
+  | "inventory_manager"
+  | "marketer"
+  | "order_manager"
+  | "customer_care"
+  | "logistics_manager"
+  | "accountant";
 
 // Routes each role may access (in addition to baseline routes).
 const BASELINE = ["/Dashboard", "/Settings", "/attendance", "/chat", "/tasks", "/staff-portal"];
@@ -19,21 +28,44 @@ const ROLE_ROUTES: Record<string, string[]> = {
   sales_rep: [],
   hr: ["/staff", "/payroll", "/attendance"],
   inventory_manager: [
-    "/inventory/products", "/inventory/buy-stock", "/inventory/stock-record",
-    "/inventory/faulty", "/inventory/agent-stock", "/inventory/waybill",
-    "/businesses", "/store/products", "/suppliers", "/purchase-orders",
+    "/inventory/products",
+    "/inventory/buy-stock",
+    "/inventory/stock-record",
+    "/inventory/faulty",
+    "/inventory/agent-stock",
+    "/inventory/waybill",
+    "/businesses",
+    "/store/products",
+    "/suppliers",
+    "/purchase-orders",
   ],
   marketer: ["/marketing/sales-forms", "/agents"],
-  order_manager: ["/orders", "/call-orders", "/store/orders", "/customer-service", "/inventory/waybill"],
+  order_manager: [
+    "/orders",
+    "/call-orders",
+    "/store/orders",
+    "/customer-service",
+    "/inventory/waybill",
+  ],
   customer_care: ["/customer-service"],
   logistics_manager: ["/inventory/waybill", "/inventory/agent-stock"],
 
   accountant: [
-    "/finance", "/finance/commissions", "/finance/refunds",
-    "/wallet", "/reports/export", "/reports/activity", "/reports/daily",
-    "/suppliers", "/payroll",
-    "/inventory/products", "/inventory/buy-stock", "/inventory/stock-record",
-    "/inventory/faulty", "/inventory/agent-stock", "/inventory/waybill",
+    "/finance",
+    "/finance/commissions",
+    "/finance/refunds",
+    "/wallet",
+    "/reports/export",
+    "/reports/activity",
+    "/reports/daily",
+    "/suppliers",
+    "/payroll",
+    "/inventory/products",
+    "/inventory/buy-stock",
+    "/inventory/stock-record",
+    "/inventory/faulty",
+    "/inventory/agent-stock",
+    "/inventory/waybill",
     "/purchase-orders",
   ],
 };
@@ -41,12 +73,12 @@ const ROLE_ROUTES: Record<string, string[]> = {
 export function canAccess(roles: string[], path: string): boolean {
   if (!roles || roles.length === 0) return false;
   const lower = path.toLowerCase();
-  if (BASELINE.some(p => p.toLowerCase() === lower)) return true;
+  if (BASELINE.some((p) => p.toLowerCase() === lower)) return true;
   for (const r of roles) {
     const allowed = ROLE_ROUTES[r];
     if (!allowed) continue;
     if (allowed.includes("*")) return true;
-    if (allowed.some(p => p.toLowerCase() === lower)) return true;
+    if (allowed.some((p) => p.toLowerCase() === lower)) return true;
   }
   return false;
 }

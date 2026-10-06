@@ -16,7 +16,13 @@ interface AuthCtx {
 }
 
 const Ctx = createContext<AuthCtx>({
-  user: null, session: null, loading: true, hydrated: false, store: null, roles: [], refresh: async () => {},
+  user: null,
+  session: null,
+  loading: true,
+  hydrated: false,
+  store: null,
+  roles: [],
+  refresh: async () => {},
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -32,10 +38,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .from("user_roles")
         .select("role, store_id, stores(id, name)")
         .eq("user_id", uid);
+
       if (roleRows && roleRows.length > 0) {
-        const first = roleRows[0] as any;
+        const { data: preference } = await supabase
+          .from("user_store_preferences")
+          .select("active_store_id")
+          .eq("user_id", uid)
+          .maybeSingle();
+
+        const activeStoreId = preference?.active_store_id ?? roleRows[0].store_id;
+        const activeRows = roleRows.filter((r: any) => r.store_id === activeStoreId);
+        const effectiveRows = activeRows.length > 0 ? activeRows : [roleRows[0]];
+        const first = effectiveRows[0] as any;
         const storeInfo = first.stores ? { id: first.stores.id, name: first.stores.name } : null;
-        const roleList = roleRows.map((r: any) => r.role);
+        const roleList = effectiveRows.map((r: any) => r.role);
+
         setStore(storeInfo);
         setRoles(roleList);
         setSentryUser({ userId: uid, storeId: storeInfo?.id, role: roleList[0] });
@@ -61,14 +78,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(s);
       setHydrated(true);
       if (s?.user) {
-        setTimeout(() => { void loadStoreAndRoles(s.user.id); }, 0);
+        setTimeout(() => {
+          void loadStoreAndRoles(s.user.id);
+        }, 0);
       } else {
-        setStore(null); setRoles([]);
+        setStore(null);
+        setRoles([]);
         clearSentryUser();
         setLoading(false);
       }
     });
-
 
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
@@ -87,7 +106,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <Ctx.Provider value={{ user: session?.user ?? null, session, loading, hydrated, store, roles, refresh }}>
+    <Ctx.Provider
+      value={{ user: session?.user ?? null, session, loading, hydrated, store, roles, refresh }}
+    >
       {children}
     </Ctx.Provider>
   );

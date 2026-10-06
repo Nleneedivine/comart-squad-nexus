@@ -28,11 +28,17 @@ export const Route = createFileRoute("/api/public/integrations/wpforms/webhook")
         const apiKey = request.headers.get("x-api-key") || "";
         const body = await request.text();
         let payload: any = {};
-        try { payload = body ? JSON.parse(body) : {}; } catch {
+        try {
+          payload = body ? JSON.parse(body) : {};
+        } catch {
           const resp = { ok: false, error: "Invalid JSON body" };
           await supabaseAdmin.from("webhook_deliveries").insert({
-            source: "wp-forms", integration_key: "wp_forms", status: "rejected",
-            payload: { raw: body.slice(0, 2000) }, response: resp, error: resp.error,
+            source: "wp-forms",
+            integration_key: "wp_forms",
+            status: "rejected",
+            payload: { raw: body.slice(0, 2000) },
+            response: resp,
+            error: resp.error,
           });
           return json(resp, 400);
         }
@@ -40,8 +46,12 @@ export const Route = createFileRoute("/api/public/integrations/wpforms/webhook")
         if (!apiKey) {
           const resp = { ok: false, error: "Missing x-api-key header" };
           await supabaseAdmin.from("webhook_deliveries").insert({
-            source: "wp-forms", integration_key: "wp_forms", status: "rejected",
-            payload, response: resp, error: resp.error,
+            source: "wp-forms",
+            integration_key: "wp_forms",
+            status: "rejected",
+            payload,
+            response: resp,
+            error: resp.error,
           });
           return json(resp, 401);
         }
@@ -54,11 +64,18 @@ export const Route = createFileRoute("/api/public/integrations/wpforms/webhook")
           .maybeSingle();
 
         if (!integ || integ.status !== "active") {
-          const resp = { ok: false, error: integ ? `Integration not active (status: ${integ.status})` : "Invalid API key" };
+          const resp = {
+            ok: false,
+            error: integ ? `Integration not active (status: ${integ.status})` : "Invalid API key",
+          };
           await supabaseAdmin.from("webhook_deliveries").insert({
             store_id: integ?.store_id ?? null,
-            source: "wp-forms", integration_key: "wp_forms", status: "rejected",
-            payload, response: resp, error: resp.error,
+            source: "wp-forms",
+            integration_key: "wp_forms",
+            status: "rejected",
+            payload,
+            response: resp,
+            error: resp.error,
           });
           return json(resp, 401);
         }
@@ -74,7 +91,9 @@ export const Route = createFileRoute("/api/public/integrations/wpforms/webhook")
             status: result.ok ? "processed" : "failed",
             payload,
             response: result as any,
-            result: result.ok ? { order_id: result.order_id, assigned_to: result.assigned_to } : null,
+            result: result.ok
+              ? { order_id: result.order_id, assigned_to: result.assigned_to }
+              : null,
             error: result.ok ? null : result.error,
           });
 
@@ -83,8 +102,12 @@ export const Route = createFileRoute("/api/public/integrations/wpforms/webhook")
           const resp = { ok: false, error: e?.message || String(e) };
           await supabaseAdmin.from("webhook_deliveries").insert({
             store_id: integ.store_id,
-            source: "wp-forms", integration_key: "wp_forms", status: "failed",
-            payload, response: resp, error: resp.error,
+            source: "wp-forms",
+            integration_key: "wp_forms",
+            status: "failed",
+            payload,
+            response: resp,
+            error: resp.error,
           });
           await captureServerException(e, {
             tags: { route: "wpforms-api-key-webhook", kind: "webhook", source: "wp-forms" },

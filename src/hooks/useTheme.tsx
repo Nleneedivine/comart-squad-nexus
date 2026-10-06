@@ -17,7 +17,11 @@ export function useTheme() {
   useEffect(() => {
     if (!user) return;
     (async () => {
-      const { data } = await supabase.from("profiles").select("theme_preference").eq("id", user.id).maybeSingle();
+      const { data } = await supabase
+        .from("profiles")
+        .select("theme_preference")
+        .eq("id", user.id)
+        .maybeSingle();
       if (data?.theme_preference) setDark(data.theme_preference === "dark");
     })();
   }, [user]);
@@ -25,7 +29,11 @@ export function useTheme() {
   const toggle = async () => {
     const next = !dark;
     setDark(next);
-    if (user) await supabase.from("profiles").update({ theme_preference: next ? "dark" : "light" }).eq("id", user.id);
+    if (user)
+      await supabase
+        .from("profiles")
+        .update({ theme_preference: next ? "dark" : "light" })
+        .eq("id", user.id);
   };
   return { dark, toggle };
 }

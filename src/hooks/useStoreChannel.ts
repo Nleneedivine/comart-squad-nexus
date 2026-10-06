@@ -28,7 +28,13 @@ interface Options {
  * - Dedupes by `${name}:${storeId}` so multiple consumers share one channel.
  * - Cleans up on unmount and on auth state change.
  */
-export function useStoreChannel({ storeId, name, on = [], broadcast = {}, enabled = true }: Options) {
+export function useStoreChannel({
+  storeId,
+  name,
+  on = [],
+  broadcast = {},
+  enabled = true,
+}: Options) {
   const [health, setHealth] = useState<ChannelHealth>("connecting");
   const channelRef = useRef<RealtimeChannel | null>(null);
 
@@ -69,7 +75,6 @@ export function useStoreChannel({ storeId, name, on = [], broadcast = {}, enable
         supabase.removeChannel(ch);
       }
     });
-
 
     return () => {
       sub.subscription.unsubscribe();

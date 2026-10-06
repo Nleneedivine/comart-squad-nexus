@@ -5,13 +5,15 @@ import { z } from "zod";
 export const sendInviteEmail = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) =>
-    z.object({
-      email: z.string().email().max(255),
-      invite_link: z.string().url().max(2048),
-      store_name: z.string().min(1).max(255),
-      role_label: z.string().min(1).max(64),
-      inviter_name: z.string().max(255).optional(),
-    }).parse(d)
+    z
+      .object({
+        email: z.string().email().max(255),
+        invite_link: z.string().url().max(2048),
+        store_name: z.string().min(1).max(255),
+        role_label: z.string().min(1).max(64),
+        inviter_name: z.string().max(255).optional(),
+      })
+      .parse(d),
   )
   .handler(async ({ data }) => {
     const lovableKey = process.env.LOVABLE_API_KEY;
@@ -63,7 +65,7 @@ export const sendInviteEmail = createServerFn({ method: "POST" })
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ raw }),
-      }
+      },
     );
 
     if (!res.ok) {

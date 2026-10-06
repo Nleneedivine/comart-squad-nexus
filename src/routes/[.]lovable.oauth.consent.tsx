@@ -34,7 +34,9 @@ export const Route = createFileRoute("/.lovable/oauth/consent")({
   },
   component: Consent,
   errorComponent: ({ error }) => (
-    <main className="p-8">Could not load this authorization request: {String((error as Error)?.message ?? error)}</main>
+    <main className="p-8">
+      Could not load this authorization request: {String((error as Error)?.message ?? error)}
+    </main>
   ),
 });
 
@@ -50,9 +52,17 @@ function Consent() {
     const { data, error } = approve
       ? await api.approveAuthorization(authorization_id)
       : await api.denyAuthorization(authorization_id);
-    if (error) { setBusy(false); setError(error.message); return; }
+    if (error) {
+      setBusy(false);
+      setError(error.message);
+      return;
+    }
     const target = data?.redirect_url ?? data?.redirect_to;
-    if (!target) { setBusy(false); setError("No redirect returned by the authorization server."); return; }
+    if (!target) {
+      setBusy(false);
+      setError("No redirect returned by the authorization server.");
+      return;
+    }
     window.location.href = target;
   }
 
@@ -63,12 +73,26 @@ function Consent() {
       <Card className="max-w-md w-full p-8 space-y-4">
         <h1 className="text-2xl font-bold">Connect {clientName} to Comart+</h1>
         <p className="text-sm text-muted-foreground">
-          {clientName} is requesting access to act as you inside Comart+. It will be able to use the tools this app exposes on your behalf.
+          {clientName} is requesting access to act as you inside Comart+. It will be able to use the
+          tools this app exposes on your behalf.
         </p>
-        {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+        {error && (
+          <p role="alert" className="text-sm text-destructive">
+            {error}
+          </p>
+        )}
         <div className="flex gap-2 pt-2">
-          <Button disabled={busy} onClick={() => decide(true)} className="flex-1">Approve</Button>
-          <Button disabled={busy} onClick={() => decide(false)} variant="outline" className="flex-1">Deny</Button>
+          <Button disabled={busy} onClick={() => decide(true)} className="flex-1">
+            Approve
+          </Button>
+          <Button
+            disabled={busy}
+            onClick={() => decide(false)}
+            variant="outline"
+            className="flex-1"
+          >
+            Deny
+          </Button>
         </div>
       </Card>
     </main>

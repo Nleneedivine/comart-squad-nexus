@@ -8,7 +8,9 @@ import { cn } from "@/lib/utils";
  * Pings supabase via auth session refresh callback and online/offline events.
  */
 export default function RealtimeStatus() {
-  const [online, setOnline] = useState<boolean>(typeof navigator === "undefined" ? true : navigator.onLine);
+  const [online, setOnline] = useState<boolean>(
+    typeof navigator === "undefined" ? true : navigator.onLine,
+  );
   const stale = false;
 
   useEffect(() => {
@@ -30,8 +32,13 @@ export default function RealtimeStatus() {
     );
   }
   return (
-    <span className={cn("inline-flex items-center gap-1 text-xs", online ? "text-amber-600" : "text-destructive")}
-      title={online ? "Reconnecting…" : "Offline"}>
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 text-xs",
+        online ? "text-amber-600" : "text-destructive",
+      )}
+      title={online ? "Reconnecting…" : "Offline"}
+    >
       <WifiOff className="h-3.5 w-3.5" />
       {online ? "Reconnecting" : "Offline"}
     </span>

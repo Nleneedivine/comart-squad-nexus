@@ -23,11 +23,14 @@ async function mirrorToDatabase(
   sentryEventId?: string,
 ) {
   try {
-    const e = err instanceof Error ? err : new Error(typeof err === "string" ? err : JSON.stringify(err));
-    const module = context?.tags?.area || context?.tags?.module || context?.tags?.route || "frontend";
+    const e =
+      err instanceof Error ? err : new Error(typeof err === "string" ? err : JSON.stringify(err));
+    const module =
+      context?.tags?.area || context?.tags?.module || context?.tags?.route || "frontend";
     const message = String(e.message || "Unknown error").slice(0, 500);
     const severity = (context?.tags?.severity as any) || classifySeverity(message, module);
-    const fallbackStoreId = typeof context?.extra?.storeId === "string" ? context.extra.storeId : null;
+    const fallbackStoreId =
+      typeof context?.extra?.storeId === "string" ? context.extra.storeId : null;
     const fallbackUserId = typeof context?.extra?.userId === "string" ? context.extra.userId : null;
     await supabase.from("app_errors").insert({
       store_id: currentStoreId || fallbackStoreId,
@@ -38,7 +41,7 @@ async function mirrorToDatabase(
       stack_trace: e.stack?.slice(0, 8000) || null,
       severity,
       status: "open",
-      environment: (import.meta.env.MODE || "production"),
+      environment: import.meta.env.MODE || "production",
       sentry_event_id: sentryEventId || null,
       metadata: scrub({ tags: context?.tags || {}, extra: context?.extra || {} }) as any,
     });
@@ -47,7 +50,8 @@ async function mirrorToDatabase(
   }
 }
 
-const SENSITIVE_KEY = /password|token|secret|pin|cvv|card|account_number|otp|paystack|authorization|apikey|api_key/i;
+const SENSITIVE_KEY =
+  /password|token|secret|pin|cvv|card|account_number|otp|paystack|authorization|apikey|api_key/i;
 
 function scrub(value: any, depth = 0): any {
   if (depth > 6 || value == null) return value;
@@ -99,7 +103,10 @@ export function initSentry() {
       if (breadcrumb.data) {
         const url = (breadcrumb.data as any).url;
         if (typeof url === "string" && /(access_token|apikey|api_key)=/i.test(url)) {
-          (breadcrumb.data as any).url = url.replace(/(access_token|apikey|api_key)=[^&]+/gi, "$1=[Filtered]");
+          (breadcrumb.data as any).url = url.replace(
+            /(access_token|apikey|api_key)=[^&]+/gi,
+            "$1=[Filtered]",
+          );
         }
         breadcrumb.data = scrub(breadcrumb.data);
       }
@@ -118,7 +125,10 @@ export function initSentry() {
         if (event.extra) event.extra = scrub(event.extra);
         if (event.contexts) event.contexts = scrub(event.contexts);
         if (event.breadcrumbs) {
-          event.breadcrumbs = event.breadcrumbs.map((b) => ({ ...b, data: b.data ? scrub(b.data) : b.data }));
+          event.breadcrumbs = event.breadcrumbs.map((b) => ({
+            ...b,
+            data: b.data ? scrub(b.data) : b.data,
+          }));
         }
       } catch {
         // never let scrubber crash the SDK
@@ -131,7 +141,11 @@ export function initSentry() {
   initialized = true;
 }
 
-export function setSentryUser(u: { userId: string; storeId?: string | null; role?: string | null }) {
+export function setSentryUser(u: {
+  userId: string;
+  storeId?: string | null;
+  role?: string | null;
+}) {
   currentUserId = u.userId;
   currentStoreId = u.storeId || null;
   if (!initialized) return;
@@ -149,7 +163,10 @@ export function clearSentryUser() {
   Sentry.setTag("role", "none");
 }
 
-export function captureError(err: unknown, context?: { tags?: Record<string, string>; extra?: Record<string, any> }) {
+export function captureError(
+  err: unknown,
+  context?: { tags?: Record<string, string>; extra?: Record<string, any> },
+) {
   let eventId: string | undefined;
   if (initialized) {
     Sentry.withScope((scope) => {

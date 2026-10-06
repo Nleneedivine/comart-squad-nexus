@@ -45,77 +45,266 @@ async function ps(path: string, init?: RequestInit) {
 }
 
 async function ensureWallet(storeId: string) {
-  const { data } = await supabaseAdmin.from("wallets").select("*").eq("store_id", storeId).maybeSingle();
+  const { data } = await supabaseAdmin
+    .from("wallets")
+    .select("*")
+    .eq("store_id", storeId)
+    .maybeSingle();
   if (data) return data;
-  const { data: created, error } = await supabaseAdmin.from("wallets").insert({ store_id: storeId }).select("*").single();
+  const { data: created, error } = await supabaseAdmin
+    .from("wallets")
+    .insert({ store_id: storeId })
+    .select("*")
+    .single();
   if (error) throw error;
   return created;
 }
 
+export const ensureWalletForCurrentStore = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { userId } = context;
+    const { data: pref } = await context.supabase
+      .from("user_store_preferences")
+      .select("active_store_id")
+      .eq("user_id", userId)
+      .maybeSingle();
+    const storeId = pref?.active_store_id;
+    if (!storeId) throw new Error("No active store");
+    if (
+      !(await context.supabase
+        .rpc("has_permission", {
+          _user_id: userId,
+          _store_id: storeId,
+          _permission: "wallet.view",
+        })
+        .then((r) => r.data))
+    )
+      throw new Error("Not authorized");
+
+    const wallet = await ensureWallet(storeId);
+    return {
+      id: wallet.id,
+      store_id: wallet.store_id,
+      balance: wallet.balance,
+      bank_name: wallet.bank_name,
+      bank_account_number: wallet.bank_account_number,
+      bank_account_name: wallet.bank_account_name,
+      created_at: wallet.created_at,
+      updated_at: wallet.updated_at,
+    };
+  });
+
 export const initFundWallet = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ amount: z.number().positive().max(10_000_000), email: z.string().email() }).parse(d))
+  .inputValidator((d) => z.object({ amount: z.number().positive().max(10_000_000) }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const { data: roles } = await supabase.from("user_roles").select("store_id").limit(1);
-    const storeId = roles?.[0]?.store_id;
-    if (!storeId) throw new Error("No store");
-    const wallet = await ensureWallet(storeId);
-    const reference = `fund_${storeId.slice(0, 8)}_${Date.now()}`;
-    const r = await ps("/transaction/initialize", {
-      method: "POST",
-      body: JSON.stringify({
-        email: data.email,
-        amount: Math.round(data.amount * 100),
-        reference,
-        metadata: { store_id: storeId, wallet_id: wallet.id, kind: "funding" },
-      }),
+    const { data: pref } = await supabase
+      .from("user_store_preferences")
+      .select("active_store_id")
+      .eq("user_id", userId)
+      .maybeSingle();
+    const storeId = pref?.active_store_id;
+    if (!storeId) throw new Error("No active store");
+
+    const { data: allowed } = await supabase.rpc("has_permission", {
+      _user_id: userId,
+      _store_id: storeId,
+      _permission: "wallet.fund",
     });
-    await supabaseAdmin.from("wallet_transactions").insert({
-      store_id: storeId, wallet_id: wallet.id, kind: "funding", amount: data.amount,
-      status: "pending", reference, paystack_reference: reference, created_by: userId,
+    if (!allowed) throw new Error("Not authorized");
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("email")
+      .eq("id", userId)
+      .single();
+    if (!profile?.email) throw new Error("Email required");
+
+    const wallet = await ensureWallet(storeId);
+    const reference = `fund_${storeId.slice(0, 8)}_${crypto.randomUUID().replace(/-/g, "")}`;
+    const { error: txError } = await supabaseAdmin.from("wallet_transactions").insert({
+      store_id: storeId,
+      wallet_id: wallet.id,
+      kind: "funding",
+      amount: data.amount,
+      status: "pending",
+      reference,
+      paystack_reference: reference,
+      created_by: userId,
       description: "Wallet funding (Paystack)",
     });
-    return { authorization_url: r.data.authorization_url, reference };
+    if (txError) throw txError;
+
+    try {
+      const r = await ps("/transaction/initialize", {
+        method: "POST",
+        body: JSON.stringify({
+          email: profile.email,
+          amount: Math.round(data.amount * 100),
+          reference,
+          metadata: { store_id: storeId, wallet_id: wallet.id, kind: "funding" },
+        }),
+      });
+      return { authorization_url: r.data.authorization_url, reference };
+    } catch (error) {
+      await supabaseAdmin
+        .from("wallet_transactions")
+        .update({ status: "failed" })
+        .eq("store_id", storeId)
+        .eq("reference", reference)
+        .eq("status", "pending");
+      throw error;
+    }
   });
 
 export const verifyFunding = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ reference: z.string().min(3).max(120) }).parse(d))
-  .handler(async ({ data }) => {
-    const r = await ps(`/transaction/verify/${encodeURIComponent(data.reference)}`);
-    const { data: tx } = await supabaseAdmin.from("wallet_transactions").select("*").eq("reference", data.reference).maybeSingle();
+  .handler(async ({ data, context }) => {
+    const { userId, supabase } = context;
+    const { data: pref } = await supabase
+      .from("user_store_preferences")
+      .select("active_store_id")
+      .eq("user_id", userId)
+      .maybeSingle();
+    const storeId = pref?.active_store_id;
+    if (!storeId) throw new Error("No active store");
+
+    const { data: allowed } = await supabase.rpc("has_permission", {
+      _user_id: userId,
+      _store_id: storeId,
+      _permission: "wallet.fund",
+    });
+    if (!allowed) throw new Error("Not authorized");
+
+    const { data: tx } = await supabase
+      .from("wallet_transactions")
+      .select("amount")
+      .eq("store_id", storeId)
+      .eq("reference", data.reference)
+      .eq("kind", "funding")
+      .maybeSingle();
     if (!tx) return { ok: false, message: "Transaction not found" };
-    if (tx.status === "success") return { ok: true, already: true };
+
+    const r = await ps("/transaction/verify/" + encodeURIComponent(data.reference));
     if (r.data.status === "success") {
-      await supabaseAdmin.from("wallet_transactions").update({ status: "success" }).eq("id", tx.id);
-      const { data: w } = await supabaseAdmin.from("wallets").select("balance").eq("id", tx.wallet_id).single();
-      const newBal = Number(w?.balance || 0) + Number(tx.amount);
-      await supabaseAdmin.from("wallets").update({ balance: newBal }).eq("id", tx.wallet_id);
-      return { ok: true };
+      const { data: done, error } = await supabaseAdmin.rpc("complete_wallet_funding", {
+        _store_id: storeId,
+        _reference: data.reference,
+        _amount: Number(r.data.amount) / 100,
+        _actor_user_id: userId,
+      });
+      if (error) throw error;
+      return { ok: done === true };
     }
-    await supabaseAdmin.from("wallet_transactions").update({ status: "failed" }).eq("id", tx.id);
+
+    await supabaseAdmin
+      .from("wallet_transactions")
+      .update({ status: "failed" })
+      .eq("store_id", storeId)
+      .eq("reference", data.reference)
+      .eq("status", "pending");
     return { ok: false, message: r.data.gateway_response || "Failed" };
+  });
+
+export const updateWalletBankDetails = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z
+      .object({
+        bank_name: z.string().trim().min(2).max(120),
+        bank_account_number: z.string().regex(/^\d{10,20}$/),
+        bank_account_name: z.string().trim().min(2).max(160),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { userId, supabase } = context;
+    const { data: pref } = await supabase
+      .from("user_store_preferences")
+      .select("active_store_id")
+      .eq("user_id", userId)
+      .maybeSingle();
+    const storeId = pref?.active_store_id;
+    if (!storeId) throw new Error("No active store");
+
+    const { data: allowed } = await supabase.rpc("has_permission", {
+      _user_id: userId,
+      _store_id: storeId,
+      _permission: "wallet.manage",
+    });
+    if (!allowed) throw new Error("Not authorized");
+
+    const { error } = await supabase.rpc("update_wallet_bank_details", {
+      _store_id: storeId,
+      _bank_name: data.bank_name,
+      _bank_account_number: data.bank_account_number,
+      _bank_account_name: data.bank_account_name,
+    });
+    if (error) throw error;
+    return { ok: true };
+  });
+
+export const setWalletPin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ pin: z.string().regex(/^\d{4,6}$/) }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { userId, supabase } = context;
+    const { data: pref } = await supabase
+      .from("user_store_preferences")
+      .select("active_store_id")
+      .eq("user_id", userId)
+      .maybeSingle();
+    const storeId = pref?.active_store_id;
+    if (!storeId) throw new Error("No active store");
+    const { data: allowed } = await supabase.rpc("has_permission", {
+      _user_id: userId,
+      _store_id: storeId,
+      _permission: "wallet.manage",
+    });
+    if (!allowed) throw new Error("Not authorized");
+    const { error } = await supabase.rpc("set_wallet_pin", { _store_id: storeId, _pin: data.pin });
+    if (error) throw error;
+    return { ok: true };
   });
 
 export const requestWithdrawal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ amount: z.number().positive() }).parse(d))
+  .inputValidator((d) =>
+    z
+      .object({
+        amount: z.number().positive().max(10_000_000),
+        pin: z.string().regex(/^\d{4,6}$/),
+        idempotency_key: z.string().min(8).max(128),
+      })
+      .parse(d),
+  )
   .handler(async ({ data, context }) => {
-    const { userId } = context;
-    const { data: roles } = await context.supabase.from("user_roles").select("store_id").limit(1);
-    const storeId = roles?.[0]?.store_id;
-    if (!storeId) throw new Error("No store");
-    const wallet = await ensureWallet(storeId);
-    if (!wallet.bank_account_number) throw new Error("Add bank account first");
-    if (Number(wallet.balance) < data.amount) throw new Error("Insufficient balance");
-    const reference = `wd_${storeId.slice(0, 8)}_${Date.now()}`;
-    // Record as pending; manual approval / Paystack transfer flow handled offline
-    await supabaseAdmin.from("wallet_transactions").insert({
-      store_id: storeId, wallet_id: wallet.id, kind: "withdrawal", amount: data.amount,
-      status: "pending", reference, created_by: userId,
-      description: `Withdraw to ${wallet.bank_name || ""} ${wallet.bank_account_number}`,
+    const { userId, supabase } = context;
+    const { data: pref } = await supabase
+      .from("user_store_preferences")
+      .select("active_store_id")
+      .eq("user_id", userId)
+      .maybeSingle();
+    const storeId = pref?.active_store_id;
+    if (!storeId) throw new Error("No active store");
+
+    const { data: allowed } = await supabase.rpc("has_permission", {
+      _user_id: userId,
+      _store_id: storeId,
+      _permission: "wallet.withdraw",
     });
-    await supabaseAdmin.from("wallets").update({ balance: Number(wallet.balance) - Number(data.amount) }).eq("id", wallet.id);
-    return { ok: true, reference };
+    if (!allowed) throw new Error("Not authorized");
+
+    const { data: result, error } = await supabase.rpc("request_wallet_withdrawal", {
+      _store_id: storeId,
+      _amount: data.amount,
+      _pin: data.pin,
+      _idempotency_key: data.idempotency_key,
+    });
+    if (error) throw error;
+    const row = Array.isArray(result) ? result[0] : result;
+    return { ok: row?.ok === true, reference: row?.reference };
   });

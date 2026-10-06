@@ -16,7 +16,9 @@ export function useRowSelection<T extends { id: string }>(rows: T[]) {
   const toggleAll = () => {
     if (allChecked) return setSelected({});
     const next: Record<string, boolean> = {};
-    visibleIds.forEach((id) => { next[id] = true; });
+    visibleIds.forEach((id) => {
+      next[id] = true;
+    });
     setSelected(next);
   };
   const clear = () => setSelected({});
@@ -40,13 +42,21 @@ export function SelectCell({ checked, onToggle }: { checked: boolean; onToggle: 
   );
 }
 
-export function DeleteRowButton({ onConfirm, label = "Delete this item?" }: { onConfirm: () => void | Promise<void>; label?: string }) {
+export function DeleteRowButton({
+  onConfirm,
+  label = "Delete this item?",
+}: {
+  onConfirm: () => void | Promise<void>;
+  label?: string;
+}) {
   return (
     <Button
       size="icon"
       variant="ghost"
       title="Delete"
-      onClick={async () => { if (confirm(label)) await onConfirm(); }}
+      onClick={async () => {
+        if (confirm(label)) await onConfirm();
+      }}
     >
       <Trash2 className="h-4 w-4 text-destructive" />
     </Button>
@@ -56,21 +66,37 @@ export function DeleteRowButton({ onConfirm, label = "Delete this item?" }: { on
 /** Deletes rows by id from a table and reports the result. */
 export async function deleteRows(table: string, ids: string[]) {
   if (ids.length === 0) return false;
-  const { error } = await supabase.from(table as any).delete().in("id", ids);
-  if (error) { toast.error(error.message); return false; }
+  const { error } = await supabase
+    .from(table as any)
+    .delete()
+    .in("id", ids);
+  if (error) {
+    toast.error(error.message);
+    return false;
+  }
   toast.success(ids.length === 1 ? "Deleted" : `${ids.length} items deleted`);
   return true;
 }
 
 /** Toolbar shown above a table when rows are selected. */
 export function BulkDeleteBar({
-  table, ids, onDone, noun = "items",
-}: { table: string; ids: string[]; onDone: () => void; noun?: string }) {
+  table,
+  ids,
+  onDone,
+  noun = "items",
+}: {
+  table: string;
+  ids: string[];
+  onDone: () => void;
+  noun?: string;
+}) {
   const [busy, setBusy] = useState(false);
   if (ids.length === 0) return null;
   return (
     <div className="mb-3 flex items-center justify-between gap-3 rounded-md border bg-muted/40 px-3 py-2">
-      <span className="text-sm">{ids.length} {noun} selected</span>
+      <span className="text-sm">
+        {ids.length} {noun} selected
+      </span>
       <Button
         size="sm"
         variant="destructive"

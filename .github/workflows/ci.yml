@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  app:
+    name: Lint and build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run lint
+
+      - run: npm run build
+        env:
+          VITE_SUPABASE_PROJECT_ID: ci-project
+          VITE_SUPABASE_URL: https://ci-project.supabase.co
+          VITE_SUPABASE_PUBLISHABLE_KEY: ci-publishable-key
+          VITE_SENTRY_DSN: ""
+
+  database:
+    name: Supabase migrations and pgTAP
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start database with retry
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Supabase's CI guidance uses the database-only starter for pgTAP.
+          # This avoids pulling the full API/UI/analytics stack and reduces registry failures.
+          for attempt in 1 2 3 4 5; do
+            echo "Supabase database start attempt $attempt/5"
+            if supabase db start; then
+              exit 0
+            fi
+            if [ "$attempt" -eq 5 ]; then
+              echo "Supabase database failed to start after 5 attempts."
+              exit 1
+            fi
+            sleep_seconds=$((attempt * 30))
+            echo "Retrying in $sleep_seconds seconds..."
+            sleep "$sleep_seconds"
+          done
+
+      - run: supabase test db

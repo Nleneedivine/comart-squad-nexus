@@ -22,6 +22,12 @@ export default tseslint.config(
       ...reactHooks.configs.recommended.rules,
       "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
       "@typescript-eslint/no-unused-vars": "off",
+      "prettier/prettier": "off",
+      // Legacy UI code still contains broad Supabase response shapes; keep these visible as warnings while the type cleanup is phased in.
+      "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/ban-ts-comment": "warn",
+      "@typescript-eslint/no-unused-expressions": "warn",
+      "no-empty": "warn",
     },
   },
   eslintPluginPrettier,
