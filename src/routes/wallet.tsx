@@ -16,7 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatNaira } from "@/lib/format";
 import { toast } from "sonner";
 import { Eye, EyeOff, ArrowUpRight, ArrowDownLeft, Settings as SettingsIcon, AlertTriangle, Search } from "lucide-react";
-import { initFundWallet, verifyFunding, requestWithdrawal, setWalletPin, ensureWalletForCurrentStore } from "@/lib/paystack.functions";
+import { initFundWallet, verifyFunding, requestWithdrawal, setWalletPin, updateWalletBankDetails, ensureWalletForCurrentStore } from "@/lib/paystack.functions";
 
 export const Route = createFileRoute("/wallet")({
   head: () => ({ meta: [{ title: "Wallet — Comart+" }, { name: "description", content: "Wallet powered by Paystack." }] }),
@@ -86,7 +86,7 @@ function Wallet() {
     if (!amt || amt <= 0) return toast.error("Enter amount");
     if (!user?.email) return toast.error("Email required");
     try {
-      const r = await initFundWallet({ data: { amount: amt, email: user.email } });
+      const r = await initFundWallet({ data: { amount: amt } });
       window.location.href = r.authorization_url;
     } catch (e: any) { toast.error(e.message); }
   };
@@ -111,9 +111,14 @@ function Wallet() {
 
   const saveBank = async () => {
     if (!wallet) return;
-    const { error } = await supabase.from("wallets").update(bank).eq("id", wallet.id);
-    if (error) return toast.error(error.message);
-    toast.success("Bank account saved"); setBankOpen(false); load();
+    try {
+      await updateWalletBankDetails({ data: bank });
+      toast.success("Bank account saved");
+      setBankOpen(false);
+      load();
+    } catch (e: any) {
+      toast.error(e.message);
+    }
   };
 
   const savePin = async () => {
