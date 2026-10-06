@@ -17,7 +17,10 @@ jobs:
           node-version: 22
           cache: npm
 
-      - run: npm ci
+      # package.json and package-lock.json are currently out of sync in the
+      # upstream Lovable export. Use npm install for validation until the lock
+      # file is regenerated from the canonical package.json.
+      - run: npm install --no-audit --no-fund
 
       - run: npm run lint
 
