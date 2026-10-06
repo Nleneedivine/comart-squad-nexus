@@ -316,15 +316,13 @@ function OrdersIndex() {
       };
     });
     await supabase.from("order_items").insert(itemsPayload);
-    await supabase
-      .from("order_status_history")
-      .insert({
-        order_id: ord.id,
-        store_id: store.id,
-        status: "pending",
-        changed_by: user.id,
-        note: "Order created",
-      });
+    await supabase.from("order_status_history").insert({
+      order_id: ord.id,
+      store_id: store.id,
+      status: "pending",
+      changed_by: user.id,
+      note: "Order created",
+    });
     for (const it of validItems) {
       const p = products.find((pp) => pp.id === it.product_id)!;
       const newBal = Math.max(0, (p.stock_qty || 0) - it.quantity);
@@ -360,25 +358,21 @@ function OrdersIndex() {
       .in("id", ids)
       .eq("store_id", store.id);
     if (error) return toast.error(error.message);
-    await supabase
-      .from("order_status_history")
-      .insert(
-        ids.map((id) => ({
-          order_id: id,
-          store_id: store.id,
-          status: bulkStatus as any,
-          changed_by: user.id,
-          note: "Bulk update",
-        })),
-      );
-    await supabase
-      .from("activity_log")
-      .insert({
+    await supabase.from("order_status_history").insert(
+      ids.map((id) => ({
+        order_id: id,
         store_id: store.id,
-        user_id: user.id,
-        type: "order",
-        activity: `Bulk set ${ids.length} orders to ${bulkStatus}`,
-      });
+        status: bulkStatus as any,
+        changed_by: user.id,
+        note: "Bulk update",
+      })),
+    );
+    await supabase.from("activity_log").insert({
+      store_id: store.id,
+      user_id: user.id,
+      type: "order",
+      activity: `Bulk set ${ids.length} orders to ${bulkStatus}`,
+    });
     toast.success(`Updated ${ids.length} orders`);
     setSelected(new Set());
     setBulkStatus("");
@@ -395,14 +389,12 @@ function OrdersIndex() {
       .eq("store_id", store.id);
     if (error) return toast.error(error.message);
     const name = staff.find((s) => s.id === bulkAssignee)?.name || "staff";
-    await supabase
-      .from("activity_log")
-      .insert({
-        store_id: store.id,
-        user_id: user.id,
-        type: "order",
-        activity: `Assigned ${ids.length} orders to ${name}`,
-      });
+    await supabase.from("activity_log").insert({
+      store_id: store.id,
+      user_id: user.id,
+      type: "order",
+      activity: `Assigned ${ids.length} orders to ${name}`,
+    });
     toast.success(`Assigned ${ids.length} orders`);
     setSelected(new Set());
     setBulkAssignee("");
@@ -418,14 +410,12 @@ function OrdersIndex() {
       .in("id", ids)
       .eq("store_id", store.id);
     if (error) return toast.error(error.message);
-    await supabase
-      .from("activity_log")
-      .insert({
-        store_id: store.id,
-        user_id: user.id,
-        type: "order",
-        activity: `${archive ? "Archived" : "Restored"} ${ids.length} orders`,
-      });
+    await supabase.from("activity_log").insert({
+      store_id: store.id,
+      user_id: user.id,
+      type: "order",
+      activity: `${archive ? "Archived" : "Restored"} ${ids.length} orders`,
+    });
     toast.success(`${archive ? "Archived" : "Restored"} ${ids.length}`);
     setSelected(new Set());
     load();
@@ -440,14 +430,12 @@ function OrdersIndex() {
     await supabase.from("order_call_attempts").delete().in("order_id", ids);
     const { error } = await supabase.from("orders").delete().in("id", ids).eq("store_id", store.id);
     if (error) return toast.error(error.message);
-    await supabase
-      .from("activity_log")
-      .insert({
-        store_id: store.id,
-        user_id: user.id,
-        type: "order",
-        activity: `Deleted ${ids.length} order(s)`,
-      });
+    await supabase.from("activity_log").insert({
+      store_id: store.id,
+      user_id: user.id,
+      type: "order",
+      activity: `Deleted ${ids.length} order(s)`,
+    });
     toast.success(`Deleted ${ids.length} order(s)`);
     setSelected(new Set());
     load();
@@ -490,14 +478,12 @@ function OrdersIndex() {
         .update({ assigned_to: u.assigned_to, assigned_at: new Date().toISOString() })
         .eq("id", u.id);
     }
-    await supabase
-      .from("activity_log")
-      .insert({
-        store_id: store.id,
-        user_id: user.id,
-        type: "order",
-        activity: `Round-robin assigned ${updates.length} orders`,
-      });
+    await supabase.from("activity_log").insert({
+      store_id: store.id,
+      user_id: user.id,
+      type: "order",
+      activity: `Round-robin assigned ${updates.length} orders`,
+    });
     toast.success(`Distributed ${updates.length} orders evenly`);
     load();
   };

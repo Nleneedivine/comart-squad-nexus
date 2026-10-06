@@ -259,14 +259,12 @@ async function runTool(
         .select("id")
         .single();
       if (error) return { error: error.message };
-      await admin
-        .from("platform_audit_log")
-        .insert({
-          action: "admin_message_sent",
-          actor_id: userId,
-          target_store_id: args.store_id,
-          metadata: { message_id: data.id, store: store.name },
-        });
+      await admin.from("platform_audit_log").insert({
+        action: "admin_message_sent",
+        actor_id: userId,
+        target_store_id: args.store_id,
+        metadata: { message_id: data.id, store: store.name },
+      });
       return { ok: true, message_id: data.id, sent_to: store.name };
     }
     case "list_messages_with_store": {
@@ -283,13 +281,11 @@ async function runTool(
         .from("feature_flags")
         .upsert({ flag_key: args.flag_key, enabled: args.enabled }, { onConflict: "flag_key" });
       if (error) return { error: error.message };
-      await admin
-        .from("platform_audit_log")
-        .insert({
-          action: "flag_toggled",
-          actor_id: userId,
-          metadata: { flag_key: args.flag_key, enabled: args.enabled },
-        });
+      await admin.from("platform_audit_log").insert({
+        action: "flag_toggled",
+        actor_id: userId,
+        metadata: { flag_key: args.flag_key, enabled: args.enabled },
+      });
       return { ok: true };
     }
     case "list_feature_flags": {
@@ -302,13 +298,11 @@ async function runTool(
         .update({ is_suspended: args.suspended })
         .eq("user_id", args.user_id);
       if (error) return { error: error.message };
-      await admin
-        .from("platform_audit_log")
-        .insert({
-          action: args.suspended ? "user_suspended" : "user_unsuspended",
-          actor_id: userId,
-          metadata: { user_id: args.user_id },
-        });
+      await admin.from("platform_audit_log").insert({
+        action: args.suspended ? "user_suspended" : "user_unsuspended",
+        actor_id: userId,
+        metadata: { user_id: args.user_id },
+      });
       return { ok: true };
     }
     case "update_subscription_status": {
@@ -317,14 +311,12 @@ async function runTool(
         .update({ status: args.status })
         .eq("store_id", args.store_id);
       if (error) return { error: error.message };
-      await admin
-        .from("platform_audit_log")
-        .insert({
-          action: "subscription_status_changed",
-          actor_id: userId,
-          target_store_id: args.store_id,
-          metadata: { status: args.status },
-        });
+      await admin.from("platform_audit_log").insert({
+        action: "subscription_status_changed",
+        actor_id: userId,
+        target_store_id: args.store_id,
+        metadata: { status: args.status },
+      });
       return { ok: true };
     }
     case "broadcast_message": {

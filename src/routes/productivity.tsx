@@ -373,14 +373,12 @@ function Tasks() {
   const save = async () => {
     if (!store || !user || !form.title || !form.assigned_to)
       return toast.error("Title and assignee required");
-    const { error } = await supabase
-      .from("tasks")
-      .insert({
-        ...form,
-        deadline: form.deadline || null,
-        store_id: store.id,
-        assigned_by: user.id,
-      });
+    const { error } = await supabase.from("tasks").insert({
+      ...form,
+      deadline: form.deadline || null,
+      store_id: store.id,
+      assigned_by: user.id,
+    });
     if (error) return toast.error(error.message);
     toast.success("Task created");
     setOpen(false);

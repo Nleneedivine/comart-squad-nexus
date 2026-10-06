@@ -88,14 +88,12 @@ function OrderDetail() {
       .update({ status: newStatus as any })
       .eq("id", order.id);
     if (error) return toast.error(error.message);
-    await supabase
-      .from("order_status_history")
-      .insert({
-        order_id: order.id,
-        store_id: store.id,
-        status: newStatus as any,
-        changed_by: user.id,
-      });
+    await supabase.from("order_status_history").insert({
+      order_id: order.id,
+      store_id: store.id,
+      status: newStatus as any,
+      changed_by: user.id,
+    });
     toast.success("Status updated");
     load();
   };

@@ -45,14 +45,12 @@ function BroadcastsPage() {
       .insert({ title, body, audience, sent_by: user?.id });
     if (error) return toast.error(error.message);
     if (user)
-      await supabase
-        .from("platform_audit_log")
-        .insert({
-          actor_id: user.id,
-          action: "broadcast.send",
-          target_type: "broadcast",
-          metadata: { title, audience },
-        });
+      await supabase.from("platform_audit_log").insert({
+        actor_id: user.id,
+        action: "broadcast.send",
+        target_type: "broadcast",
+        metadata: { title, audience },
+      });
     toast.success("Broadcast sent");
     setTitle("");
     setBody("");

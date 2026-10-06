@@ -121,17 +121,15 @@ function InventoryProducts() {
         .single();
       if (error) return toast.error(error.message);
       if (p && form.stock_qty > 0) {
-        await supabase
-          .from("stock_movements")
-          .insert({
-            store_id: store.id,
-            product_id: p.id,
-            product_name: p.name,
-            type: "initial",
-            qty_change: form.stock_qty,
-            balance: form.stock_qty,
-            reference: "Initial stock",
-          });
+        await supabase.from("stock_movements").insert({
+          store_id: store.id,
+          product_id: p.id,
+          product_name: p.name,
+          type: "initial",
+          qty_change: form.stock_qty,
+          balance: form.stock_qty,
+          reference: "Initial stock",
+        });
       }
       toast.success("Product added");
     }

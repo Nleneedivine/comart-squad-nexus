@@ -91,16 +91,14 @@ function Faulty() {
     if (!p) return toast.error("Select product");
     if (form.quantity <= 0) return toast.error("Quantity must be > 0");
     if ((p.stock_qty || 0) < form.quantity) return toast.error(`Only ${p.stock_qty || 0} in stock`);
-    const { error } = await supabase
-      .from("faulty_stocks")
-      .insert({
-        store_id: store.id,
-        product_id: p.id,
-        product_name: p.name,
-        quantity: form.quantity,
-        reason: form.reason,
-        reported_date: form.reported_date,
-      });
+    const { error } = await supabase.from("faulty_stocks").insert({
+      store_id: store.id,
+      product_id: p.id,
+      product_name: p.name,
+      quantity: form.quantity,
+      reason: form.reason,
+      reported_date: form.reported_date,
+    });
     if (error) return toast.error(error.message);
     const newBal = (p.stock_qty || 0) - form.quantity;
     await supabase.from("products").update({ stock_qty: newBal }).eq("id", p.id);

@@ -89,16 +89,14 @@ function AgentStock() {
     if (!a || !p) return toast.error("Select agent and product");
     if (form.quantity <= 0) return toast.error("Quantity must be > 0");
     if ((p.stock_qty || 0) < form.quantity) return toast.error(`Only ${p.stock_qty || 0} in stock`);
-    const { error } = await supabase
-      .from("agent_stocks")
-      .insert({
-        store_id: store.id,
-        agent_id: a.id,
-        agent_name: a.name,
-        product_id: p.id,
-        product_name: p.name,
-        quantity: form.quantity,
-      });
+    const { error } = await supabase.from("agent_stocks").insert({
+      store_id: store.id,
+      agent_id: a.id,
+      agent_name: a.name,
+      product_id: p.id,
+      product_name: p.name,
+      quantity: form.quantity,
+    });
     if (error) return toast.error(error.message);
     const newBal = (p.stock_qty || 0) - form.quantity;
     await supabase.from("products").update({ stock_qty: newBal }).eq("id", p.id);

@@ -110,17 +110,15 @@ function BuyStock() {
       const p = products.find((pp) => pp.id === i.product_id)!;
       const newBalance = (p.stock_qty || 0) + i.quantity;
       await supabase.from("products").update({ stock_qty: newBalance }).eq("id", p.id);
-      await supabase
-        .from("stock_movements")
-        .insert({
-          store_id: store.id,
-          product_id: p.id,
-          product_name: p.name,
-          type: "purchase",
-          qty_change: i.quantity,
-          balance: newBalance,
-          reference: `Purchase ${pur.id.slice(0, 8)}`,
-        });
+      await supabase.from("stock_movements").insert({
+        store_id: store.id,
+        product_id: p.id,
+        product_name: p.name,
+        type: "purchase",
+        qty_change: i.quantity,
+        balance: newBalance,
+        reference: `Purchase ${pur.id.slice(0, 8)}`,
+      });
     }
     toast.success("Purchase recorded");
     setOpen(false);
