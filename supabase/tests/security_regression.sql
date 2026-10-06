@@ -1,6 +1,6 @@
 BEGIN;
 
-SELECT plan(10);
+SELECT plan(11);
 
 -- These are catalog-level regression checks and do not require production data.
 SELECT ok(
@@ -31,6 +31,11 @@ SELECT ok(
 SELECT ok(
   NOT has_table_privilege('authenticated', 'public.whatsapp_integrations', 'SELECT'),
   'authenticated cannot directly SELECT WhatsApp credential rows'
+);
+
+SELECT ok(
+  NOT has_table_privilege('authenticated', 'public.staff_invites', 'SELECT'),
+  'authenticated cannot directly SELECT invitation tokens'
 );
 
 SELECT ok(
