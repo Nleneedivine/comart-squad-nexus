@@ -3183,6 +3183,7 @@ export type Database = {
     Views: {
       [_ in never]: never
     }
+    Functions: {
       has_permission: {
         Args: { _user_id: string; _store_id: string; _permission: string }
         Returns: boolean
@@ -3253,7 +3254,7 @@ export type Database = {
         Args: { _store_id: string; _user_id: string; _role: Database["public"]["Enums"]["app_role"] }
         Returns: boolean
       }
-    Functions: {
+    
       accept_staff_invite: { Args: { _token: string }; Returns: Json }
       advance_subscription_lifecycle: { Args: never; Returns: undefined }
       auto_assign_order: { Args: { _order_id: string }; Returns: string }
