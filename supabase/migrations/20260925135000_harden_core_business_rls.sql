@@ -262,6 +262,7 @@ CREATE POLICY "public active sales forms" ON public.sales_forms
 -- Public submissions must reference an active form belonging to the same store.
 DROP POLICY IF EXISTS "members view submissions" ON public.form_submissions;
 DROP POLICY IF EXISTS "public submit form" ON public.form_submissions;
+DROP POLICY IF EXISTS "public submit active form" ON public.form_submissions;
 CREATE POLICY "submissions view by permission" ON public.form_submissions
   FOR SELECT TO authenticated USING (
     public.has_permission(auth.uid(), store_id, 'sales_forms.view')
