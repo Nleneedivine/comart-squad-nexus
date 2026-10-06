@@ -68,8 +68,7 @@ export const Route = createFileRoute("/api/public/paystack-webhook")({
               .eq("reference", reference)
               .maybeSingle();
             if (tx && tx.status !== "success") {
-              await supabaseAdmin
-                .from("wallet_transactions")
+              await supabaseAdmin.from("wallet_transactions")
                 .update({ status: "success" })
                 .eq("id", tx.id);
               const { data: w } = await supabaseAdmin
