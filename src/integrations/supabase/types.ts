@@ -3207,7 +3207,7 @@ export type Database = {
         Args: { _token: string }
         Returns: {
           email: string
-          role: string
+          role: Database["public"]["Enums"]["app_role"]
           store_id: string
           store_name: string
           status: string
@@ -3220,7 +3220,7 @@ export type Database = {
         Returns: {
           id: string
           email: string
-          role: string
+          role: Database["public"]["Enums"]["app_role"]
           token: string
           status: string
           expires_at: string
