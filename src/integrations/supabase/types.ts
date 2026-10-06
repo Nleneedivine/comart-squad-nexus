@@ -2807,6 +2807,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["wallet_tx_status"]
           store_id?: string
           wallet_id?: string
+          idempotency_key?: string | null
         }
         Relationships: []
       }
