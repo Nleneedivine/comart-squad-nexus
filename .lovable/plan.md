@@ -1,54 +1,34 @@
-## Super Admin AI Assistant — Plan
+# Security hardening for Comart+ (connected database)
 
-A chat surface on the Super Admin dashboard (`/admin`) powered by Lovable AI (`google/gemini-3-flash-preview`) that lets you query the platform, message store admins, and perform configuration changes via tool-calling.
+## Key finding first
+The hardening you described (permission-based RLS, `has_permission`, `active_store_id`, wallet RPCs, role-mutation RPCs, WhatsApp credential protection, procurement RPC hardening, audit logging) is **not present** in this Lovable project or its connected database. No migration, function, or code file references `has_permission` or `active_store_id`. It likely lives only in the GitHub repo on a branch that was never synced here. So this is a build-from-scratch, not a gap-fix.
 
-### Mention system
-- **`@`** — opens a popover listing **all stores** (name + owner email). Inserts `@store:<id>` token into the prompt; the AI receives the resolved store context.
-- **`/`** — opens a popover listing **all app routes/functions** (Dashboard, Orders, Inventory, Staff, Finance, Settings, Admin pages, etc.) pulled from a curated registry. Inserts `/page:<path>` token.
-- Both popovers are keyboard-navigable (↑/↓/Enter/Esc), filterable by typing.
+Option A (recommended): sync/merge that GitHub work into this project first, then I verify and close gaps.
+Option B: I build the full system here, as below.
 
-### Admin inbox (in-app)
-- New table `admin_messages` (sender_id, store_id, recipient_user_id, subject, body, parent_id, read_at, created_at).
-- Store admins see a new "Messages from Platform" panel in their dashboard with unread badge and reply.
-- Super Admin sees thread view per store.
+## Critical issues confirmed in the live database
+1. **Wallet balance is client-writable**: store admins can `UPDATE wallets.balance` directly; any member can `INSERT` wallet_transactions (fake "success" rows).
+2. **PIN hash exposed and checked in the browser**: `wallets.pin_hash` is readable by every store member; PIN is unsalted SHA-256 compared client-side.
+3. **Paystack verification is not idempotent or store-bound**: `verifyFunding` uses the admin client, any signed-in user can verify any reference, and a race can credit twice. Withdrawal is not row-locked and picks "first" store, not the active one.
+4. **Hard-coded privileged email** in `handle_new_user` (auto-grants admin).
+5. **Invited users get an unrelated personal store** when the invite lookup misses (e.g. Google email casing/expired).
+6. **Anon can execute 21 SECURITY DEFINER functions**, including `superadmin_delete_store`, `generate_payslips`, `mark_payroll_paid`, `receive_purchase_order_items`, `auto_assign_order`, trigger functions.
+7. **user_roles**: any admin/manager can grant themselves or others `owner`; no self-escalation guard.
+8. **WhatsApp access token** column readable by all store members.
+9. Many policies target role `public` instead of `authenticated`.
 
-### AI tools (server-side, `createServerFn` w/ super-admin guard)
-The AI chat route exposes these tools — each verifies caller is a superadmin:
-1. `list_stores` — search/filter stores
-2. `get_store_details` — full store + owner + staff + recent orders + subscription
-3. `list_store_staff` — staff of a store with status
-4. `message_store_admin` — send message to a store's owner (inserts into `admin_messages`)
-5. `list_recent_errors` — pull from `app_errors` for a store
-6. `toggle_feature_flag` — flip feature flag for a store/global
-7. `suspend_user` / `unsuspend_user` — toggle `user_roles.is_suspended`
-8. `update_subscription_status` — change plan/status
-9. `close_store` — wraps existing `superadmin_delete_store`
-10. `list_recent_orders` — last N orders for a store
-11. `broadcast_message` — create a platform broadcast
+## What I will build (Option B)
+1. Permissions model: `role_permissions(role, permission)` seeded with wallet.view/fund/withdraw/manage, staff.manage, inventory.view/manage/receive/adjust/transfer, finance.view/manage, orders.view/manage, integrations.manage, sales_forms.view/manage. `has_permission(_store_id, _perm)` always uses `auth.uid()` (no user parameter, so it cannot inspect others).
+2. `profiles.active_store_id` + `set_active_store(_store_id)` RPC that rejects non-member stores; trigger blocks direct changes.
+3. Rewrite RLS on all business tables to `authenticated` + `has_permission(store_id, ...)`; reads via `.view`, writes via `.manage`.
+4. Wallet: revoke direct writes; column-level revoke on `pin_hash`; RPCs `wallet_set_pin` (bcrypt via pgcrypto), `wallet_update_bank` (wallet.manage + PIN), `wallet_request_withdrawal` (`FOR UPDATE` lock, idempotency key, PIN check); `wallet_complete_funding` executable by service_role only, unique on reference, credits once. Server functions switched to these.
+5. Staff RPCs: `staff_assign_role`, `staff_remove_role`, `staff_set_suspended` (staff.manage, no self-escalation to owner, last-owner protection). Fix `handle_new_user` (no email backdoor; invited users never get a personal store).
+6. WhatsApp: move access token to a server-only table; RLS by integrations.manage.
+7. Revoke EXECUTE from `anon`/`public` on all definer functions; grant only what clients need to `authenticated`; trigger/cron functions to nobody but owner.
+8. Tests: SQL test script creating two stores/two users, running as each via `set local role authenticated` + JWT claims, asserting cross-store SELECT/INSERT/UPDATE/DELETE/RPC all fail, active-store spoof fails, double funding credits once, concurrent withdrawal cannot overdraw. Results reported with exact counts. Plus build/lint.
+9. Frontend: wallet page, staff page, store switcher updated to use the RPCs.
 
-Each tool returns compact JSON. Mutating tools log to `platform_audit_log`.
-
-### Files
-- **Migration**: `admin_messages` table + RLS (superadmins write, recipient + superadmins read) + `mark_admin_message_read` RPC.
-- **`src/lib/admin-ai.functions.ts`** — `superAdminChat` serverFn streaming via AI SDK with all tools; guards via `has_role('admin')` + `superadmins` table.
-- **`src/components/admin/SuperAdminChat.tsx`** — floating chat panel with AI Elements (`Conversation`, `Message`, `MessageResponse`, `PromptInput`, `Tool`), mention popovers, markdown rendering.
-- **`src/components/admin/MentionPopover.tsx`** — shared `@`/`/` popover.
-- **`src/lib/page-registry.ts`** — curated list of app routes for `/` mentions.
-- **`src/routes/admin.index.tsx`** — embed `<SuperAdminChat />`.
-- **`src/components/AdminInbox.tsx`** + tile on store admin Dashboard for incoming messages.
-- **`src/routes/api/admin-chat.ts`** — streaming route (`toUIMessageStreamResponse`) wired to Lovable AI Gateway helper.
-- **`src/lib/ai-gateway.server.ts`** — gateway provider helper (if not present).
-
-### Technical notes
-- Streaming via AI SDK `streamText` + `stepCountIs(50)` for tool loops.
-- Every tool re-verifies superadmin status server-side (defense in depth).
-- Mention tokens are resolved server-side before being passed to the model so it sees structured context, not raw `@store:uuid`.
-- Tool calls render with `<Tool>` accordion (collapsed by default) so you can audit what the AI did.
-- Confirmation step for destructive tools (`close_store`, `suspend_user`) — AI proposes, you click "Confirm".
-
-### Out of scope (would need follow-up)
-- Editing source code / route layouts (only data/settings can be changed).
-- Free-text search across customers (you said stores only on `@`).
-- Voice input.
-
-Proceed?
+## Risks
+- Existing users' access will change to match permissions; owner/admin keep full access within their own store.
+- Existing PINs (unsalted SHA-256) must be reset by users.
+- Large change set (~1 big migration + ~10 files); done in stages with tests after each.
