@@ -62,9 +62,11 @@ EXECUTE FUNCTION public.set_default_active_store();
 
 -- Backfill existing users deterministically once, without changing an existing preference.
 INSERT INTO public.user_store_preferences (user_id, active_store_id)
-SELECT ur.user_id, MIN(ur.store_id)
+SELECT DISTINCT ON (ur.user_id)
+  ur.user_id,
+  ur.store_id
 FROM public.user_roles ur
-GROUP BY ur.user_id
+ORDER BY ur.user_id, ur.store_id
 ON CONFLICT (user_id) DO NOTHING;
 
 -- Remove the legacy email-based privilege escalation. Super-admin status must
