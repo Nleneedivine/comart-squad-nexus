@@ -128,8 +128,12 @@ function WhatsAppSetup() {
         name: t.name, body: t.body, language: t.language, variables: vars,
       }).eq("id", t.id);
     } else {
+      const { data: authData } = await supabase.auth.getUser();
+      const userId = authData.user?.id;
+      if (!userId) throw new Error("Authentication required");
       const { data } = await (supabase as any).from("whatsapp_templates").insert({
-        store_id: store.id, use_case: uc, name: t.name, body: t.body, language: t.language, variables: vars,
+        store_id: store.id, use_case: uc, name: t.name, body: t.body, language: t.language,
+        variables: vars, created_by: userId,
       }).select().single();
       setTemplates(m => ({ ...m, [uc]: { ...t, id: data?.id } }));
     }
