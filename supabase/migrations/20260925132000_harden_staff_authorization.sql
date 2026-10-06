@@ -5,12 +5,8 @@
 DROP POLICY IF EXISTS "lookup invite by token" ON public.staff_invites;
 DROP POLICY IF EXISTS "admins view invites" ON public.staff_invites;
 DROP POLICY IF EXISTS "admins manage invites" ON public.staff_invites;
-CREATE POLICY "admins view invites" ON public.staff_invites
-  FOR SELECT USING (public.has_permission(auth.uid(), store_id, 'staff.view'));
-
 CREATE POLICY "admins manage invites" ON public.staff_invites
-  FOR ALL USING (public.has_permission(auth.uid(), store_id, 'staff.manage'))
-  WITH CHECK (public.has_permission(auth.uid(), store_id, 'staff.manage'));
+  FOR SELECT USING (public.has_permission(auth.uid(), store_id, 'staff.manage'));
 
 REVOKE INSERT, UPDATE, DELETE ON public.staff_invites FROM authenticated;
 
@@ -37,6 +33,31 @@ AS $$
 $$;
 
 GRANT EXECUTE ON FUNCTION public.get_invite_by_token(TEXT) TO anon, authenticated;
+
+CREATE OR REPLACE FUNCTION public.get_store_invites(_store_id UUID)
+RETURNS TABLE(
+  id UUID,
+  email TEXT,
+  role public.app_role,
+  token TEXT,
+  status TEXT,
+  expires_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ
+)
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $
+  SELECT i.id, i.email, i.role, i.token, i.status, i.expires_at, i.created_at
+  FROM public.staff_invites i
+  WHERE i.store_id = _store_id
+    AND i.status = 'pending'
+    AND public.has_permission(auth.uid(), _store_id, 'staff.manage')
+  ORDER BY i.created_at DESC;
+$;
+
+GRANT EXECUTE ON FUNCTION public.get_store_invites(UUID) TO authenticated;
 
 CREATE OR REPLACE FUNCTION public.invite_staff(
   _store_id UUID,
