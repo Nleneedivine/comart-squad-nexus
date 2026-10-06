@@ -32,9 +32,9 @@ UNION ALL
 SELECT store_b, 'Store B Product', 2000, 1400 FROM security_ctx;
 
 INSERT INTO public.finance_records (store_id, type, amount, description, created_by)
-SELECT store_a, 'income', 1000, 'Store A Finance', user_a FROM security_ctx
+SELECT store_a, 'income'::public.finance_type, 1000, 'Store A Finance', user_a FROM security_ctx
 UNION ALL
-SELECT store_b, 'income', 2000, 'Store B Finance', user_b FROM security_ctx;
+SELECT store_b, 'income'::public.finance_type, 2000, 'Store B Finance', user_b FROM security_ctx;
 
 INSERT INTO public.wallets (store_id, balance)
 SELECT store_a, 10000 FROM security_ctx
@@ -158,7 +158,7 @@ SELECT throws_ok(
 
 SELECT throws_ok(
   $$INSERT INTO public.finance_records (store_id, type, amount, description, created_by)
-    VALUES ((SELECT store_b FROM security_ctx), 'income', 9999, 'Cross Store Finance', (SELECT user_a FROM security_ctx))$$,
+    VALUES ((SELECT store_b FROM security_ctx), 'income'::public.finance_type, 9999, 'Cross Store Finance', (SELECT user_a FROM security_ctx))$$,
   '42501',
   NULL,
   'user A cannot insert finance into store B'
