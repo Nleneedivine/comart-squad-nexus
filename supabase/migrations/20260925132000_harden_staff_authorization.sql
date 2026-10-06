@@ -45,13 +45,13 @@ LANGUAGE sql
 STABLE
 SECURITY DEFINER
 SET search_path = public
-AS $
+AS $store_invites$
   SELECT i.id, i.email, i.role, i.token, i.status, i.expires_at, i.created_at  FROM public.staff_invites i
   WHERE i.store_id = _store_id
     AND i.status = 'pending'
     AND public.has_permission(auth.uid(), _store_id, 'staff.manage')
   ORDER BY i.created_at DESC;
-$;
+$store_invites$;
 
 GRANT EXECUTE ON FUNCTION public.get_store_invites(UUID) TO authenticated;
 
