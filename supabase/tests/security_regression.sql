@@ -1,6 +1,6 @@
 BEGIN;
 
-SELECT plan(15);
+SELECT plan(22);
 
 -- These are catalog-level regression checks and do not require production data.
 SELECT ok(
@@ -92,6 +92,50 @@ SELECT ok(
 SELECT ok(
   NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='staff_invites' AND policyname='lookup invite by token'),
   'global invite lookup policy is removed'
+);
+
+
+SELECT ok(
+  NOT has_table_privilege('anon', 'public.customers', 'SELECT'),
+  'anonymous users cannot directly read customer data'
+);
+
+SELECT ok(
+  EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='customers' AND policyname='customers view by permission'),
+  'customer reads require customers.view'
+);
+
+SELECT ok(
+  EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='purchase_orders' AND policyname='purchase orders insert by permission'),
+  'purchase-order writes require inventory.manage'
+);
+
+SELECT ok(
+  EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='waybills' AND policyname='waybills insert by permission'),
+  'waybill writes require logistics.manage'
+);
+
+SELECT ok(
+  has_function_privilege(
+    'authenticated',
+    'public.receive_purchase_order_items(uuid,jsonb)',
+    'EXECUTE'
+  ),
+  'authenticated can reach the permission-checked stock receiving RPC'
+);
+
+SELECT ok(
+  NOT has_function_privilege(
+    'anon',
+    'public.receive_purchase_order_items(uuid,jsonb)',
+    'EXECUTE'
+  ),
+  'anonymous users cannot execute stock receiving RPC'
+);
+
+SELECT ok(
+  EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='form_submissions' AND policyname='public submit active form'),
+  'public form submissions must reference an active form in the same store'
 );
 
 SELECT * FROM finish();
