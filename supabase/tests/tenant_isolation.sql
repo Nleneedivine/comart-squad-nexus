@@ -1,6 +1,6 @@
 BEGIN;
 
-SELECT plan(30);
+SELECT plan(29);
 
 -- Two independent authenticated users. The signup trigger creates one store
 -- and one owner role for each user. All fixture data is rolled back at the end.
