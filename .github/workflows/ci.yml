@@ -17,7 +17,6 @@ jobs:
           node-version: 22
           cache: npm
 
-      # package-lock.json is regenerated from package.json on the hardening branch.
       - run: npm ci
 
       - run: npm run lint
@@ -39,17 +38,20 @@ jobs:
         with:
           version: latest
 
-      - name: Start Supabase with retry
+      - name: Start database-only Supabase with retry
         shell: bash
         run: |
           set -euo pipefail
+          # pgTAP only needs Postgres. Excluding the API/UI/analytics services
+          # dramatically reduces Docker pulls and avoids public registry rate limits.
+          services_to_exclude="gotrue,realtime,storage-api,imgproxy,kong,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor"
           for attempt in 1 2 3 4 5; do
-            echo "Supabase start attempt $attempt/5"
-            if supabase start; then
+            echo "Supabase database start attempt $attempt/5"
+            if supabase start --exclude "$services_to_exclude"; then
               exit 0
             fi
             if [ "$attempt" -eq 5 ]; then
-              echo "Supabase failed to start after 5 attempts."
+              echo "Supabase database failed to start after 5 attempts."
               exit 1
             fi
             sleep_seconds=$((attempt * 30))
