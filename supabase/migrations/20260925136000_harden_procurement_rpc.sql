@@ -12,8 +12,8 @@ DECLARE
   po_row public.purchase_orders%ROWTYPE;
   poi_row public.purchase_order_items%ROWTYPE;
   prod_row public.products%ROWTYPE;
-  received_qty int;
-  damaged_qty int;
+  v_received_qty int;
+  v_damaged_qty int;
   new_stock int;
   total_ordered int;
   total_received int;
@@ -50,19 +50,19 @@ BEGIN
       RAISE EXCEPTION 'Purchase order item not found';
     END IF;
 
-    received_qty := GREATEST(COALESCE((item->>'received')::int, 0), 0);
-    damaged_qty := GREATEST(COALESCE((item->>'damaged')::int, 0), 0);
+    v_received_qty := GREATEST(COALESCE((item->>'received')::int, 0), 0);
+    v_damaged_qty := GREATEST(COALESCE((item->>'damaged')::int, 0), 0);
 
-    IF received_qty + damaged_qty > (poi_row.quantity - poi_row.received_qty - poi_row.damaged_qty) THEN
+    IF v_received_qty + v_damaged_qty > (poi_row.quantity - poi_row.received_qty - poi_row.damaged_qty) THEN
       RAISE EXCEPTION 'Received quantity exceeds remaining quantity for item %', poi_row.id;
     END IF;
 
     UPDATE public.purchase_order_items
-    SET received_qty = received_qty + received_qty,
-        damaged_qty = damaged_qty + damaged_qty
+    SET received_qty = poi_row.received_qty + v_received_qty,
+        damaged_qty = poi_row.damaged_qty + v_damaged_qty
     WHERE id = poi_row.id;
 
-    IF poi_row.product_id IS NOT NULL AND received_qty > 0 THEN
+    IF poi_row.product_id IS NOT NULL AND v_received_qty > 0 THEN
       SELECT *
       INTO prod_row
       FROM public.products
@@ -74,7 +74,7 @@ BEGIN
         RAISE EXCEPTION 'Product not found';
       END IF;
 
-      new_stock := COALESCE(prod_row.stock_qty, 0) + received_qty;
+      new_stock := COALESCE(prod_row.stock_qty, 0) + v_received_qty;
 
       UPDATE public.products
       SET stock_qty = new_stock,
@@ -86,7 +86,7 @@ BEGIN
       )
       VALUES (
         po_row.store_id, prod_row.id, poi_row.product_name, 'in',
-        received_qty, new_stock, 'PO ' || po_row.po_number
+        v_received_qty, new_stock, 'PO ' || po_row.po_number
       );
     END IF;
   END LOOP;
