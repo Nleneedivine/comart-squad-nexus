@@ -19,7 +19,7 @@ FROM (
     ('manager'::public.app_role), ('head_of_operations'::public.app_role)
 ) r(role)
 CROSS JOIN public.permissions p
-WHERE p.key IN ('customers.view','customers.manage','agents.view','agents.manage','logistics.manage')
+WHERE p.key IN ('customers.view','customers.manage','agents.view','agents.manage','sales_forms.view','sales_forms.manage','logistics.manage')
 ON CONFLICT DO NOTHING;
 
 INSERT INTO public.role_permissions(role, permission_key)
