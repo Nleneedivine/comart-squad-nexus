@@ -183,6 +183,8 @@ DROP POLICY IF EXISTS "admins manage wallet_tx" ON public.wallet_transactions;
 -- the new permission check explicit.
 INSERT INTO public.role_permissions(role, permission_key)
 VALUES
+ ('hr', 'staff.view'),
+ ('hr', 'staff.manage'),
  ('accountant', 'wallet.view'),
  ('accountant', 'wallet.fund'),
  ('accountant', 'wallet.withdraw'),
