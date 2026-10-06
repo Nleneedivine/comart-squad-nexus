@@ -48,13 +48,12 @@ function AcceptInvite() {
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.from("staff_invites").select("*").eq("token", token).maybeSingle();
-      if (!data) { setState("missing"); return; }
+      const { data, error } = await supabase.rpc("get_invite_by_token", { _token: token }).maybeSingle();
+      if (error || !data) { setState("missing"); return; }
       setInvite(data);
       if (data.status !== "pending" || data.accepted_at) { setState("used"); return; }
       if (new Date(data.expires_at).getTime() < Date.now()) { setState("expired"); return; }
-      const { data: s } = await supabase.from("stores").select("name").eq("id", data.store_id).maybeSingle();
-      setStore(s);
+      setStore({ name: data.store_name });
       setState("ready");
     })();
   }, [token]);
