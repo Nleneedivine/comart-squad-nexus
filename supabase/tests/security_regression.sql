@@ -1,6 +1,6 @@
 BEGIN;
 
-SELECT plan(11);
+SELECT plan(15);
 
 -- These are catalog-level regression checks and do not require production data.
 SELECT ok(
@@ -72,6 +72,26 @@ SELECT ok(
     'EXECUTE'
   ),
   'anonymous invite lookup is available without table-wide invite SELECT'
+);
+
+SELECT ok(
+  EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='finance_records' AND policyname='finance managers can insert finance'),
+  'finance inserts require finance.manage'
+);
+
+SELECT ok(
+  EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='products' AND policyname='inventory managers can insert products'),
+  'product inserts require inventory.manage'
+);
+
+SELECT ok(
+  EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='call_orders' AND policyname='order managers can update call orders'),
+  'call-order updates require orders.manage'
+);
+
+SELECT ok(
+  NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='staff_invites' AND policyname='lookup invite by token'),
+  'global invite lookup policy is removed'
 );
 
 SELECT * FROM finish();
