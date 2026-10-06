@@ -38,16 +38,15 @@ jobs:
         with:
           version: latest
 
-      - name: Start database-only Supabase with retry
+      - name: Start database with retry
         shell: bash
         run: |
           set -euo pipefail
-          # pgTAP only needs Postgres. Excluding the API/UI/analytics services
-          # dramatically reduces Docker pulls and avoids public registry rate limits.
-          services_to_exclude="gotrue,realtime,storage-api,imgproxy,kong,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor"
+          # Supabase's CI guidance uses the database-only starter for pgTAP.
+          # This avoids pulling the full API/UI/analytics stack and reduces registry failures.
           for attempt in 1 2 3 4 5; do
             echo "Supabase database start attempt $attempt/5"
-            if supabase start --exclude "$services_to_exclude"; then
+            if supabase db start; then
               exit 0
             fi
             if [ "$attempt" -eq 5 ]; then
