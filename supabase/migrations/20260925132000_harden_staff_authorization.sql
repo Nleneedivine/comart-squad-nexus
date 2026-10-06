@@ -5,10 +5,7 @@
 DROP POLICY IF EXISTS "lookup invite by token" ON public.staff_invites;
 DROP POLICY IF EXISTS "admins view invites" ON public.staff_invites;
 DROP POLICY IF EXISTS "admins manage invites" ON public.staff_invites;
-CREATE POLICY "admins manage invites" ON public.staff_invites
-  FOR SELECT USING (public.has_permission(auth.uid(), store_id, 'staff.manage'));
-
-REVOKE INSERT, UPDATE, DELETE ON public.staff_invites FROM authenticated;
+REVOKE SELECT, INSERT, UPDATE, DELETE ON public.staff_invites FROM authenticated;
 
 CREATE OR REPLACE FUNCTION public.get_invite_by_token(_token TEXT)
 RETURNS TABLE(
