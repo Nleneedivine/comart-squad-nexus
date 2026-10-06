@@ -24,7 +24,7 @@ export const Route = createFileRoute("/wallet")({
 });
 
 function Wallet() {
-  const { store, user } = useAuth();
+  const { store } = useAuth();
   const [wallet, setWallet] = useState<any>(null);
   const [tx, setTx] = useState<any[]>([]);
   const [show, setShow] = useState(false);
@@ -84,7 +84,6 @@ function Wallet() {
   const fund = async () => {
     const amt = Number(amount);
     if (!amt || amt <= 0) return toast.error("Enter amount");
-    if (!user?.email) return toast.error("Email required");
     try {
       const r = await initFundWallet({ data: { amount: amt } });
       window.location.href = r.authorization_url;
