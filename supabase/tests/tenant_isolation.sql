@@ -41,6 +41,10 @@ SELECT store_a, 10000 FROM security_ctx
 UNION ALL
 SELECT store_b, 20000 FROM security_ctx;
 
+-- pgTAP executes assertion SQL under the current role, so allow the
+-- authenticated test role to read this transaction-local fixture context.
+GRANT SELECT ON security_ctx TO authenticated;
+
 -- RLS must execute as the same Postgres roles used by Supabase API requests.
 SET LOCAL ROLE authenticated;
 SET LOCAL request.jwt.claims = '{"role":"authenticated","sub":"11111111-1111-1111-1111-111111111111"}';
