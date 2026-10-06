@@ -5,15 +5,40 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Webhook, RefreshCw, Search, CheckCircle2, XCircle, Clock, Activity, PlayCircle } from "lucide-react";
+import {
+  Webhook,
+  RefreshCw,
+  Search,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  Activity,
+  PlayCircle,
+} from "lucide-react";
 
 export const Route = createFileRoute("/webhooks")({
-  head: () => ({ meta: [{ title: "Webhook Logs — Comart+" }, { name: "description", content: "Outbound webhook events with delivery status." }] }),
-  component: () => <ProtectedShell><WebhookLogs /></ProtectedShell>,
+  head: () => ({
+    meta: [
+      { title: "Webhook Logs — Comart+" },
+      { name: "description", content: "Outbound webhook events with delivery status." },
+    ],
+  }),
+  component: () => (
+    <ProtectedShell>
+      <WebhookLogs />
+    </ProtectedShell>
+  ),
 });
 
 function WebhookLogs() {
@@ -25,22 +50,35 @@ function WebhookLogs() {
   const load = async () => {
     if (!store) return;
     setLoading(true);
-    const { data } = await supabase.from("webhook_logs").select("*").eq("store_id", store.id).order("created_at", { ascending: false }).limit(500);
+    const { data } = await supabase
+      .from("webhook_logs")
+      .select("*")
+      .eq("store_id", store.id)
+      .order("created_at", { ascending: false })
+      .limit(500);
     setRows(data || []);
     setLoading(false);
   };
-  useEffect(() => { load(); }, [store]);
+  useEffect(() => {
+    load();
+  }, [store]);
 
-  const stats = useMemo(() => ({
-    total: rows.length,
-    success: rows.filter(r => r.status === "success").length,
-    failed: rows.filter(r => r.status === "failed").length,
-    pending: rows.filter(r => r.status === "pending" || r.status === "retry").length,
-  }), [rows]);
+  const stats = useMemo(
+    () => ({
+      total: rows.length,
+      success: rows.filter((r) => r.status === "success").length,
+      failed: rows.filter((r) => r.status === "failed").length,
+      pending: rows.filter((r) => r.status === "pending" || r.status === "retry").length,
+    }),
+    [rows],
+  );
 
   const filtered = useMemo(
-    () => rows.filter(r => (r.topic + " " + (r.summary || "")).toLowerCase().includes(q.toLowerCase())),
-    [rows, q]
+    () =>
+      rows.filter((r) =>
+        (r.topic + " " + (r.summary || "")).toLowerCase().includes(q.toLowerCase()),
+      ),
+    [rows, q],
   );
 
   const test = async () => {
@@ -70,32 +108,56 @@ function WebhookLogs() {
     <div className="space-y-6">
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2"><Webhook className="h-6 w-6 text-primary" />Webhook Logs</h1>
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            <Webhook className="h-6 w-6 text-primary" />
+            Webhook Logs
+          </h1>
           <p className="text-muted-foreground text-sm mt-1">Outbound event delivery history.</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={load} disabled={loading}><RefreshCw className={`h-4 w-4 mr-2 ${loading && "animate-spin"}`} />Refresh</Button>
-          <Button onClick={test}><PlayCircle className="h-4 w-4 mr-2" />Test Webhook</Button>
+          <Button variant="outline" onClick={load} disabled={loading}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading && "animate-spin"}`} />
+            Refresh
+          </Button>
+          <Button onClick={test}>
+            <PlayCircle className="h-4 w-4 mr-2" />
+            Test Webhook
+          </Button>
         </div>
       </div>
 
       <div className="rounded-lg border bg-muted/30 p-4 text-sm">
         <div className="font-medium mb-1">Paystack Webhook URL</div>
-        <code className="text-xs break-all">{typeof window !== "undefined" ? `${window.location.origin}/api/public/paystack-webhook` : "/api/public/paystack-webhook"}</code>
-        <p className="text-xs text-muted-foreground mt-2">Add this URL in your Paystack dashboard → Settings → API Keys & Webhooks. Signature is verified with your live secret key.</p>
+        <code className="text-xs break-all">
+          {typeof window !== "undefined"
+            ? `${window.location.origin}/api/public/paystack-webhook`
+            : "/api/public/paystack-webhook"}
+        </code>
+        <p className="text-xs text-muted-foreground mt-2">
+          Add this URL in your Paystack dashboard → Settings → API Keys & Webhooks. Signature is
+          verified with your live secret key.
+        </p>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
           { label: "Total Events", value: stats.total, icon: Activity, color: "text-primary" },
-          { label: "Successful", value: stats.success, icon: CheckCircle2, color: "text-emerald-600" },
+          {
+            label: "Successful",
+            value: stats.success,
+            icon: CheckCircle2,
+            color: "text-emerald-600",
+          },
           { label: "Failed", value: stats.failed, icon: XCircle, color: "text-red-600" },
           { label: "Pending Retry", value: stats.pending, icon: Clock, color: "text-amber-600" },
-        ].map(s => {
+        ].map((s) => {
           const Icon = s.icon;
           return (
             <Card key={s.label} className="p-4">
-              <div className="flex items-center justify-between"><span className="text-xs text-muted-foreground">{s.label}</span><Icon className={`h-4 w-4 ${s.color}`} /></div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">{s.label}</span>
+                <Icon className={`h-4 w-4 ${s.color}`} />
+              </div>
               <div className="text-2xl font-bold mt-2">{s.value}</div>
             </Card>
           );
@@ -105,7 +167,12 @@ function WebhookLogs() {
       <Card className="p-4">
         <div className="relative max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input className="pl-9" placeholder="Search topic or summary..." value={q} onChange={e => setQ(e.target.value)} />
+          <Input
+            className="pl-9"
+            placeholder="Search topic or summary..."
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+          />
         </div>
       </Card>
 
@@ -121,20 +188,35 @@ function WebhookLogs() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filtered.map(r => {
+            {filtered.map((r) => {
               const sb = STATUS_BADGE[r.status] || STATUS_BADGE.pending;
               const Icon = sb.icon;
               return (
                 <TableRow key={r.id}>
-                  <TableCell className="text-sm text-muted-foreground whitespace-nowrap">{new Date(r.created_at).toLocaleString()}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
+                    {new Date(r.created_at).toLocaleString()}
+                  </TableCell>
                   <TableCell className="font-mono text-sm">{r.topic}</TableCell>
-                  <TableCell><Badge className={sb.cls} variant="secondary"><Icon className="h-3 w-3 mr-1" />{r.status}</Badge></TableCell>
+                  <TableCell>
+                    <Badge className={sb.cls} variant="secondary">
+                      <Icon className="h-3 w-3 mr-1" />
+                      {r.status}
+                    </Badge>
+                  </TableCell>
                   <TableCell className="text-sm">{r.summary || "—"}</TableCell>
-                  <TableCell className="text-right text-sm text-muted-foreground">{r.duration_ms != null ? `${r.duration_ms}ms` : "—"}</TableCell>
+                  <TableCell className="text-right text-sm text-muted-foreground">
+                    {r.duration_ms != null ? `${r.duration_ms}ms` : "—"}
+                  </TableCell>
                 </TableRow>
               );
             })}
-            {filtered.length === 0 && <TableRow><TableCell colSpan={5} className="text-center py-12 text-muted-foreground">No webhook events recorded.</TableCell></TableRow>}
+            {filtered.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
+                  No webhook events recorded.
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </Card>

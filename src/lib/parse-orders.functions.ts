@@ -32,16 +32,22 @@ function sanitizeOrders(input: unknown): ParsedOrder[] {
   if (!Array.isArray(input)) return [];
   return input
     .map((row) => {
-      const record = row && typeof row === "object" ? row as Record<string, unknown> : null;
+      const record = row && typeof row === "object" ? (row as Record<string, unknown>) : null;
       if (!record) return null;
       const items = Array.isArray(record.items)
         ? record.items.reduce<ParsedOrder["items"]>((acc, item) => {
-            const itemRecord = item && typeof item === "object" ? item as Record<string, unknown> : null;
-            const productName = typeof itemRecord?.product_name === "string" ? itemRecord.product_name.trim() : "";
+            const itemRecord =
+              item && typeof item === "object" ? (item as Record<string, unknown>) : null;
+            const productName =
+              typeof itemRecord?.product_name === "string" ? itemRecord.product_name.trim() : "";
             if (!productName) return acc;
             const quantity = Number(itemRecord?.quantity ?? 1);
-            const unitPrice = itemRecord?.unit_price == null ? undefined : Number(itemRecord.unit_price);
-            const variant = typeof itemRecord?.variant === "string" && itemRecord.variant.trim() ? itemRecord.variant.trim() : undefined;
+            const unitPrice =
+              itemRecord?.unit_price == null ? undefined : Number(itemRecord.unit_price);
+            const variant =
+              typeof itemRecord?.variant === "string" && itemRecord.variant.trim()
+                ? itemRecord.variant.trim()
+                : undefined;
             acc.push({
               product_name: productName,
               quantity: Number.isFinite(quantity) && quantity > 0 ? quantity : 1,
@@ -54,11 +60,19 @@ function sanitizeOrders(input: unknown): ParsedOrder[] {
 
       if (items.length === 0) return null;
 
-      const customerName = typeof record.customer_name === "string" ? record.customer_name.trim() : "";
+      const customerName =
+        typeof record.customer_name === "string" ? record.customer_name.trim() : "";
       const phone = typeof record.phone === "string" ? record.phone.replace(/\D+/g, "") : "";
-      const address = typeof record.address === "string" && record.address.trim() ? record.address.trim() : undefined;
-      const notes = typeof record.notes === "string" && record.notes.trim() ? record.notes.trim() : undefined;
-      const delivery = typeof record.delivery === "string" && record.delivery.trim() ? record.delivery.trim() : undefined;
+      const address =
+        typeof record.address === "string" && record.address.trim()
+          ? record.address.trim()
+          : undefined;
+      const notes =
+        typeof record.notes === "string" && record.notes.trim() ? record.notes.trim() : undefined;
+      const delivery =
+        typeof record.delivery === "string" && record.delivery.trim()
+          ? record.delivery.trim()
+          : undefined;
       const amount = record.amount == null ? undefined : Number(record.amount);
 
       return {
@@ -107,11 +121,20 @@ export const parseOrdersAi = createServerFn({ method: "POST" })
       const json = await res.json();
       const content = json.choices?.[0]?.message?.content || "{}";
       let parsed: any = {};
-      try { parsed = JSON.parse(content); } catch { throw new Error("AI returned invalid JSON"); }
+      try {
+        parsed = JSON.parse(content);
+      } catch {
+        throw new Error("AI returned invalid JSON");
+      }
       return { orders: sanitizeOrders(parsed.orders) };
     } catch (error) {
       await captureServerException(error, {
-        tags: { route: "parse_orders_ai", module: "bulk_import", kind: "server_function", severity: "high" },
+        tags: {
+          route: "parse_orders_ai",
+          module: "bulk_import",
+          kind: "server_function",
+          severity: "high",
+        },
         extra: { textLength: data.text.length, productCount: data.products.length },
         user: { id: context.userId },
       });

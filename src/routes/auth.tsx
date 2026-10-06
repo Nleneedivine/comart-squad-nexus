@@ -10,8 +10,15 @@ import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/auth")({
-  head: () => ({ meta: [{ title: "Sign in — Comart+" }, { name: "description", content: "Sign in or create your Comart+ account." }] }),
-  validateSearch: (s: Record<string, unknown>): { next?: string } => ({ next: typeof s.next === "string" ? s.next : undefined }),
+  head: () => ({
+    meta: [
+      { title: "Sign in — Comart+" },
+      { name: "description", content: "Sign in or create your Comart+ account." },
+    ],
+  }),
+  validateSearch: (s: Record<string, unknown>): { next?: string } => ({
+    next: typeof s.next === "string" ? s.next : undefined,
+  }),
   component: AuthPage,
 });
 
@@ -19,7 +26,6 @@ function safeNext(next: string): string | null {
   if (!next || !next.startsWith("/") || next.startsWith("//")) return null;
   return next;
 }
-
 
 function AuthPage() {
   const navigate = useNavigate();
@@ -36,12 +42,16 @@ function AuthPage() {
   useEffect(() => {
     if (!hydrated || loading) return;
     if (user) {
-      if (nextPath) { window.location.assign(nextPath); return; }
-      const isStaff = roles.length > 0 && !roles.some(r => ["owner","admin","manager","head_of_operations"].includes(r));
+      if (nextPath) {
+        window.location.assign(nextPath);
+        return;
+      }
+      const isStaff =
+        roles.length > 0 &&
+        !roles.some((r) => ["owner", "admin", "manager", "head_of_operations"].includes(r));
       navigate({ to: isStaff ? "/staff-portal" : "/Dashboard" });
     }
   }, [user, loading, hydrated, roles, navigate, nextPath]);
-
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,7 +59,8 @@ function AuthPage() {
     try {
       if (mode === "signup") {
         const { error } = await supabase.auth.signUp({
-          email, password,
+          email,
+          password,
           options: {
             emailRedirectTo: window.location.origin + (nextPath ?? "/Dashboard"),
             data: { full_name: fullName, store_name: storeName || "My Store" },
@@ -63,11 +74,15 @@ function AuthPage() {
       }
     } catch (err: any) {
       toast.error(err.message || "Authentication failed");
-    } finally { setBusy(false); }
+    } finally {
+      setBusy(false);
+    }
   };
 
   const google = async () => {
-    const r = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin + (nextPath ?? "/Dashboard") });
+    const r = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: window.location.origin + (nextPath ?? "/Dashboard"),
+    });
 
     if (r.error) toast.error("Google sign-in failed");
   };
@@ -79,48 +94,89 @@ function AuthPage() {
           <span className="text-primary">Comart</span>+
         </Link>
         <div>
-          <h2 className="text-4xl font-bold leading-tight">Run your Nigerian business with one calm dashboard.</h2>
-          <p className="mt-4 text-base opacity-80">Orders, inventory, staff, finance and customers — in ₦, for your store.</p>
+          <h2 className="text-4xl font-bold leading-tight">
+            Run your Nigerian business with one calm dashboard.
+          </h2>
+          <p className="mt-4 text-base opacity-80">
+            Orders, inventory, staff, finance and customers — in ₦, for your store.
+          </p>
         </div>
         <p className="text-sm opacity-60">© {new Date().getFullYear()} Comart+</p>
       </div>
       <div className="flex items-center justify-center p-6">
         <Card className="w-full max-w-md p-8">
-          <div className="lg:hidden text-2xl font-bold mb-6"><span className="text-primary">Comart</span>+</div>
-          <h1 className="text-2xl font-bold">{mode === "signin" ? "Welcome back" : "Create your store"}</h1>
+          <div className="lg:hidden text-2xl font-bold mb-6">
+            <span className="text-primary">Comart</span>+
+          </div>
+          <h1 className="text-2xl font-bold">
+            {mode === "signin" ? "Welcome back" : "Create your store"}
+          </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {mode === "signin" ? "Sign in to continue to your dashboard" : "Sign up — we'll set up your store automatically"}
+            {mode === "signin"
+              ? "Sign in to continue to your dashboard"
+              : "Sign up — we'll set up your store automatically"}
           </p>
           <form onSubmit={submit} className="mt-6 space-y-4">
             {mode === "signup" && (
               <>
                 <div className="space-y-2">
                   <Label htmlFor="name">Full name</Label>
-                  <Input id="name" value={fullName} onChange={e => setFullName(e.target.value)} required />
+                  <Input
+                    id="name"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    required
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="store">Store name</Label>
-                  <Input id="store" value={storeName} onChange={e => setStoreName(e.target.value)} placeholder="My Store" />
+                  <Input
+                    id="store"
+                    value={storeName}
+                    onChange={(e) => setStoreName(e.target.value)}
+                    placeholder="My Store"
+                  />
                 </div>
               </>
             )}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} required />
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" value={password} onChange={e => setPassword(e.target.value)} required minLength={6} />
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={6}
+              />
             </div>
-            <Button type="submit" disabled={busy} className="w-full">{busy ? "Please wait..." : mode === "signin" ? "Sign in" : "Create account"}</Button>
+            <Button type="submit" disabled={busy} className="w-full">
+              {busy ? "Please wait..." : mode === "signin" ? "Sign in" : "Create account"}
+            </Button>
           </form>
           <div className="my-4 flex items-center gap-3 text-xs text-muted-foreground">
             <div className="h-px flex-1 bg-border" /> OR <div className="h-px flex-1 bg-border" />
           </div>
-          <Button type="button" variant="outline" className="w-full" onClick={google}>Continue with Google</Button>
+          <Button type="button" variant="outline" className="w-full" onClick={google}>
+            Continue with Google
+          </Button>
           <p className="mt-6 text-sm text-center text-muted-foreground">
             {mode === "signin" ? "New here?" : "Already have an account?"}{" "}
-            <button type="button" className="text-primary font-medium" onClick={() => setMode(mode === "signin" ? "signup" : "signin")}>
+            <button
+              type="button"
+              className="text-primary font-medium"
+              onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
+            >
               {mode === "signin" ? "Create an account" : "Sign in"}
             </button>
           </p>

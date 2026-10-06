@@ -11,7 +11,9 @@ import { toast } from "sonner";
 import { MailCheck, Clock, ShieldX, Copy } from "lucide-react";
 
 export const Route = createFileRoute("/invite/$token")({
-  head: () => ({ meta: [{ title: "Accept invite — Comart+" }, { name: "robots", content: "noindex" }] }),
+  head: () => ({
+    meta: [{ title: "Accept invite — Comart+" }, { name: "robots", content: "noindex" }],
+  }),
   component: AcceptInvite,
 });
 
@@ -30,7 +32,9 @@ function AcceptInvite() {
   const nav = useNavigate();
   const [invite, setInvite] = useState<any>(null);
   const [store, setStore] = useState<any>(null);
-  const [state, setState] = useState<"loading" | "ready" | "expired" | "missing" | "used" | "wrong-email">("loading");
+  const [state, setState] = useState<
+    "loading" | "ready" | "expired" | "missing" | "used" | "wrong-email"
+  >("loading");
   const [busy, setBusy] = useState(false);
   const [mode, setMode] = useState<"signup" | "signin">("signup");
   const [fullName, setFullName] = useState("");
@@ -48,11 +52,22 @@ function AcceptInvite() {
 
   useEffect(() => {
     (async () => {
-      const { data, error } = await supabase.rpc("get_invite_by_token", { _token: token }).maybeSingle();
-      if (error || !data) { setState("missing"); return; }
+      const { data, error } = await supabase
+        .rpc("get_invite_by_token", { _token: token })
+        .maybeSingle();
+      if (error || !data) {
+        setState("missing");
+        return;
+      }
       setInvite(data);
-      if (data.status !== "pending" || data.accepted_at) { setState("used"); return; }
-      if (new Date(data.expires_at).getTime() < Date.now()) { setState("expired"); return; }
+      if (data.status !== "pending" || data.accepted_at) {
+        setState("used");
+        return;
+      }
+      if (new Date(data.expires_at).getTime() < Date.now()) {
+        setState("expired");
+        return;
+      }
       setStore({ name: data.store_name });
       setState("ready");
     })();
@@ -60,7 +75,14 @@ function AcceptInvite() {
 
   useEffect(() => {
     if (!hydrated || loading || finishingInvite) return;
-    if (state === "ready" && user && invite && user.email && invite.email && user.email.toLowerCase() !== invite.email.toLowerCase()) {
+    if (
+      state === "ready" &&
+      user &&
+      invite &&
+      user.email &&
+      invite.email &&
+      user.email.toLowerCase() !== invite.email.toLowerCase()
+    ) {
       setState("wrong-email");
     }
   }, [state, user, invite, hydrated, loading, finishingInvite]);
@@ -84,11 +106,15 @@ function AcceptInvite() {
       const storeName = store?.name || "your team";
       setWelcome(storeName);
       if (!silent) toast.success("Welcome to the team!");
-      setTimeout(() => { nav({ to: "/staff-portal" }); }, 3200);
+      setTimeout(() => {
+        nav({ to: "/staff-portal" });
+      }, 3200);
     } catch (e: any) {
       setFinishingInvite(false);
       toast.error(e.message || "Could not accept invite");
-    } finally { setBusy(false); }
+    } finally {
+      setBusy(false);
+    }
   };
 
   const signupAccept = async (e: React.FormEvent) => {
@@ -108,19 +134,26 @@ function AcceptInvite() {
       // The DB trigger handle_new_user consumes the invite automatically.
       toast.success("Account created — you're in!");
       // Attempt immediate sign-in (works if auto-confirm is on; otherwise prompt)
-      const { error: signInErr } = await supabase.auth.signInWithPassword({ email: invite.email, password });
+      const { error: signInErr } = await supabase.auth.signInWithPassword({
+        email: invite.email,
+        password,
+      });
       if (signInErr) {
-        toast.info("Check your inbox to confirm your email, then sign in with the password shown above.");
+        toast.info(
+          "Check your inbox to confirm your email, then sign in with the password shown above.",
+        );
         setMode("signin");
       } else {
         const { data: sessionData } = await supabase.auth.getSession();
         if (sessionData.session?.user?.id) await markStaffReady(sessionData.session.user.id);
         await refresh();
-          await acceptForCurrentUser(true);
+        await acceptForCurrentUser(true);
       }
     } catch (e: any) {
       toast.error(e.message || "Signup failed");
-    } finally { setBusy(false); }
+    } finally {
+      setBusy(false);
+    }
   };
 
   const signinExisting = async (e: React.FormEvent) => {
@@ -134,7 +167,9 @@ function AcceptInvite() {
       await acceptForCurrentUser(true);
     } catch (e: any) {
       toast.error(e.message || "Sign-in failed");
-    } finally { setBusy(false); }
+    } finally {
+      setBusy(false);
+    }
   };
 
   const google = async () => {
@@ -162,7 +197,9 @@ function AcceptInvite() {
         </div>
       )}
       <Card className="w-full max-w-md p-6 md:p-8 space-y-4">
-        {state === "loading" && <div className="text-center text-muted-foreground py-8">Checking invitation…</div>}
+        {state === "loading" && (
+          <div className="text-center text-muted-foreground py-8">Checking invitation…</div>
+        )}
 
         {state === "missing" && (
           <div className="text-center space-y-3 py-4">
@@ -176,7 +213,9 @@ function AcceptInvite() {
           <div className="text-center space-y-3 py-4">
             <Clock className="mx-auto h-10 w-10 text-muted-foreground" />
             <h1 className="text-xl font-bold">Invitation expired</h1>
-            <p className="text-sm text-muted-foreground">Ask the store admin to send you a new invite.</p>
+            <p className="text-sm text-muted-foreground">
+              Ask the store admin to send you a new invite.
+            </p>
           </div>
         )}
 
@@ -184,7 +223,9 @@ function AcceptInvite() {
           <div className="text-center space-y-3 py-4">
             <MailCheck className="mx-auto h-10 w-10 text-muted-foreground" />
             <h1 className="text-xl font-bold">Already used</h1>
-            <p className="text-sm text-muted-foreground">This invitation has already been accepted or cancelled.</p>
+            <p className="text-sm text-muted-foreground">
+              This invitation has already been accepted or cancelled.
+            </p>
           </div>
         )}
 
@@ -193,9 +234,17 @@ function AcceptInvite() {
             <ShieldX className="mx-auto h-10 w-10 text-destructive" />
             <h1 className="text-xl font-bold">Wrong account</h1>
             <p className="text-sm text-muted-foreground">
-              This invitation was sent to <strong>{invite?.email}</strong>. You're signed in as {user?.email}.
+              This invitation was sent to <strong>{invite?.email}</strong>. You're signed in as{" "}
+              {user?.email}.
             </p>
-            <Button variant="outline" onClick={async () => { await supabase.auth.signOut(); }}>Sign out & switch account</Button>
+            <Button
+              variant="outline"
+              onClick={async () => {
+                await supabase.auth.signOut();
+              }}
+            >
+              Sign out & switch account
+            </Button>
           </div>
         )}
 
@@ -205,53 +254,138 @@ function AcceptInvite() {
               <MailCheck className="mx-auto h-10 w-10 text-primary mb-2" />
               <h1 className="text-xl font-bold">You're invited to join</h1>
               <p className="text-2xl font-bold mt-1">{store?.name}</p>
-              <p className="text-sm text-muted-foreground mt-1">as <strong>{ROLE_LABELS[invite.role] || invite.role}</strong></p>
+              <p className="text-sm text-muted-foreground mt-1">
+                as <strong>{ROLE_LABELS[invite.role] || invite.role}</strong>
+              </p>
               <p className="text-xs text-muted-foreground mt-2">{invite.email}</p>
             </div>
 
             {!loading && hydrated && user ? (
-              <Button className="w-full" onClick={() => { void acceptForCurrentUser(); }} disabled={busy} size="lg">
+              <Button
+                className="w-full"
+                onClick={() => {
+                  void acceptForCurrentUser();
+                }}
+                disabled={busy}
+                size="lg"
+              >
                 {busy ? "Joining…" : "Accept & join"}
               </Button>
             ) : (
               <>
                 <div className="flex gap-2">
-                  <Button type="button" variant={mode === "signup" ? "default" : "outline"} className="flex-1" onClick={() => setMode("signup")}>Create account</Button>
-                  <Button type="button" variant={mode === "signin" ? "default" : "outline"} className="flex-1" onClick={() => setMode("signin")}>I already have one</Button>
+                  <Button
+                    type="button"
+                    variant={mode === "signup" ? "default" : "outline"}
+                    className="flex-1"
+                    onClick={() => setMode("signup")}
+                  >
+                    Create account
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={mode === "signin" ? "default" : "outline"}
+                    className="flex-1"
+                    onClick={() => setMode("signin")}
+                  >
+                    I already have one
+                  </Button>
                 </div>
 
                 {mode === "signup" ? (
                   <form onSubmit={signupAccept} className="space-y-3">
-                    <div className="space-y-2"><Label>Email</Label><Input value={invite.email} disabled /></div>
-                    <div className="space-y-2"><Label>Full name</Label><Input value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Your name" required /></div>
+                    <div className="space-y-2">
+                      <Label>Email</Label>
+                      <Input value={invite.email} disabled />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Full name</Label>
+                      <Input
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        placeholder="Your name"
+                        required
+                      />
+                    </div>
                     <div className="space-y-2">
                       <Label>Auto-generated password</Label>
                       <div className="flex gap-2">
-                        <Input type={generatedShown ? "text" : "password"} value={password} readOnly className="font-mono text-sm" />
-                        <Button type="button" variant="outline" size="icon" onClick={() => { navigator.clipboard.writeText(password); toast.success("Copied"); }}><Copy className="h-4 w-4" /></Button>
+                        <Input
+                          type={generatedShown ? "text" : "password"}
+                          value={password}
+                          readOnly
+                          className="font-mono text-sm"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          onClick={() => {
+                            navigator.clipboard.writeText(password);
+                            toast.success("Copied");
+                          }}
+                        >
+                          <Copy className="h-4 w-4" />
+                        </Button>
                       </div>
-                      <p className="text-xs text-muted-foreground">Save this password. You can change it later in Settings.</p>
-                      <button type="button" className="text-xs text-primary" onClick={() => setGeneratedShown(s => !s)}>{generatedShown ? "Hide" : "Show"}</button>
-                      <button type="button" className="text-xs text-primary ml-3" onClick={() => setPassword(genPassword())}>Regenerate</button>
+                      <p className="text-xs text-muted-foreground">
+                        Save this password. You can change it later in Settings.
+                      </p>
+                      <button
+                        type="button"
+                        className="text-xs text-primary"
+                        onClick={() => setGeneratedShown((s) => !s)}
+                      >
+                        {generatedShown ? "Hide" : "Show"}
+                      </button>
+                      <button
+                        type="button"
+                        className="text-xs text-primary ml-3"
+                        onClick={() => setPassword(genPassword())}
+                      >
+                        Regenerate
+                      </button>
                     </div>
-                    <Button type="submit" disabled={busy} className="w-full" size="lg">{busy ? "Creating…" : "Create account & join"}</Button>
+                    <Button type="submit" disabled={busy} className="w-full" size="lg">
+                      {busy ? "Creating…" : "Create account & join"}
+                    </Button>
                   </form>
                 ) : (
                   <form onSubmit={signinExisting} className="space-y-3">
-                    <div className="space-y-2"><Label>Email</Label><Input value={invite.email} disabled /></div>
-                    <div className="space-y-2"><Label>Password</Label><Input type="password" value={password} onChange={e => setPassword(e.target.value)} required /></div>
-                    <Button type="submit" disabled={busy} className="w-full" size="lg">{busy ? "Signing in…" : "Sign in & join"}</Button>
+                    <div className="space-y-2">
+                      <Label>Email</Label>
+                      <Input value={invite.email} disabled />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Password</Label>
+                      <Input
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <Button type="submit" disabled={busy} className="w-full" size="lg">
+                      {busy ? "Signing in…" : "Sign in & join"}
+                    </Button>
                   </form>
                 )}
 
                 <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                  <div className="h-px flex-1 bg-border" /> OR <div className="h-px flex-1 bg-border" />
+                  <div className="h-px flex-1 bg-border" /> OR{" "}
+                  <div className="h-px flex-1 bg-border" />
                 </div>
-                <Button type="button" variant="outline" className="w-full" onClick={google}>Continue with Google</Button>
-                <p className="text-xs text-center text-muted-foreground">Use the Google account matching {invite.email}.</p>
+                <Button type="button" variant="outline" className="w-full" onClick={google}>
+                  Continue with Google
+                </Button>
+                <p className="text-xs text-center text-muted-foreground">
+                  Use the Google account matching {invite.email}.
+                </p>
               </>
             )}
-            <p className="text-xs text-center text-muted-foreground">Expires {new Date(invite.expires_at).toLocaleDateString()}</p>
+            <p className="text-xs text-center text-muted-foreground">
+              Expires {new Date(invite.expires_at).toLocaleDateString()}
+            </p>
           </div>
         )}
       </Card>

@@ -7,12 +7,24 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader,
-  AlertDialogTitle, AlertDialogTrigger,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { AlertTriangle } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -22,8 +34,17 @@ import { format, isAfter } from "date-fns";
 import NotificationPreferences from "@/components/NotificationPreferences";
 
 export const Route = createFileRoute("/Settings")({
-  head: () => ({ meta: [{ title: "Settings — Comart+" }, { name: "description", content: "Manage your Comart+ profile and account settings." }] }),
-  component: () => <ProtectedShell><SettingsPage /></ProtectedShell>,
+  head: () => ({
+    meta: [
+      { title: "Settings — Comart+" },
+      { name: "description", content: "Manage your Comart+ profile and account settings." },
+    ],
+  }),
+  component: () => (
+    <ProtectedShell>
+      <SettingsPage />
+    </ProtectedShell>
+  ),
 });
 
 function SettingsPage() {
@@ -37,10 +58,14 @@ function SettingsPage() {
     resumption_time: string | null;
     late_deadline: string | null;
   } | null>(null);
-  const [weights, setWeights] = useState<{ role_id: string; user_id: string; name: string; role: string; weight: number }[]>([]);
+  const [weights, setWeights] = useState<
+    { role_id: string; user_id: string; name: string; role: string; weight: number }[]
+  >([]);
   const [closeConfirm, setCloseConfirm] = useState("");
   const [closing, setClosing] = useState(false);
-  const isAdmin = roles.some(r => ["owner","admin","manager","head_of_operations"].includes(r));
+  const isAdmin = roles.some((r) =>
+    ["owner", "admin", "manager", "head_of_operations"].includes(r),
+  );
   const isOwner = roles.includes("owner");
 
   const closeStore = async () => {
@@ -57,23 +82,43 @@ function SettingsPage() {
 
   useEffect(() => {
     if (!user) return;
-    supabase.from("profiles").select("*").eq("id", user.id).maybeSingle().then(({ data }) => setProfile(data));
+    supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", user.id)
+      .maybeSingle()
+      .then(({ data }) => setProfile(data));
   }, [user]);
 
   useEffect(() => {
     if (!store || !isAdmin) return;
-    supabase.from("stores").select("max_call_attempts, auto_assign_enabled, auto_assign_strategy, resumption_time, late_deadline").eq("id", store.id).maybeSingle()
+    supabase
+      .from("stores")
+      .select(
+        "max_call_attempts, auto_assign_enabled, auto_assign_strategy, resumption_time, late_deadline",
+      )
+      .eq("id", store.id)
+      .maybeSingle()
       .then(({ data }) => data && setOps(data as any));
-    supabase.from("user_roles")
-      .select("id, user_id, role, assignment_weight, is_suspended, profiles:user_id(full_name, email)")
+    supabase
+      .from("user_roles")
+      .select(
+        "id, user_id, role, assignment_weight, is_suspended, profiles:user_id(full_name, email)",
+      )
       .eq("store_id", store.id)
       .then(({ data }) => {
         const rows = (data || [])
-          .filter((r: any) => !r.is_suspended && ["sales_rep","order_manager","customer_care","manager","admin","owner"].includes(r.role))
+          .filter(
+            (r: any) =>
+              !r.is_suspended &&
+              ["sales_rep", "order_manager", "customer_care", "manager", "admin", "owner"].includes(
+                r.role,
+              ),
+          )
           .map((r: any) => ({
             role_id: r.id,
             user_id: r.user_id,
-            name: r.profiles?.full_name || r.profiles?.email || r.user_id.slice(0,8),
+            name: r.profiles?.full_name || r.profiles?.email || r.user_id.slice(0, 8),
             role: r.role,
             weight: r.assignment_weight ?? 1,
           }));
@@ -83,13 +128,16 @@ function SettingsPage() {
 
   const saveOps = async () => {
     if (!store || !ops) return;
-    const { error } = await supabase.from("stores").update({
-      max_call_attempts: ops.max_call_attempts,
-      auto_assign_enabled: ops.auto_assign_enabled,
-      auto_assign_strategy: ops.auto_assign_strategy,
-      resumption_time: ops.resumption_time || null,
-      late_deadline: ops.late_deadline || null,
-    }).eq("id", store.id);
+    const { error } = await supabase
+      .from("stores")
+      .update({
+        max_call_attempts: ops.max_call_attempts,
+        auto_assign_enabled: ops.auto_assign_enabled,
+        auto_assign_strategy: ops.auto_assign_strategy,
+        resumption_time: ops.resumption_time || null,
+        late_deadline: ops.late_deadline || null,
+      })
+      .eq("id", store.id);
     if (error) return toast.error(error.message);
     toast.success("Operations settings saved");
   };
@@ -97,37 +145,58 @@ function SettingsPage() {
   const saveWeights = async () => {
     if (!store) return;
     for (const w of weights) {
-      const { error } = await supabase.from("user_roles").update({ assignment_weight: Math.max(0, w.weight | 0) }).eq("id", w.role_id);
-      if (error) { toast.error(error.message); return; }
+      const { error } = await supabase
+        .from("user_roles")
+        .update({ assignment_weight: Math.max(0, w.weight | 0) })
+        .eq("id", w.role_id);
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
     }
     toast.success("Weights saved");
   };
-
 
   const lockedUntil = profile?.avatar_locked_until ? new Date(profile.avatar_locked_until) : null;
   const isLocked = lockedUntil && isAfter(lockedUntil, new Date());
 
   const save = async () => {
     if (!user || !profile) return;
-    const { error } = await supabase.from("profiles").update({
-      full_name: profile.full_name, phone: profile.phone, community_name: profile.community_name,
-    }).eq("id", user.id);
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        full_name: profile.full_name,
+        phone: profile.phone,
+        community_name: profile.community_name,
+      })
+      .eq("id", user.id);
     if (error) return toast.error(error.message);
-    toast.success("Profile updated"); refresh();
+    toast.success("Profile updated");
+    refresh();
   };
 
   const onAvatar = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!user || !profile) return;
-    if (isLocked) { toast.error(`Profile picture locked until ${format(lockedUntil!, "PP")}`); return; }
-    const file = e.target.files?.[0]; if (!file) return;
+    if (isLocked) {
+      toast.error(`Profile picture locked until ${format(lockedUntil!, "PP")}`);
+      return;
+    }
+    const file = e.target.files?.[0];
+    if (!file) return;
     if (file.size > 5 * 1024 * 1024) return toast.error("Image must be under 5MB");
     const ext = file.name.split(".").pop() || "jpg";
     const path = `${user.id}/avatar_${Date.now()}.${ext}`;
-    const { error: upErr } = await supabase.storage.from("avatars").upload(path, file, { upsert: true, cacheControl: "3600" });
+    const { error: upErr } = await supabase.storage
+      .from("avatars")
+      .upload(path, file, { upsert: true, cacheControl: "3600" });
     if (upErr) return toast.error(upErr.message);
     const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
-    const lock = new Date(); lock.setDate(lock.getDate() + 30);
-    const { error } = await supabase.from("profiles").update({ avatar_url: pub.publicUrl, avatar_locked_until: lock.toISOString() }).eq("id", user.id);
+    const lock = new Date();
+    lock.setDate(lock.getDate() + 30);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ avatar_url: pub.publicUrl, avatar_locked_until: lock.toISOString() })
+      .eq("id", user.id);
     if (error) return toast.error(error.message);
     setProfile({ ...profile, avatar_url: pub.publicUrl, avatar_locked_until: lock.toISOString() });
     toast.success("Avatar updated. Locked for 30 days.");
@@ -139,7 +208,9 @@ function SettingsPage() {
     <div className="max-w-3xl space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Settings</h1>
-        <p className="text-sm text-muted-foreground">Manage your profile and account preferences.</p>
+        <p className="text-sm text-muted-foreground">
+          Manage your profile and account preferences.
+        </p>
       </div>
       <Tabs defaultValue="profile">
         <TabsList>
@@ -147,7 +218,11 @@ function SettingsPage() {
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
           {isAdmin && <TabsTrigger value="operations">Operations</TabsTrigger>}
           <TabsTrigger value="general">General Settings</TabsTrigger>
-          {isOwner && <TabsTrigger value="danger" className="text-destructive">Danger Zone</TabsTrigger>}
+          {isOwner && (
+            <TabsTrigger value="danger" className="text-destructive">
+              Danger Zone
+            </TabsTrigger>
+          )}
         </TabsList>
         <TabsContent value="notifications">
           <NotificationPreferences />
@@ -155,21 +230,59 @@ function SettingsPage() {
         <TabsContent value="profile">
           <Card className="p-6 space-y-6">
             <div className="flex items-center gap-4">
-              <Avatar className="h-20 w-20"><AvatarImage src={profile.avatar_url || undefined} /><AvatarFallback>{(profile.full_name || "U")[0]}</AvatarFallback></Avatar>
+              <Avatar className="h-20 w-20">
+                <AvatarImage src={profile.avatar_url || undefined} />
+                <AvatarFallback>{(profile.full_name || "U")[0]}</AvatarFallback>
+              </Avatar>
               <div>
-                <Label htmlFor="avatar" className="cursor-pointer text-primary text-sm font-medium">Upload new avatar</Label>
-                <Input id="avatar" type="file" accept="image/*" onChange={onAvatar} className="hidden" />
+                <Label htmlFor="avatar" className="cursor-pointer text-primary text-sm font-medium">
+                  Upload new avatar
+                </Label>
+                <Input
+                  id="avatar"
+                  type="file"
+                  accept="image/*"
+                  onChange={onAvatar}
+                  className="hidden"
+                />
                 <p className="text-xs text-muted-foreground mt-1">
                   ⚠️ Profile pictures are locked for 30 days after upload.
-                  {isLocked && <> Locked until <strong>{format(lockedUntil!, "PP")}</strong>.</>}
+                  {isLocked && (
+                    <>
+                      {" "}
+                      Locked until <strong>{format(lockedUntil!, "PP")}</strong>.
+                    </>
+                  )}
                 </p>
               </div>
             </div>
             <div className="grid md:grid-cols-2 gap-4">
-              <div className="space-y-2"><Label>Full name</Label><Input value={profile.full_name || ""} onChange={e => setProfile({ ...profile, full_name: e.target.value })} /></div>
-              <div className="space-y-2"><Label>Email</Label><Input value={profile.email || ""} disabled /></div>
-              <div className="space-y-2"><Label>Phone</Label><Input value={profile.phone || ""} onChange={e => setProfile({ ...profile, phone: e.target.value })} placeholder="+234..." /></div>
-              <div className="space-y-2"><Label>Community display name</Label><Input value={profile.community_name || ""} onChange={e => setProfile({ ...profile, community_name: e.target.value })} /></div>
+              <div className="space-y-2">
+                <Label>Full name</Label>
+                <Input
+                  value={profile.full_name || ""}
+                  onChange={(e) => setProfile({ ...profile, full_name: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Email</Label>
+                <Input value={profile.email || ""} disabled />
+              </div>
+              <div className="space-y-2">
+                <Label>Phone</Label>
+                <Input
+                  value={profile.phone || ""}
+                  onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+                  placeholder="+234..."
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Community display name</Label>
+                <Input
+                  value={profile.community_name || ""}
+                  onChange={(e) => setProfile({ ...profile, community_name: e.target.value })}
+                />
+              </div>
             </div>
             <Button onClick={save}>Save changes</Button>
           </Card>
@@ -179,27 +292,55 @@ function SettingsPage() {
             <Card className="p-6 space-y-5 max-w-2xl">
               <div>
                 <h3 className="font-semibold">Order workflow</h3>
-                <p className="text-sm text-muted-foreground">Control how incoming orders are routed to staff and how many call attempts they should make.</p>
+                <p className="text-sm text-muted-foreground">
+                  Control how incoming orders are routed to staff and how many call attempts they
+                  should make.
+                </p>
               </div>
-              {!ops ? <p className="text-sm text-muted-foreground">Loading…</p> : (
+              {!ops ? (
+                <p className="text-sm text-muted-foreground">Loading…</p>
+              ) : (
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <Label>Maximum call attempts per order</Label>
-                    <Input type="number" min={1} max={10} value={ops.max_call_attempts}
-                      onChange={e => setOps({ ...ops, max_call_attempts: Math.max(1, Math.min(10, Number(e.target.value) || 1)) })} />
-                    <p className="text-xs text-muted-foreground">Staff cannot log more than this many calls per order before marking it as unreachable.</p>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={10}
+                      value={ops.max_call_attempts}
+                      onChange={(e) =>
+                        setOps({
+                          ...ops,
+                          max_call_attempts: Math.max(1, Math.min(10, Number(e.target.value) || 1)),
+                        })
+                      }
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Staff cannot log more than this many calls per order before marking it as
+                      unreachable.
+                    </p>
                   </div>
                   <div className="flex items-center justify-between border rounded-md p-3">
                     <div>
                       <Label className="text-sm">Auto-assign new orders</Label>
-                      <p className="text-xs text-muted-foreground">When off, orders stay unassigned until a manager assigns them.</p>
+                      <p className="text-xs text-muted-foreground">
+                        When off, orders stay unassigned until a manager assigns them.
+                      </p>
                     </div>
-                    <Switch checked={ops.auto_assign_enabled} onCheckedChange={v => setOps({ ...ops, auto_assign_enabled: v })} />
+                    <Switch
+                      checked={ops.auto_assign_enabled}
+                      onCheckedChange={(v) => setOps({ ...ops, auto_assign_enabled: v })}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label>Assignment strategy</Label>
-                    <Select value={ops.auto_assign_strategy} onValueChange={v => setOps({ ...ops, auto_assign_strategy: v })}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
+                    <Select
+                      value={ops.auto_assign_strategy}
+                      onValueChange={(v) => setOps({ ...ops, auto_assign_strategy: v })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="least_load">Least load (fewest open orders)</SelectItem>
                         <SelectItem value="round_robin">Round robin (rotate fairly)</SelectItem>
@@ -211,44 +352,67 @@ function SettingsPage() {
                   {ops.auto_assign_enabled && ops.auto_assign_strategy === "weighted" && (
                     <div className="space-y-2 border rounded-md p-3">
                       <Label className="text-sm">Staff weights</Label>
-                      <p className="text-xs text-muted-foreground">Higher weight = receives proportionally more orders. Set 0 to exclude.</p>
+                      <p className="text-xs text-muted-foreground">
+                        Higher weight = receives proportionally more orders. Set 0 to exclude.
+                      </p>
                       <div className="space-y-2 max-h-64 overflow-y-auto">
                         {weights.length === 0 ? (
                           <p className="text-xs text-muted-foreground">No eligible staff yet.</p>
-                        ) : weights.map((w, idx) => (
-                          <div key={w.role_id} className="flex items-center gap-2">
-                            <div className="flex-1 text-sm truncate">{w.name} <span className="text-xs text-muted-foreground">({w.role})</span></div>
-                            <Input
-                              type="number"
-                              min={0}
-                              className="w-24"
-                              value={w.weight}
-                              onChange={e => {
-                                const n = [...weights];
-                                n[idx] = { ...w, weight: Math.max(0, Number(e.target.value) || 0) };
-                                setWeights(n);
-                              }}
-                            />
-                          </div>
-                        ))}
+                        ) : (
+                          weights.map((w, idx) => (
+                            <div key={w.role_id} className="flex items-center gap-2">
+                              <div className="flex-1 text-sm truncate">
+                                {w.name}{" "}
+                                <span className="text-xs text-muted-foreground">({w.role})</span>
+                              </div>
+                              <Input
+                                type="number"
+                                min={0}
+                                className="w-24"
+                                value={w.weight}
+                                onChange={(e) => {
+                                  const n = [...weights];
+                                  n[idx] = {
+                                    ...w,
+                                    weight: Math.max(0, Number(e.target.value) || 0),
+                                  };
+                                  setWeights(n);
+                                }}
+                              />
+                            </div>
+                          ))
+                        )}
                       </div>
-                      <Button size="sm" variant="outline" onClick={saveWeights}>Save weights</Button>
+                      <Button size="sm" variant="outline" onClick={saveWeights}>
+                        Save weights
+                      </Button>
                     </div>
                   )}
 
                   <div className="border-t pt-4 space-y-3">
                     <div>
                       <h3 className="font-semibold">Attendance policy</h3>
-                      <p className="text-sm text-muted-foreground">Set expected start time and the latest acceptable clock-in. Anyone clocking in after the deadline is marked Late.</p>
+                      <p className="text-sm text-muted-foreground">
+                        Set expected start time and the latest acceptable clock-in. Anyone clocking
+                        in after the deadline is marked Late.
+                      </p>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
                         <Label className="text-xs">Resumption time</Label>
-                        <Input type="time" value={ops.resumption_time || ""} onChange={e => setOps({ ...ops, resumption_time: e.target.value })} />
+                        <Input
+                          type="time"
+                          value={ops.resumption_time || ""}
+                          onChange={(e) => setOps({ ...ops, resumption_time: e.target.value })}
+                        />
                       </div>
                       <div className="space-y-1">
                         <Label className="text-xs">Latest clock-in (Late after)</Label>
-                        <Input type="time" value={ops.late_deadline || ""} onChange={e => setOps({ ...ops, late_deadline: e.target.value })} />
+                        <Input
+                          type="time"
+                          value={ops.late_deadline || ""}
+                          onChange={(e) => setOps({ ...ops, late_deadline: e.target.value })}
+                        />
                       </div>
                     </div>
                   </div>
@@ -261,7 +425,9 @@ function SettingsPage() {
         )}
 
         <TabsContent value="general">
-          <Card className="p-6 text-sm text-muted-foreground">General settings will appear here.</Card>
+          <Card className="p-6 text-sm text-muted-foreground">
+            General settings will appear here.
+          </Card>
         </TabsContent>
         {isOwner && (
           <TabsContent value="danger">
@@ -271,12 +437,17 @@ function SettingsPage() {
                 <div>
                   <h3 className="font-semibold text-destructive">Close store permanently</h3>
                   <p className="text-sm text-muted-foreground mt-1">
-                    This will permanently delete <strong>{store?.name}</strong> and all of its data: orders, customers, products,
-                    staff roles, invites, finance records, payroll, inventory, chats — everything. This cannot be undone.
+                    This will permanently delete <strong>{store?.name}</strong> and all of its data:
+                    orders, customers, products, staff roles, invites, finance records, payroll,
+                    inventory, chats — everything. This cannot be undone.
                   </p>
                 </div>
               </div>
-              <AlertDialog onOpenChange={(o) => { if (!o) setCloseConfirm(""); }}>
+              <AlertDialog
+                onOpenChange={(o) => {
+                  if (!o) setCloseConfirm("");
+                }}
+              >
                 <AlertDialogTrigger asChild>
                   <Button variant="destructive">Close my store</Button>
                 </AlertDialogTrigger>
@@ -284,11 +455,19 @@ function SettingsPage() {
                   <AlertDialogHeader>
                     <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      This will permanently delete <strong>{store?.name}</strong> and every record tied to it. You will be signed out.
-                      <br /><br />Type the store name <code className="bg-muted px-1 rounded">{store?.name}</code> to confirm.
+                      This will permanently delete <strong>{store?.name}</strong> and every record
+                      tied to it. You will be signed out.
+                      <br />
+                      <br />
+                      Type the store name{" "}
+                      <code className="bg-muted px-1 rounded">{store?.name}</code> to confirm.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
-                  <Input value={closeConfirm} onChange={(e) => setCloseConfirm(e.target.value)} placeholder={store?.name} />
+                  <Input
+                    value={closeConfirm}
+                    onChange={(e) => setCloseConfirm(e.target.value)}
+                    placeholder={store?.name}
+                  />
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                     <AlertDialogAction

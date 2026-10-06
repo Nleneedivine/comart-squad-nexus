@@ -7,14 +7,38 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertTriangle, AlertOctagon, CreditCard, Webhook, Building2, CheckCircle2, RefreshCw, ExternalLink, Search } from "lucide-react";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  AlertTriangle,
+  AlertOctagon,
+  CreditCard,
+  Webhook,
+  Building2,
+  CheckCircle2,
+  RefreshCw,
+  ExternalLink,
+  Search,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/system-health")({
-  head: () => ({ meta: [{ title: "System Health — Comart+" }, { name: "robots", content: "noindex" }] }),
+  head: () => ({
+    meta: [{ title: "System Health — Comart+" }, { name: "robots", content: "noindex" }],
+  }),
   component: SystemHealthPage,
 });
 
@@ -51,12 +75,19 @@ const sevDot: Record<string, string> = {
 function timeAgo(iso: string) {
   const s = Math.max(1, Math.round((Date.now() - new Date(iso).getTime()) / 1000));
   if (s < 60) return `${s}s ago`;
-  const m = Math.round(s / 60); if (m < 60) return `${m}m ago`;
-  const h = Math.round(m / 60); if (h < 48) return `${h}h ago`;
+  const m = Math.round(s / 60);
+  if (m < 60) return `${m}m ago`;
+  const h = Math.round(m / 60);
+  if (h < 48) return `${h}h ago`;
   return `${Math.round(h / 24)}d ago`;
 }
 
-const RANGES: Record<string, number> = { "1h": 3600e3, "24h": 86400e3, "7d": 7 * 86400e3, "30d": 30 * 86400e3 };
+const RANGES: Record<string, number> = {
+  "1h": 3600e3,
+  "24h": 86400e3,
+  "7d": 7 * 86400e3,
+  "30d": 30 * 86400e3,
+};
 
 function SystemHealthPage() {
   const [rows, setRows] = useState<ErrorRow[]>([]);
@@ -73,7 +104,12 @@ function SystemHealthPage() {
   async function load() {
     setLoading(true);
     const since = new Date(Date.now() - RANGES[range]).toISOString();
-    let q = supabase.from("app_errors").select("*").gte("created_at", since).order("created_at", { ascending: false }).limit(500);
+    let q = supabase
+      .from("app_errors")
+      .select("*")
+      .gte("created_at", since)
+      .order("created_at", { ascending: false })
+      .limit(500);
     if (severity !== "all") q = q.eq("severity", severity);
     if (module !== "all") q = q.eq("module", module);
     if (status !== "all") q = q.eq("status", status);
@@ -82,7 +118,9 @@ function SystemHealthPage() {
     setLoading(false);
   }
 
-  useEffect(() => { load(); }, [range, severity, module, status]);
+  useEffect(() => {
+    load();
+  }, [range, severity, module, status]);
 
   // Load store names for display
   useEffect(() => {
@@ -90,10 +128,14 @@ function SystemHealthPage() {
     if (ids.length === 0) return;
     const missing = ids.filter((id) => !stores[id]);
     if (missing.length === 0) return;
-    supabase.from("stores").select("id,name").in("id", missing).then(({ data }) => {
-      if (!data) return;
-      setStores((prev) => ({ ...prev, ...Object.fromEntries(data.map((s) => [s.id, s.name])) }));
-    });
+    supabase
+      .from("stores")
+      .select("id,name")
+      .in("id", missing)
+      .then(({ data }) => {
+        if (!data) return;
+        setStores((prev) => ({ ...prev, ...Object.fromEntries(data.map((s) => [s.id, s.name])) }));
+      });
   }, [rows]);
 
   // Realtime live feed
@@ -101,35 +143,52 @@ function SystemHealthPage() {
     if (!live) return;
     const ch = supabase
       .channel("system-health-errors")
-      .on("postgres_changes" as any, { event: "INSERT", schema: "public", table: "app_errors" }, (payload) => {
-        const r = payload.new as ErrorRow;
-        setRows((prev) => [r, ...prev].slice(0, 500));
-      })
-      .on("postgres_changes" as any, { event: "UPDATE", schema: "public", table: "app_errors" }, (payload) => {
-        const r = payload.new as ErrorRow;
-        setRows((prev) => prev.map((x) => (x.id === r.id ? r : x)));
-      })
+      .on(
+        "postgres_changes" as any,
+        { event: "INSERT", schema: "public", table: "app_errors" },
+        (payload) => {
+          const r = payload.new as ErrorRow;
+          setRows((prev) => [r, ...prev].slice(0, 500));
+        },
+      )
+      .on(
+        "postgres_changes" as any,
+        { event: "UPDATE", schema: "public", table: "app_errors" },
+        (payload) => {
+          const r = payload.new as ErrorRow;
+          setRows((prev) => prev.map((x) => (x.id === r.id ? r : x)));
+        },
+      )
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    return () => {
+      supabase.removeChannel(ch);
+    };
   }, [live]);
 
   const filtered = useMemo(() => {
     if (!search.trim()) return rows;
     const q = search.toLowerCase();
-    return rows.filter((r) =>
-      r.message.toLowerCase().includes(q) ||
-      r.module.toLowerCase().includes(q) ||
-      (r.store_id || "").toLowerCase().includes(q) ||
-      JSON.stringify(r.metadata || {}).toLowerCase().includes(q),
+    return rows.filter(
+      (r) =>
+        r.message.toLowerCase().includes(q) ||
+        r.module.toLowerCase().includes(q) ||
+        (r.store_id || "").toLowerCase().includes(q) ||
+        JSON.stringify(r.metadata || {})
+          .toLowerCase()
+          .includes(q),
     );
   }, [rows, search]);
 
   const kpis = useMemo(() => {
     const total = rows.length;
     const critical = rows.filter((r) => r.severity === "critical").length;
-    const payments = rows.filter((r) => /billing|payment|paystack|wallet/i.test(r.module + " " + r.message)).length;
+    const payments = rows.filter((r) =>
+      /billing|payment|paystack|wallet/i.test(r.module + " " + r.message),
+    ).length;
     const webhooks = rows.filter((r) => /webhook/i.test(r.module + " " + r.message)).length;
-    const bulkImport = rows.filter((r) => /bulk_import/i.test(r.module) || /bulk import|import failed during/i.test(r.message)).length;
+    const bulkImport = rows.filter(
+      (r) => /bulk_import/i.test(r.module) || /bulk import|import failed during/i.test(r.message),
+    ).length;
     const tenants = new Set(rows.map((r) => r.store_id).filter(Boolean)).size;
     const resolved = rows.filter((r) => r.status === "resolved").length;
     const resolvedPct = total ? Math.round((resolved / total) * 100) : 0;
@@ -139,10 +198,17 @@ function SystemHealthPage() {
   const modules = useMemo(() => Array.from(new Set(rows.map((r) => r.module))).sort(), [rows]);
 
   async function setRowStatus(id: string, newStatus: "resolved" | "ignored" | "open") {
-    const { error } = await supabase.from("app_errors")
-      .update({ status: newStatus, resolved_at: newStatus === "resolved" ? new Date().toISOString() : null })
+    const { error } = await supabase
+      .from("app_errors")
+      .update({
+        status: newStatus,
+        resolved_at: newStatus === "resolved" ? new Date().toISOString() : null,
+      })
       .eq("id", id);
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     toast.success(`Marked as ${newStatus}`);
     setSelected((s) => (s && s.id === id ? { ...s, status: newStatus } : s));
     setRows((prev) => prev.map((r) => (r.id === id ? { ...r, status: newStatus } : r)));
@@ -157,11 +223,21 @@ function SystemHealthPage() {
         </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 rounded-md border px-3 py-1.5 bg-background">
-            <span className={cn("inline-block h-2 w-2 rounded-full", live ? "bg-red-500 animate-pulse" : "bg-muted-foreground")} />
-            <Label htmlFor="live" className="text-sm cursor-pointer">Live feed</Label>
+            <span
+              className={cn(
+                "inline-block h-2 w-2 rounded-full",
+                live ? "bg-red-500 animate-pulse" : "bg-muted-foreground",
+              )}
+            />
+            <Label htmlFor="live" className="text-sm cursor-pointer">
+              Live feed
+            </Label>
             <Switch id="live" checked={live} onCheckedChange={setLive} />
           </div>
-          <Button variant="outline" size="sm" onClick={load}><RefreshCw className="h-4 w-4 mr-2" />Refresh</Button>
+          <Button variant="outline" size="sm" onClick={load}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
         </div>
       </header>
 
@@ -171,7 +247,12 @@ function SystemHealthPage() {
         <Kpi icon={AlertTriangle} label="Critical" value={kpis.critical} tone="critical" />
         <Kpi icon={CreditCard} label="Payment failures" value={kpis.payments} tone="critical" />
         <Kpi icon={Webhook} label="Webhook failures" value={kpis.webhooks} tone="high" />
-        <Kpi icon={AlertTriangle} label="Bulk import failures" value={kpis.bulkImport} tone="high" />
+        <Kpi
+          icon={AlertTriangle}
+          label="Bulk import failures"
+          value={kpis.bulkImport}
+          tone="high"
+        />
         <Kpi icon={Building2} label="Affected tenants" value={kpis.tenants} tone="default" />
         <Kpi icon={CheckCircle2} label="Resolved %" value={`${kpis.resolvedPct}%`} tone="ok" />
       </div>
@@ -180,10 +261,17 @@ function SystemHealthPage() {
       <Card className="p-3 flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[220px]">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search message, tenant, module…" className="pl-8" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search message, tenant, module…"
+            className="pl-8"
+          />
         </div>
         <Select value={range} onValueChange={(v) => setRange(v as any)}>
-          <SelectTrigger className="w-[120px]"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-[120px]">
+            <SelectValue />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="1h">Last 1h</SelectItem>
             <SelectItem value="24h">Last 24h</SelectItem>
@@ -192,7 +280,9 @@ function SystemHealthPage() {
           </SelectContent>
         </Select>
         <Select value={severity} onValueChange={setSeverity}>
-          <SelectTrigger className="w-[140px]"><SelectValue placeholder="Severity" /></SelectTrigger>
+          <SelectTrigger className="w-[140px]">
+            <SelectValue placeholder="Severity" />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All severities</SelectItem>
             <SelectItem value="critical">Critical</SelectItem>
@@ -202,14 +292,22 @@ function SystemHealthPage() {
           </SelectContent>
         </Select>
         <Select value={module} onValueChange={setModule}>
-          <SelectTrigger className="w-[160px]"><SelectValue placeholder="Module" /></SelectTrigger>
+          <SelectTrigger className="w-[160px]">
+            <SelectValue placeholder="Module" />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All modules</SelectItem>
-            {modules.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+            {modules.map((m) => (
+              <SelectItem key={m} value={m}>
+                {m}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
         <Select value={status} onValueChange={setStatus}>
-          <SelectTrigger className="w-[130px]"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-[130px]">
+            <SelectValue />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All status</SelectItem>
             <SelectItem value="open">Open</SelectItem>
@@ -233,35 +331,70 @@ function SystemHealthPage() {
             </tr>
           </thead>
           <tbody>
-            {loading && <tr><td colSpan={6} className="p-10 text-center text-muted-foreground">Loading…</td></tr>}
+            {loading && (
+              <tr>
+                <td colSpan={6} className="p-10 text-center text-muted-foreground">
+                  Loading…
+                </td>
+              </tr>
+            )}
             {!loading && filtered.length === 0 && (
-              <tr><td colSpan={6} className="p-12 text-center text-muted-foreground">
-                <CheckCircle2 className="h-8 w-8 mx-auto mb-2 text-emerald-500" />
-                No errors match your filters. The platform is healthy.
-              </td></tr>
+              <tr>
+                <td colSpan={6} className="p-12 text-center text-muted-foreground">
+                  <CheckCircle2 className="h-8 w-8 mx-auto mb-2 text-emerald-500" />
+                  No errors match your filters. The platform is healthy.
+                </td>
+              </tr>
             )}
             {filtered.map((r) => (
-              <tr key={r.id} onClick={() => setSelected(r)} className="border-t cursor-pointer hover:bg-accent/40 transition-colors">
+              <tr
+                key={r.id}
+                onClick={() => setSelected(r)}
+                className="border-t cursor-pointer hover:bg-accent/40 transition-colors"
+              >
                 <td className="p-3">
-                  <span className={cn("inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md border text-xs font-medium uppercase", sevColor[r.severity] || sevColor.low)}>
-                    <span className={cn("h-1.5 w-1.5 rounded-full", sevDot[r.severity] || sevDot.low)} />
+                  <span
+                    className={cn(
+                      "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md border text-xs font-medium uppercase",
+                      sevColor[r.severity] || sevColor.low,
+                    )}
+                  >
+                    <span
+                      className={cn("h-1.5 w-1.5 rounded-full", sevDot[r.severity] || sevDot.low)}
+                    />
                     {r.severity}
                   </span>
                 </td>
                 <td className="p-3 max-w-0">
                   <div className="font-medium truncate">{r.message}</div>
-                  {r.environment && <div className="text-xs text-muted-foreground">{r.environment}</div>}
-                </td>
-                <td className="p-3"><Badge variant="outline" className="font-mono text-xs">{r.module}</Badge></td>
-                <td className="p-3 text-xs text-muted-foreground truncate max-w-[180px]">
-                  {r.store_id ? (stores[r.store_id] || r.store_id.slice(0, 8)) : "—"}
+                  {r.environment && (
+                    <div className="text-xs text-muted-foreground">{r.environment}</div>
+                  )}
                 </td>
                 <td className="p-3">
-                  <Badge variant={r.status === "resolved" ? "secondary" : r.status === "ignored" ? "outline" : "default"}>
+                  <Badge variant="outline" className="font-mono text-xs">
+                    {r.module}
+                  </Badge>
+                </td>
+                <td className="p-3 text-xs text-muted-foreground truncate max-w-[180px]">
+                  {r.store_id ? stores[r.store_id] || r.store_id.slice(0, 8) : "—"}
+                </td>
+                <td className="p-3">
+                  <Badge
+                    variant={
+                      r.status === "resolved"
+                        ? "secondary"
+                        : r.status === "ignored"
+                          ? "outline"
+                          : "default"
+                    }
+                  >
                     {r.status}
                   </Badge>
                 </td>
-                <td className="p-3 text-xs text-muted-foreground whitespace-nowrap">{timeAgo(r.created_at)}</td>
+                <td className="p-3 text-xs text-muted-foreground whitespace-nowrap">
+                  {timeAgo(r.created_at)}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -275,21 +408,42 @@ function SystemHealthPage() {
             <>
               <SheetHeader>
                 <div className="flex items-center gap-2">
-                  <span className={cn("inline-block h-2.5 w-2.5 rounded-full", sevDot[selected.severity] || sevDot.low)} />
+                  <span
+                    className={cn(
+                      "inline-block h-2.5 w-2.5 rounded-full",
+                      sevDot[selected.severity] || sevDot.low,
+                    )}
+                  />
                   <SheetTitle className="text-lg">{selected.message}</SheetTitle>
                 </div>
                 <SheetDescription>
-                  <span className={cn("inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md border text-xs font-medium uppercase mr-2", sevColor[selected.severity] || sevColor.low)}>
+                  <span
+                    className={cn(
+                      "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md border text-xs font-medium uppercase mr-2",
+                      sevColor[selected.severity] || sevColor.low,
+                    )}
+                  >
                     {selected.severity}
                   </span>
-                  <Badge variant="outline" className="font-mono text-xs mr-2">{selected.module}</Badge>
-                  <span className="text-xs text-muted-foreground">{new Date(selected.created_at).toLocaleString()}</span>
+                  <Badge variant="outline" className="font-mono text-xs mr-2">
+                    {selected.module}
+                  </Badge>
+                  <span className="text-xs text-muted-foreground">
+                    {new Date(selected.created_at).toLocaleString()}
+                  </span>
                 </SheetDescription>
               </SheetHeader>
 
               <div className="mt-6 space-y-5">
                 <Section title="Context">
-                  <Field k="Tenant / Store" v={selected.store_id ? `${stores[selected.store_id] || ""} (${selected.store_id})` : "—"} />
+                  <Field
+                    k="Tenant / Store"
+                    v={
+                      selected.store_id
+                        ? `${stores[selected.store_id] || ""} (${selected.store_id})`
+                        : "—"
+                    }
+                  />
                   <Field k="User" v={selected.user_id || "—"} />
                   <Field k="Environment" v={selected.environment || "—"} />
                   <Field k="Status" v={selected.status} />
@@ -298,7 +452,9 @@ function SystemHealthPage() {
 
                 {selected.stack_trace && (
                   <Section title="Stack trace">
-                    <pre className="text-xs bg-muted/40 rounded-md p-3 max-h-[260px] overflow-auto whitespace-pre-wrap font-mono">{selected.stack_trace}</pre>
+                    <pre className="text-xs bg-muted/40 rounded-md p-3 max-h-[260px] overflow-auto whitespace-pre-wrap font-mono">
+                      {selected.stack_trace}
+                    </pre>
                   </Section>
                 )}
 
@@ -312,18 +468,36 @@ function SystemHealthPage() {
 
                 <Section title="Actions">
                   <div className="flex flex-wrap gap-2">
-                    <Button size="sm" onClick={() => setRowStatus(selected.id, "resolved")} disabled={selected.status === "resolved"}>
+                    <Button
+                      size="sm"
+                      onClick={() => setRowStatus(selected.id, "resolved")}
+                      disabled={selected.status === "resolved"}
+                    >
                       <CheckCircle2 className="h-4 w-4 mr-1.5" /> Mark resolved
                     </Button>
-                    <Button size="sm" variant="outline" onClick={() => setRowStatus(selected.id, "ignored")} disabled={selected.status === "ignored"}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setRowStatus(selected.id, "ignored")}
+                      disabled={selected.status === "ignored"}
+                    >
                       Ignore
                     </Button>
-                    <Button size="sm" variant="outline" onClick={() => setRowStatus(selected.id, "open")} disabled={selected.status === "open"}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setRowStatus(selected.id, "open")}
+                      disabled={selected.status === "open"}
+                    >
                       Reopen
                     </Button>
                     {selected.sentry_event_id && (
                       <Button size="sm" variant="outline" asChild>
-                        <a href={`https://sentry.io/organizations/sentry/issues/?query=${selected.sentry_event_id}`} target="_blank" rel="noreferrer">
+                        <a
+                          href={`https://sentry.io/organizations/sentry/issues/?query=${selected.sentry_event_id}`}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
                           <ExternalLink className="h-4 w-4 mr-1.5" /> Open in Sentry
                         </a>
                       </Button>
@@ -339,8 +513,25 @@ function SystemHealthPage() {
   );
 }
 
-function Kpi({ icon: Icon, label, value, tone }: { icon: any; label: string; value: any; tone: "default" | "critical" | "high" | "ok" }) {
-  const toneCls = tone === "critical" ? "text-red-600" : tone === "high" ? "text-orange-600" : tone === "ok" ? "text-emerald-600" : "text-foreground";
+function Kpi({
+  icon: Icon,
+  label,
+  value,
+  tone,
+}: {
+  icon: any;
+  label: string;
+  value: any;
+  tone: "default" | "critical" | "high" | "ok";
+}) {
+  const toneCls =
+    tone === "critical"
+      ? "text-red-600"
+      : tone === "high"
+        ? "text-orange-600"
+        : tone === "ok"
+          ? "text-emerald-600"
+          : "text-foreground";
   return (
     <Card className="p-4">
       <div className="flex items-center justify-between">

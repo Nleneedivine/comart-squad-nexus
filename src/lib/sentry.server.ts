@@ -7,7 +7,8 @@
  * Silently no-ops if DSN is missing or fetch fails — never breaks the caller.
  */
 
-const SENSITIVE_KEY = /password|token|secret|pin|cvv|card|account_number|otp|authorization|cookie|paystack/i;
+const SENSITIVE_KEY =
+  /password|token|secret|pin|cvv|card|account_number|otp|authorization|cookie|paystack/i;
 
 type DsnParts = { host: string; projectId: string; publicKey: string; protocol: string };
 
@@ -16,8 +17,15 @@ function parseDsn(dsn: string): DsnParts | null {
     const u = new URL(dsn);
     const projectId = u.pathname.replace(/^\//, "");
     if (!u.username || !projectId) return null;
-    return { host: u.host, projectId, publicKey: u.username, protocol: u.protocol.replace(":", "") };
-  } catch { return null; }
+    return {
+      host: u.host,
+      projectId,
+      publicKey: u.username,
+      protocol: u.protocol.replace(":", ""),
+    };
+  } catch {
+    return null;
+  }
 }
 
 function scrub(value: unknown, depth = 0): unknown {
@@ -28,7 +36,10 @@ function scrub(value: unknown, depth = 0): unknown {
     let i = 0;
     for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
       if (i++ > 50) break;
-      if (SENSITIVE_KEY.test(k)) { out[k] = "[redacted]"; continue; }
+      if (SENSITIVE_KEY.test(k)) {
+        out[k] = "[redacted]";
+        continue;
+      }
       out[k] = scrub(v, depth + 1);
     }
     return out;
@@ -38,7 +49,11 @@ function scrub(value: unknown, depth = 0): unknown {
 }
 
 function envName(): "production" | "preview" | "development" {
-  const env = (process.env.SENTRY_ENVIRONMENT || process.env.NODE_ENV || "production").toLowerCase();
+  const env = (
+    process.env.SENTRY_ENVIRONMENT ||
+    process.env.NODE_ENV ||
+    "production"
+  ).toLowerCase();
   if (env.startsWith("dev")) return "development";
   if (env.startsWith("prev") || env.startsWith("stag")) return "preview";
   return "production";
@@ -55,14 +70,17 @@ export interface CaptureContext {
 
 export async function captureServerException(
   error: unknown,
-  context: CaptureContext = {}
+  context: CaptureContext = {},
 ): Promise<void> {
   const dsn = process.env.SENTRY_DSN;
   if (!dsn) return;
   const parts = parseDsn(dsn);
   if (!parts) return;
 
-  const err = error instanceof Error ? error : new Error(typeof error === "string" ? error : JSON.stringify(error));
+  const err =
+    error instanceof Error
+      ? error
+      : new Error(typeof error === "string" ? error : JSON.stringify(error));
   const eventId = crypto.randomUUID().replace(/-/g, "");
   const timestamp = Date.now() / 1000;
 
@@ -87,27 +105,41 @@ export async function captureServerException(
     extra: scrub(context.extra || {}) as Record<string, unknown>,
     user: context.user,
     fingerprint: context.fingerprint,
-    request: context.request ? {
-      url: context.request.url,
-      method: context.request.method,
-      headers: safeHeaders,
-    } : undefined,
+    request: context.request
+      ? {
+          url: context.request.url,
+          method: context.request.method,
+          headers: safeHeaders,
+        }
+      : undefined,
     exception: {
-      values: [{
-        type: err.name || "Error",
-        value: String(err.message || err).slice(0, 1000),
-        stacktrace: err.stack ? {
-          frames: err.stack.split("\n").slice(1, 30).reverse().map((line) => ({
-            filename: line.trim(),
-            function: "?",
-            in_app: true,
-          })),
-        } : undefined,
-      }],
+      values: [
+        {
+          type: err.name || "Error",
+          value: String(err.message || err).slice(0, 1000),
+          stacktrace: err.stack
+            ? {
+                frames: err.stack
+                  .split("\n")
+                  .slice(1, 30)
+                  .reverse()
+                  .map((line) => ({
+                    filename: line.trim(),
+                    function: "?",
+                    in_app: true,
+                  })),
+              }
+            : undefined,
+        },
+      ],
     },
   };
 
-  const envelopeHeader = JSON.stringify({ event_id: eventId, sent_at: new Date().toISOString(), dsn });
+  const envelopeHeader = JSON.stringify({
+    event_id: eventId,
+    sent_at: new Date().toISOString(),
+    dsn,
+  });
   const itemHeader = JSON.stringify({ type: "event", content_type: "application/json" });
   const body = `${envelopeHeader}\n${itemHeader}\n${JSON.stringify(event)}\n`;
 
@@ -129,15 +161,22 @@ export async function captureServerException(
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const tagsObj = (context.tags || {}) as Record<string, any>;
-    const module = String(tagsObj.route || tagsObj.path || tagsObj.area || tagsObj.kind || "server");
+    const module = String(
+      tagsObj.route || tagsObj.path || tagsObj.area || tagsObj.kind || "server",
+    );
     const message = String(err.message || err).slice(0, 500);
     const text = `${module} ${message}`;
     const severity =
       tagsObj.severity ||
-      (/billing|payment|paystack|auth|wallet|webhook|subscription/i.test(text) ? "critical" :
-       /order|inventory|stock/i.test(text) ? "high" :
-       /realtime|chat|render/i.test(text) ? "medium" : "low");
-    const storeId = (context.user?.id && /^[0-9a-f-]{36}$/i.test(context.user.id)) ? context.user.id : null;
+      (/billing|payment|paystack|auth|wallet|webhook|subscription/i.test(text)
+        ? "critical"
+        : /order|inventory|stock/i.test(text)
+          ? "high"
+          : /realtime|chat|render/i.test(text)
+            ? "medium"
+            : "low");
+    const storeId =
+      context.user?.id && /^[0-9a-f-]{36}$/i.test(context.user.id) ? context.user.id : null;
 
     await supabaseAdmin.from("app_errors").insert({
       store_id: storeId,
@@ -149,7 +188,11 @@ export async function captureServerException(
       status: "open",
       environment: envName(),
       sentry_event_id: eventId,
-      metadata: { tags: tagsObj, extra: context.extra || {}, fingerprint: context.fingerprint } as any,
+      metadata: {
+        tags: tagsObj,
+        extra: context.extra || {},
+        fingerprint: context.fingerprint,
+      } as any,
     });
 
     // If it's a webhook, also log to failed_webhooks for the dedicated tab.

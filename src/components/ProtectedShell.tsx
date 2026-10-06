@@ -35,31 +35,43 @@ export default function ProtectedShell({ children }: { children?: ReactNode }) {
 
   useEffect(() => {
     if (!hydrated || loading) return;
-    if (!user) { nav({ to: "/auth" }); return; }
+    if (!user) {
+      nav({ to: "/auth" });
+      return;
+    }
   }, [user, loading, hydrated, nav]);
 
   // One-time role-based landing: if a non-admin lands on /Dashboard, send to their natural page
   useEffect(() => {
     if (!user || roles.length === 0) return;
-    const isAdmin = roles.some(r => ["owner","admin","manager","head_of_operations"].includes(r));
+    const isAdmin = roles.some((r) =>
+      ["owner", "admin", "manager", "head_of_operations"].includes(r),
+    );
     if (isAdmin) return;
     if (loc.pathname !== "/Dashboard") return;
     const sessionKey = `landed-${user.id}`;
     if (sessionStorage.getItem(sessionKey)) return;
-    const landing = roles.map(r => ROLE_LANDING[r]).find(Boolean);
-    if (landing) { sessionStorage.setItem(sessionKey, "1"); nav({ to: landing }); }
+    const landing = roles.map((r) => ROLE_LANDING[r]).find(Boolean);
+    if (landing) {
+      sessionStorage.setItem(sessionKey, "1");
+      nav({ to: landing });
+    }
   }, [user, roles, loc.pathname, nav]);
 
   useEffect(() => {
     if (!hydrated || loading) return;
-    if (!user || loc.pathname === "/onboarding") { setCheck("ok"); return; }
+    if (!user || loc.pathname === "/onboarding") {
+      setCheck("ok");
+      return;
+    }
     // Skip re-running the full check (and re-showing the loading overlay) if
     // we've already validated this user once. Only `attempts` (manual retry)
     // or a user identity change should force a re-check.
     const key = `${user.id}:${attempts}`;
     if (checkedForUserRef.current === key) return;
     let cancelled = false;
-    const firstRun = checkedForUserRef.current === null || !checkedForUserRef.current.startsWith(user.id + ":");
+    const firstRun =
+      checkedForUserRef.current === null || !checkedForUserRef.current.startsWith(user.id + ":");
 
     const run = async (attempt: number) => {
       // Only show the full-screen loading overlay on the very first check
@@ -67,7 +79,11 @@ export default function ProtectedShell({ children }: { children?: ReactNode }) {
       if (firstRun && attempt === 0) setCheck("checking");
       try {
         // Superadmins skip onboarding and go to /admin
-        const { data: sa } = await supabase.from("superadmins").select("id").eq("user_id", user.id).maybeSingle();
+        const { data: sa } = await supabase
+          .from("superadmins")
+          .select("id")
+          .eq("user_id", user.id)
+          .maybeSingle();
         if (cancelled) return;
         if (sa && !loc.pathname.startsWith("/admin")) {
           setCheck("redirect");
@@ -83,19 +99,27 @@ export default function ProtectedShell({ children }: { children?: ReactNode }) {
         if (error) throw error;
         // No profile row yet (handle_new_user trigger may still be running) → retry briefly
         if (!data) {
-          if (attempt < 5) { setTimeout(() => run(attempt + 1), 600 * (attempt + 1)); return; }
+          if (attempt < 5) {
+            setTimeout(() => run(attempt + 1), 600 * (attempt + 1));
+            return;
+          }
           checkedForUserRef.current = key;
           setCheck("ok");
           return;
         }
-        const isStaffOnly = roles.length > 0 && !roles.some((r) => ["owner", "admin", "manager", "head_of_operations"].includes(r));
+        const isStaffOnly =
+          roles.length > 0 &&
+          !roles.some((r) => ["owner", "admin", "manager", "head_of_operations"].includes(r));
         if (isStaffOnly || data.onboarding_completed === false) {
           checkedForUserRef.current = key;
           setCheck("ok");
           return;
         }
         // Suspended members across all stores → forced sign-out
-        const { data: rolesRows } = await supabase.from("user_roles").select("is_suspended").eq("user_id", user.id);
+        const { data: rolesRows } = await supabase
+          .from("user_roles")
+          .select("is_suspended")
+          .eq("user_id", user.id);
         if (cancelled) return;
         if (rolesRows && rolesRows.length > 0 && rolesRows.every((r: any) => r.is_suspended)) {
           await supabase.auth.signOut();
@@ -106,12 +130,17 @@ export default function ProtectedShell({ children }: { children?: ReactNode }) {
         setCheck("ok");
       } catch (e) {
         if (cancelled) return;
-        if (attempt < 3) { setTimeout(() => run(attempt + 1), 800 * (attempt + 1)); return; }
+        if (attempt < 3) {
+          setTimeout(() => run(attempt + 1), 800 * (attempt + 1));
+          return;
+        }
         setCheck("error");
       }
     };
     run(0);
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
     // NOTE: deliberately exclude `loc.pathname` and `roles` from deps — they
     // change on every navigation / role-row refresh and would re-trigger the
     // loading overlay on every click. The check is per-user, gated by the
@@ -120,7 +149,11 @@ export default function ProtectedShell({ children }: { children?: ReactNode }) {
   }, [user, attempts, hydrated, loading]);
 
   if (!hydrated || loading || !user || check === "checking" || check === "idle") {
-    return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Loading...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center text-muted-foreground">
+        Loading...
+      </div>
+    );
   }
 
   if (check === "error") {
@@ -128,8 +161,12 @@ export default function ProtectedShell({ children }: { children?: ReactNode }) {
       <div className="min-h-screen flex items-center justify-center px-4">
         <div className="max-w-md text-center space-y-3">
           <h1 className="text-xl font-bold">Couldn't load your account</h1>
-          <p className="text-sm text-muted-foreground">We had trouble reaching the server. Check your connection and try again.</p>
-          <Button onClick={() => setAttempts((a) => a + 1)}><RefreshCw className="h-4 w-4 mr-2" /> Retry</Button>
+          <p className="text-sm text-muted-foreground">
+            We had trouble reaching the server. Check your connection and try again.
+          </p>
+          <Button onClick={() => setAttempts((a) => a + 1)}>
+            <RefreshCw className="h-4 w-4 mr-2" /> Retry
+          </Button>
         </div>
       </div>
     );
@@ -147,13 +184,16 @@ export default function ProtectedShell({ children }: { children?: ReactNode }) {
           <Lock className="mx-auto h-10 w-10 text-muted-foreground" />
           <h1 className="text-xl font-bold">Your store is not registered</h1>
           <p className="text-sm text-muted-foreground">
-            We couldn't find an active store linked to <strong>{user?.email}</strong>.
-            Please sign up to create a new store, or accept an invitation from your store admin.
+            We couldn't find an active store linked to <strong>{user?.email}</strong>. Please sign
+            up to create a new store, or accept an invitation from your store admin.
           </p>
           <Button
             className="w-full"
             onClick={async () => {
-              try { localStorage.clear(); sessionStorage.clear(); } catch {}
+              try {
+                localStorage.clear();
+                sessionStorage.clear();
+              } catch {}
               await supabase.auth.signOut();
               nav({ to: "/auth" });
             }}
@@ -169,7 +209,9 @@ export default function ProtectedShell({ children }: { children?: ReactNode }) {
 
   return (
     <AppLayout>
-      {allowed ? children : (
+      {allowed ? (
+        children
+      ) : (
         <EmptyState
           icon={Lock}
           title="Access restricted"

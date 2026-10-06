@@ -7,20 +7,61 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Phone, Clock, LogIn, LogOut, Upload, TrendingUp, Package, CheckCircle2, XCircle, BarChart3 } from "lucide-react";
+import {
+  Phone,
+  Clock,
+  LogIn,
+  LogOut,
+  Upload,
+  TrendingUp,
+  Package,
+  CheckCircle2,
+  XCircle,
+  BarChart3,
+} from "lucide-react";
 import { formatNaira } from "@/lib/format";
-import { ResponsiveContainer, LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, CartesianGrid } from "recharts";
+import {
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+  CartesianGrid,
+} from "recharts";
 
 export const Route = createFileRoute("/staff-portal")({
-  head: () => ({ meta: [{ title: "My Workspace — Comart+" }, { name: "robots", content: "noindex" }] }),
-  component: () => <ProtectedShell><StaffPortal /></ProtectedShell>,
+  head: () => ({
+    meta: [{ title: "My Workspace — Comart+" }, { name: "robots", content: "noindex" }],
+  }),
+  component: () => (
+    <ProtectedShell>
+      <StaffPortal />
+    </ProtectedShell>
+  ),
 });
 
 function StaffPortal() {
@@ -29,7 +70,14 @@ function StaffPortal() {
   const [orders, setOrders] = useState<any[]>([]);
   const [maxCalls, setMaxCalls] = useState(3);
   const [perf, setPerf] = useState({ assigned: 0, confirmed: 0, cancelled: 0, delivered: 0 });
-  const [profile, setProfile] = useState<any>({ full_name: "", phone: "", email: "", address: "", bio: "", avatar_url: "" });
+  const [profile, setProfile] = useState<any>({
+    full_name: "",
+    phone: "",
+    email: "",
+    address: "",
+    bio: "",
+    avatar_url: "",
+  });
   const [todayAtt, setTodayAtt] = useState<any | null>(null);
   const [attHistory, setAttHistory] = useState<any[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
@@ -42,42 +90,74 @@ function StaffPortal() {
 
   const load = async () => {
     if (!store || !user) return;
-    const { data: o } = await supabase.from("orders")
-      .select("id, order_number, customer_name, amount, status, notes, created_at, customers(phone, full_address)")
-      .eq("store_id", store.id).eq("assigned_to", user.id).eq("is_archived", false)
-      .order("created_at", { ascending: false }).limit(100);
+    const { data: o } = await supabase
+      .from("orders")
+      .select(
+        "id, order_number, customer_name, amount, status, notes, created_at, customers(phone, full_address)",
+      )
+      .eq("store_id", store.id)
+      .eq("assigned_to", user.id)
+      .eq("is_archived", false)
+      .order("created_at", { ascending: false })
+      .limit(100);
     setOrders(o || []);
-    const { data: s } = await supabase.from("stores").select("max_call_attempts").eq("id", store.id).maybeSingle();
+    const { data: s } = await supabase
+      .from("stores")
+      .select("max_call_attempts")
+      .eq("id", store.id)
+      .maybeSingle();
     setMaxCalls(s?.max_call_attempts ?? 3);
 
     // Performance
-    const { data: stats } = await supabase.from("orders")
-      .select("status").eq("store_id", store.id).eq("assigned_to", user.id);
+    const { data: stats } = await supabase
+      .from("orders")
+      .select("status")
+      .eq("store_id", store.id)
+      .eq("assigned_to", user.id);
     const counts = { assigned: stats?.length || 0, confirmed: 0, cancelled: 0, delivered: 0 };
     (stats || []).forEach((r: any) => {
-      if (["delivered","completed","fulfilled"].includes(r.status)) counts.delivered++;
-      if (["processing","shipped"].includes(r.status)) counts.confirmed++;
-      if (["cancelled","canceled"].includes(r.status)) counts.cancelled++;
+      if (["delivered", "completed", "fulfilled"].includes(r.status)) counts.delivered++;
+      if (["processing", "shipped"].includes(r.status)) counts.confirmed++;
+      if (["cancelled", "canceled"].includes(r.status)) counts.cancelled++;
     });
     setPerf(counts);
 
     // Profile
     const { data: p } = await supabase.from("profiles").select("*").eq("id", user.id).maybeSingle();
-    if (p) setProfile({ full_name: p.full_name || "", phone: p.phone || "", email: p.email || user.email || "", address: p.address || "", bio: p.bio || "", avatar_url: p.avatar_url || "" });
+    if (p)
+      setProfile({
+        full_name: p.full_name || "",
+        phone: p.phone || "",
+        email: p.email || user.email || "",
+        address: p.address || "",
+        bio: p.bio || "",
+        avatar_url: p.avatar_url || "",
+      });
 
     // Attendance today
-    const today = new Date().toISOString().slice(0,10);
-    const { data: a } = await supabase.from("attendance")
-      .select("*").eq("store_id", store.id).eq("user_id", user.id)
-      .gte("clock_in", today + "T00:00:00").order("clock_in", { ascending: false }).limit(1);
+    const today = new Date().toISOString().slice(0, 10);
+    const { data: a } = await supabase
+      .from("attendance")
+      .select("*")
+      .eq("store_id", store.id)
+      .eq("user_id", user.id)
+      .gte("clock_in", today + "T00:00:00")
+      .order("clock_in", { ascending: false })
+      .limit(1);
     setTodayAtt(a?.[0] || null);
-    const { data: hist } = await supabase.from("attendance")
-      .select("*").eq("store_id", store.id).eq("user_id", user.id)
-      .order("clock_in", { ascending: false }).limit(20);
+    const { data: hist } = await supabase
+      .from("attendance")
+      .select("*")
+      .eq("store_id", store.id)
+      .eq("user_id", user.id)
+      .order("clock_in", { ascending: false })
+      .limit(20);
     setAttHistory(hist || []);
   };
 
-  useEffect(() => { load(); }, [store, user]);
+  useEffect(() => {
+    load();
+  }, [store, user]);
 
   // Build time-series perf data (last 8 weeks or last 6 months)
   useEffect(() => {
@@ -86,18 +166,21 @@ function StaffPortal() {
       const since = new Date();
       if (seriesRange === "weekly") since.setDate(since.getDate() - 7 * 8);
       else since.setMonth(since.getMonth() - 6);
-      const { data } = await supabase.from("orders")
+      const { data } = await supabase
+        .from("orders")
         .select("status, created_at")
-        .eq("store_id", store.id).eq("assigned_to", user.id)
+        .eq("store_id", store.id)
+        .eq("assigned_to", user.id)
         .gte("created_at", since.toISOString())
         .limit(2000);
       const bucketKey = (d: Date) => {
         if (seriesRange === "weekly") {
-          const ref = new Date(d); ref.setHours(0,0,0,0);
+          const ref = new Date(d);
+          ref.setHours(0, 0, 0, 0);
           ref.setDate(ref.getDate() - ref.getDay()); // Sunday start
-          return ref.toISOString().slice(0,10);
+          return ref.toISOString().slice(0, 10);
         }
-        return d.toISOString().slice(0,7); // YYYY-MM
+        return d.toISOString().slice(0, 7); // YYYY-MM
       };
       const buckets: Record<string, any> = {};
       const labels: string[] = [];
@@ -105,7 +188,7 @@ function StaffPortal() {
       if (seriesRange === "weekly") {
         cursor.setDate(cursor.getDate() - cursor.getDay());
         for (let i = 0; i < 8; i++) {
-          const k = cursor.toISOString().slice(0,10);
+          const k = cursor.toISOString().slice(0, 10);
           buckets[k] = { label: k.slice(5), assigned: 0, confirmed: 0, delivered: 0, cancelled: 0 };
           labels.push(k);
           cursor.setDate(cursor.getDate() + 7);
@@ -113,7 +196,7 @@ function StaffPortal() {
       } else {
         cursor.setDate(1);
         for (let i = 0; i < 6; i++) {
-          const k = cursor.toISOString().slice(0,7);
+          const k = cursor.toISOString().slice(0, 7);
           buckets[k] = { label: k, assigned: 0, confirmed: 0, delivered: 0, cancelled: 0 };
           labels.push(k);
           cursor.setMonth(cursor.getMonth() + 1);
@@ -121,22 +204,30 @@ function StaffPortal() {
       }
       (data || []).forEach((r: any) => {
         const k = bucketKey(new Date(r.created_at));
-        const b = buckets[k]; if (!b) return;
+        const b = buckets[k];
+        if (!b) return;
         b.assigned++;
-        if (["delivered","completed","fulfilled"].includes(r.status)) b.delivered++;
-        else if (["processing","shipped"].includes(r.status)) b.confirmed++;
-        else if (["cancelled","canceled"].includes(r.status)) b.cancelled++;
+        if (["delivered", "completed", "fulfilled"].includes(r.status)) b.delivered++;
+        else if (["processing", "shipped"].includes(r.status)) b.confirmed++;
+        else if (["cancelled", "canceled"].includes(r.status)) b.cancelled++;
       });
-      const arr = labels.map(k => ({ ...buckets[k], conversion: buckets[k].assigned ? Math.round((buckets[k].delivered / buckets[k].assigned) * 100) : 0 }));
+      const arr = labels.map((k) => ({
+        ...buckets[k],
+        conversion: buckets[k].assigned
+          ? Math.round((buckets[k].delivered / buckets[k].assigned) * 100)
+          : 0,
+      }));
       setSeries(arr);
     })();
   }, [store, user, seriesRange]);
 
-
   const openOrder = async (o: any) => {
     setSelectedOrder(o);
-    const { data } = await supabase.from("order_call_attempts")
-      .select("*").eq("order_id", o.id).order("created_at", { ascending: true });
+    const { data } = await supabase
+      .from("order_call_attempts")
+      .select("*")
+      .eq("order_id", o.id)
+      .order("created_at", { ascending: true });
     setAttempts(data || []);
   };
 
@@ -144,32 +235,53 @@ function StaffPortal() {
     if (!selectedOrder || !user || !store) return;
     if (attempts.length >= maxCalls) return toast.error(`Max ${maxCalls} calls reached`);
     const { error } = await supabase.from("order_call_attempts").insert({
-      store_id: store.id, order_id: selectedOrder.id, user_id: user.id,
-      attempt_number: attempts.length + 1, outcome: callOutcome, notes: callNotes || null,
+      store_id: store.id,
+      order_id: selectedOrder.id,
+      user_id: user.id,
+      attempt_number: attempts.length + 1,
+      outcome: callOutcome,
+      notes: callNotes || null,
     });
     if (error) return toast.error(error.message);
     // Auto-update order status based on outcome
-    if (callOutcome === "confirmed") await supabase.from("orders").update({ status: "processing" }).eq("id", selectedOrder.id);
-    if (callOutcome === "cancelled") await supabase.from("orders").update({ status: "cancelled" }).eq("id", selectedOrder.id);
+    if (callOutcome === "confirmed")
+      await supabase.from("orders").update({ status: "processing" }).eq("id", selectedOrder.id);
+    if (callOutcome === "cancelled")
+      await supabase.from("orders").update({ status: "cancelled" }).eq("id", selectedOrder.id);
     toast.success("Call logged");
-    setCallNotes(""); setCallOutcome("no_answer"); setCallOpen(false);
-    openOrder(selectedOrder); load();
+    setCallNotes("");
+    setCallOutcome("no_answer");
+    setCallOpen(false);
+    openOrder(selectedOrder);
+    load();
   };
 
   const updateStatus = async (status: string) => {
     if (!selectedOrder) return;
-    const { error } = await supabase.from("orders").update({ status: status as any }).eq("id", selectedOrder.id);
+    const { error } = await supabase
+      .from("orders")
+      .update({ status: status as any })
+      .eq("id", selectedOrder.id);
     if (error) return toast.error(error.message);
-    toast.success("Status updated"); openOrder(selectedOrder); load();
+    toast.success("Status updated");
+    openOrder(selectedOrder);
+    load();
   };
 
   const saveProfile = async () => {
     if (!user) return;
-    const { error } = await supabase.from("profiles").update({
-      full_name: profile.full_name, phone: profile.phone, address: profile.address, bio: profile.bio,
-    }).eq("id", user.id);
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        full_name: profile.full_name,
+        phone: profile.phone,
+        address: profile.address,
+        bio: profile.bio,
+      })
+      .eq("id", user.id);
     if (error) return toast.error(error.message);
-    toast.success("Profile updated"); refresh();
+    toast.success("Profile updated");
+    refresh();
   };
 
   const uploadAvatar = async (file: File) => {
@@ -187,59 +299,122 @@ function StaffPortal() {
 
   const clockIn = async () => {
     if (!store || !user) return;
-    const { error } = await supabase.from("attendance").insert({ store_id: store.id, user_id: user.id, clock_in: new Date().toISOString() });
+    const { error } = await supabase
+      .from("attendance")
+      .insert({ store_id: store.id, user_id: user.id, clock_in: new Date().toISOString() });
     if (error) return toast.error(error.message);
-    toast.success("Clocked in"); load();
+    toast.success("Clocked in");
+    load();
   };
 
   const clockOut = async () => {
     if (!todayAtt) return;
-    const { error } = await supabase.from("attendance").update({ clock_out: new Date().toISOString() }).eq("id", todayAtt.id);
+    const { error } = await supabase
+      .from("attendance")
+      .update({ clock_out: new Date().toISOString() })
+      .eq("id", todayAtt.id);
     if (error) return toast.error(error.message);
-    toast.success("Clocked out"); load();
+    toast.success("Clocked out");
+    load();
   };
 
   const conversion = perf.assigned ? Math.round((perf.delivered / perf.assigned) * 100) : 0;
-  const initials = useMemo(() => (profile.full_name || profile.email || "?").split(" ").map((s: string) => s[0]).join("").slice(0,2).toUpperCase(), [profile]);
+  const initials = useMemo(
+    () =>
+      (profile.full_name || profile.email || "?")
+        .split(" ")
+        .map((s: string) => s[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase(),
+    [profile],
+  );
 
   return (
     <div className="space-y-6 max-w-6xl">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold">My Workspace</h1>
-          <p className="text-sm text-muted-foreground">Your assigned orders, calls, attendance and performance.</p>
+          <p className="text-sm text-muted-foreground">
+            Your assigned orders, calls, attendance and performance.
+          </p>
         </div>
         <div className="flex items-center gap-2">
-          {todayAtt && !todayAtt.clock_out
-            ? <Button onClick={clockOut} variant="outline"><LogOut className="h-4 w-4 mr-1" /> Clock out</Button>
-            : <Button onClick={clockIn}><LogIn className="h-4 w-4 mr-1" /> Clock in</Button>}
+          {todayAtt && !todayAtt.clock_out ? (
+            <Button onClick={clockOut} variant="outline">
+              <LogOut className="h-4 w-4 mr-1" /> Clock out
+            </Button>
+          ) : (
+            <Button onClick={clockIn}>
+              <LogIn className="h-4 w-4 mr-1" /> Clock in
+            </Button>
+          )}
         </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card className="p-4"><div className="text-xs text-muted-foreground">Assigned</div><div className="text-2xl font-bold">{perf.assigned}</div></Card>
-        <Card className="p-4"><div className="text-xs text-muted-foreground">Delivered</div><div className="text-2xl font-bold text-green-600">{perf.delivered}</div></Card>
-        <Card className="p-4"><div className="text-xs text-muted-foreground">Cancelled</div><div className="text-2xl font-bold text-destructive">{perf.cancelled}</div></Card>
-        <Card className="p-4"><div className="text-xs text-muted-foreground flex items-center gap-1"><TrendingUp className="h-3 w-3" />Conversion</div><div className="text-2xl font-bold">{conversion}%</div></Card>
+        <Card className="p-4">
+          <div className="text-xs text-muted-foreground">Assigned</div>
+          <div className="text-2xl font-bold">{perf.assigned}</div>
+        </Card>
+        <Card className="p-4">
+          <div className="text-xs text-muted-foreground">Delivered</div>
+          <div className="text-2xl font-bold text-green-600">{perf.delivered}</div>
+        </Card>
+        <Card className="p-4">
+          <div className="text-xs text-muted-foreground">Cancelled</div>
+          <div className="text-2xl font-bold text-destructive">{perf.cancelled}</div>
+        </Card>
+        <Card className="p-4">
+          <div className="text-xs text-muted-foreground flex items-center gap-1">
+            <TrendingUp className="h-3 w-3" />
+            Conversion
+          </div>
+          <div className="text-2xl font-bold">{conversion}%</div>
+        </Card>
       </div>
 
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList>
-          <TabsTrigger value="orders"><Package className="h-4 w-4 mr-1" />My Orders</TabsTrigger>
-          <TabsTrigger value="performance"><BarChart3 className="h-4 w-4 mr-1" />Performance</TabsTrigger>
-          <TabsTrigger value="attendance"><Clock className="h-4 w-4 mr-1" />Attendance</TabsTrigger>
+          <TabsTrigger value="orders">
+            <Package className="h-4 w-4 mr-1" />
+            My Orders
+          </TabsTrigger>
+          <TabsTrigger value="performance">
+            <BarChart3 className="h-4 w-4 mr-1" />
+            Performance
+          </TabsTrigger>
+          <TabsTrigger value="attendance">
+            <Clock className="h-4 w-4 mr-1" />
+            Attendance
+          </TabsTrigger>
           <TabsTrigger value="profile">Profile</TabsTrigger>
         </TabsList>
 
         <TabsContent value="orders" className="space-y-2 mt-4">
-          {orders.length === 0
-            ? <Card className="p-8 text-center text-muted-foreground">No orders assigned to you yet.</Card>
-            : orders.map(o => (
-              <Card key={o.id} className="p-4 cursor-pointer hover:bg-muted/40" onClick={() => openOrder(o)}>
+          {orders.length === 0 ? (
+            <Card className="p-8 text-center text-muted-foreground">
+              No orders assigned to you yet.
+            </Card>
+          ) : (
+            orders.map((o) => (
+              <Card
+                key={o.id}
+                className="p-4 cursor-pointer hover:bg-muted/40"
+                onClick={() => openOrder(o)}
+              >
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <div>
-                    <div className="font-semibold">{o.customer_name || "—"} <span className="text-xs text-muted-foreground">#{o.order_number || o.id.slice(0,8)}</span></div>
-                    <div className="text-xs text-muted-foreground">{o.customers?.phone || "no phone"} · {o.customers?.full_address || "no address"}</div>
+                    <div className="font-semibold">
+                      {o.customer_name || "—"}{" "}
+                      <span className="text-xs text-muted-foreground">
+                        #{o.order_number || o.id.slice(0, 8)}
+                      </span>
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {o.customers?.phone || "no phone"} ·{" "}
+                      {o.customers?.full_address || "no address"}
+                    </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge variant="outline">{o.status}</Badge>
@@ -247,19 +422,23 @@ function StaffPortal() {
                   </div>
                 </div>
               </Card>
-            ))}
+            ))
+          )}
         </TabsContent>
-
 
         <TabsContent value="performance" className="mt-4 space-y-4">
           <Card className="p-4 space-y-4">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div>
                 <h3 className="font-semibold">Performance trend</h3>
-                <p className="text-xs text-muted-foreground">Orders assigned vs delivered and your conversion rate.</p>
+                <p className="text-xs text-muted-foreground">
+                  Orders assigned vs delivered and your conversion rate.
+                </p>
               </div>
               <Select value={seriesRange} onValueChange={(v: any) => setSeriesRange(v)}>
-                <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="w-40">
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="weekly">Last 8 weeks</SelectItem>
                   <SelectItem value="monthly">Last 6 months</SelectItem>
@@ -288,16 +467,46 @@ function StaffPortal() {
                   <XAxis dataKey="label" fontSize={11} />
                   <YAxis fontSize={11} domain={[0, 100]} unit="%" />
                   <Tooltip />
-                  <Line type="monotone" dataKey="conversion" stroke="hsl(var(--primary))" strokeWidth={2} name="Conversion %" />
+                  <Line
+                    type="monotone"
+                    dataKey="conversion"
+                    stroke="hsl(var(--primary))"
+                    strokeWidth={2}
+                    name="Conversion %"
+                  />
                 </LineChart>
               </ResponsiveContainer>
             </div>
           </Card>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <Card className="p-4"><div className="text-xs text-muted-foreground">Best week</div><div className="text-lg font-semibold">{series.reduce((m, r) => r.delivered > (m?.delivered || 0) ? r : m, null as any)?.label || "—"}</div></Card>
-            <Card className="p-4"><div className="text-xs text-muted-foreground">Total delivered</div><div className="text-lg font-semibold text-green-600">{series.reduce((s, r) => s + r.delivered, 0)}</div></Card>
-            <Card className="p-4"><div className="text-xs text-muted-foreground">Total cancelled</div><div className="text-lg font-semibold text-destructive">{series.reduce((s, r) => s + r.cancelled, 0)}</div></Card>
-            <Card className="p-4"><div className="text-xs text-muted-foreground">Avg conversion</div><div className="text-lg font-semibold">{series.length ? Math.round(series.reduce((s, r) => s + r.conversion, 0) / series.length) : 0}%</div></Card>
+            <Card className="p-4">
+              <div className="text-xs text-muted-foreground">Best week</div>
+              <div className="text-lg font-semibold">
+                {series.reduce((m, r) => (r.delivered > (m?.delivered || 0) ? r : m), null as any)
+                  ?.label || "—"}
+              </div>
+            </Card>
+            <Card className="p-4">
+              <div className="text-xs text-muted-foreground">Total delivered</div>
+              <div className="text-lg font-semibold text-green-600">
+                {series.reduce((s, r) => s + r.delivered, 0)}
+              </div>
+            </Card>
+            <Card className="p-4">
+              <div className="text-xs text-muted-foreground">Total cancelled</div>
+              <div className="text-lg font-semibold text-destructive">
+                {series.reduce((s, r) => s + r.cancelled, 0)}
+              </div>
+            </Card>
+            <Card className="p-4">
+              <div className="text-xs text-muted-foreground">Avg conversion</div>
+              <div className="text-lg font-semibold">
+                {series.length
+                  ? Math.round(series.reduce((s, r) => s + r.conversion, 0) / series.length)
+                  : 0}
+                %
+              </div>
+            </Card>
           </div>
         </TabsContent>
 
@@ -305,16 +514,46 @@ function StaffPortal() {
           <Card className="p-4">
             <h3 className="font-semibold mb-3">Recent attendance</h3>
             <table className="w-full text-sm">
-              <thead className="text-left text-muted-foreground"><tr><th className="py-2">Date</th><th>In</th><th>Out</th><th className="text-right">Hours</th></tr></thead>
+              <thead className="text-left text-muted-foreground">
+                <tr>
+                  <th className="py-2">Date</th>
+                  <th>In</th>
+                  <th>Out</th>
+                  <th className="text-right">Hours</th>
+                </tr>
+              </thead>
               <tbody>
-                {attHistory.length === 0 && <tr><td colSpan={4} className="py-4 text-center text-muted-foreground">No records yet</td></tr>}
-                {attHistory.map(a => {
-                  const hrs = a.clock_out ? ((new Date(a.clock_out).getTime() - new Date(a.clock_in).getTime()) / 3600000).toFixed(2) : "—";
+                {attHistory.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="py-4 text-center text-muted-foreground">
+                      No records yet
+                    </td>
+                  </tr>
+                )}
+                {attHistory.map((a) => {
+                  const hrs = a.clock_out
+                    ? (
+                        (new Date(a.clock_out).getTime() - new Date(a.clock_in).getTime()) /
+                        3600000
+                      ).toFixed(2)
+                    : "—";
                   return (
                     <tr key={a.id} className="border-t">
                       <td className="py-2">{new Date(a.clock_in).toLocaleDateString()}</td>
-                      <td>{new Date(a.clock_in).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</td>
-                      <td>{a.clock_out ? new Date(a.clock_out).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "—"}</td>
+                      <td>
+                        {new Date(a.clock_in).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </td>
+                      <td>
+                        {a.clock_out
+                          ? new Date(a.clock_out).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })
+                          : "—"}
+                      </td>
                       <td className="text-right">{hrs}</td>
                     </tr>
                   );
@@ -333,15 +572,48 @@ function StaffPortal() {
               </Avatar>
               <label className="text-sm flex items-center gap-1 cursor-pointer text-primary hover:underline">
                 <Upload className="h-3.5 w-3.5" /> Change photo
-                <input type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && uploadAvatar(e.target.files[0])} />
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => e.target.files?.[0] && uploadAvatar(e.target.files[0])}
+                />
               </label>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div><Label>Full name</Label><Input value={profile.full_name} onChange={e => setProfile({ ...profile, full_name: e.target.value })} /></div>
-              <div><Label>Phone</Label><Input value={profile.phone} onChange={e => setProfile({ ...profile, phone: e.target.value })} /></div>
-              <div className="md:col-span-2"><Label>Email</Label><Input value={profile.email} disabled /></div>
-              <div className="md:col-span-2"><Label>Address</Label><Input value={profile.address} onChange={e => setProfile({ ...profile, address: e.target.value })} /></div>
-              <div className="md:col-span-2"><Label>Bio</Label><Textarea rows={3} value={profile.bio} onChange={e => setProfile({ ...profile, bio: e.target.value })} /></div>
+              <div>
+                <Label>Full name</Label>
+                <Input
+                  value={profile.full_name}
+                  onChange={(e) => setProfile({ ...profile, full_name: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label>Phone</Label>
+                <Input
+                  value={profile.phone}
+                  onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+                />
+              </div>
+              <div className="md:col-span-2">
+                <Label>Email</Label>
+                <Input value={profile.email} disabled />
+              </div>
+              <div className="md:col-span-2">
+                <Label>Address</Label>
+                <Input
+                  value={profile.address}
+                  onChange={(e) => setProfile({ ...profile, address: e.target.value })}
+                />
+              </div>
+              <div className="md:col-span-2">
+                <Label>Bio</Label>
+                <Textarea
+                  rows={3}
+                  value={profile.bio}
+                  onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
+                />
+              </div>
             </div>
             <Button onClick={saveProfile}>Save profile</Button>
           </Card>
@@ -349,48 +621,89 @@ function StaffPortal() {
       </Tabs>
 
       {/* Order detail dialog */}
-      <Dialog open={!!selectedOrder} onOpenChange={o => !o && setSelectedOrder(null)}>
+      <Dialog open={!!selectedOrder} onOpenChange={(o) => !o && setSelectedOrder(null)}>
         <DialogContent className="max-w-2xl">
-          <DialogHeader><DialogTitle>Order #{selectedOrder?.order_number || selectedOrder?.id?.slice(0,8)}</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>
+              Order #{selectedOrder?.order_number || selectedOrder?.id?.slice(0, 8)}
+            </DialogTitle>
+          </DialogHeader>
           {selectedOrder && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3 text-sm">
-                <div><div className="text-xs text-muted-foreground">Customer</div><div className="font-medium">{selectedOrder.customer_name}</div></div>
-                <div><div className="text-xs text-muted-foreground">Phone</div><div className="font-medium">{selectedOrder.customers?.phone || "—"}</div></div>
-                <div className="col-span-2"><div className="text-xs text-muted-foreground">Address</div><div className="font-medium">{selectedOrder.customers?.full_address || "—"}</div></div>
-                <div><div className="text-xs text-muted-foreground">Amount</div><div className="font-semibold">{formatNaira(selectedOrder.amount)}</div></div>
-                <div><div className="text-xs text-muted-foreground">Status</div><Badge>{selectedOrder.status}</Badge></div>
-                {selectedOrder.notes && <div className="col-span-2"><div className="text-xs text-muted-foreground">Notes</div><div>{selectedOrder.notes}</div></div>}
+                <div>
+                  <div className="text-xs text-muted-foreground">Customer</div>
+                  <div className="font-medium">{selectedOrder.customer_name}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground">Phone</div>
+                  <div className="font-medium">{selectedOrder.customers?.phone || "—"}</div>
+                </div>
+                <div className="col-span-2">
+                  <div className="text-xs text-muted-foreground">Address</div>
+                  <div className="font-medium">{selectedOrder.customers?.full_address || "—"}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground">Amount</div>
+                  <div className="font-semibold">{formatNaira(selectedOrder.amount)}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground">Status</div>
+                  <Badge>{selectedOrder.status}</Badge>
+                </div>
+                {selectedOrder.notes && (
+                  <div className="col-span-2">
+                    <div className="text-xs text-muted-foreground">Notes</div>
+                    <div>{selectedOrder.notes}</div>
+                  </div>
+                )}
               </div>
 
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-semibold text-sm">Call attempts ({attempts.length}/{maxCalls})</h4>
+                  <h4 className="font-semibold text-sm">
+                    Call attempts ({attempts.length}/{maxCalls})
+                  </h4>
                   {attempts.length < maxCalls && (
-                    <Button size="sm" onClick={() => setCallOpen(true)}><Phone className="h-3 w-3 mr-1" />Log call</Button>
+                    <Button size="sm" onClick={() => setCallOpen(true)}>
+                      <Phone className="h-3 w-3 mr-1" />
+                      Log call
+                    </Button>
                   )}
                 </div>
-                {attempts.length === 0
-                  ? <p className="text-sm text-muted-foreground">No calls logged yet.</p>
-                  : (
-                    <ul className="space-y-2 text-sm">
-                      {attempts.map(a => (
-                        <li key={a.id} className="border rounded p-2">
-                          <div className="flex justify-between">
-                            <span className="font-medium">Call #{a.attempt_number} · <Badge variant="outline">{a.outcome}</Badge></span>
-                            <span className="text-xs text-muted-foreground">{new Date(a.created_at).toLocaleString()}</span>
-                          </div>
-                          {a.notes && <p className="text-xs text-muted-foreground mt-1">{a.notes}</p>}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+                {attempts.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No calls logged yet.</p>
+                ) : (
+                  <ul className="space-y-2 text-sm">
+                    {attempts.map((a) => (
+                      <li key={a.id} className="border rounded p-2">
+                        <div className="flex justify-between">
+                          <span className="font-medium">
+                            Call #{a.attempt_number} · <Badge variant="outline">{a.outcome}</Badge>
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(a.created_at).toLocaleString()}
+                          </span>
+                        </div>
+                        {a.notes && <p className="text-xs text-muted-foreground mt-1">{a.notes}</p>}
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
 
               <div className="flex gap-2 pt-2 border-t">
-                <Button size="sm" variant="outline" onClick={() => updateStatus("processing")}><CheckCircle2 className="h-3 w-3 mr-1" />Confirm</Button>
-                <Button size="sm" variant="outline" onClick={() => updateStatus("delivered")}>Delivered</Button>
-                <Button size="sm" variant="destructive" onClick={() => updateStatus("cancelled")}><XCircle className="h-3 w-3 mr-1" />Cancel</Button>
+                <Button size="sm" variant="outline" onClick={() => updateStatus("processing")}>
+                  <CheckCircle2 className="h-3 w-3 mr-1" />
+                  Confirm
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => updateStatus("delivered")}>
+                  Delivered
+                </Button>
+                <Button size="sm" variant="destructive" onClick={() => updateStatus("cancelled")}>
+                  <XCircle className="h-3 w-3 mr-1" />
+                  Cancel
+                </Button>
               </div>
             </div>
           )}
@@ -400,12 +713,16 @@ function StaffPortal() {
       {/* Log call dialog */}
       <Dialog open={callOpen} onOpenChange={setCallOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Log call attempt</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>Log call attempt</DialogTitle>
+          </DialogHeader>
           <div className="space-y-3">
             <div>
               <Label>Outcome</Label>
               <Select value={callOutcome} onValueChange={setCallOutcome}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="no_answer">No answer</SelectItem>
                   <SelectItem value="answered">Answered</SelectItem>
@@ -417,11 +734,18 @@ function StaffPortal() {
             </div>
             <div>
               <Label>Notes</Label>
-              <Textarea rows={3} value={callNotes} onChange={e => setCallNotes(e.target.value)} placeholder="What did the customer say?" />
+              <Textarea
+                rows={3}
+                value={callNotes}
+                onChange={(e) => setCallNotes(e.target.value)}
+                placeholder="What did the customer say?"
+              />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCallOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setCallOpen(false)}>
+              Cancel
+            </Button>
             <Button onClick={logCall}>Save attempt</Button>
           </DialogFooter>
         </DialogContent>

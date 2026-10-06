@@ -3,7 +3,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
 export type Plan = "starter" | "pro" | "business";
-export type SubStatus = "trialing" | "active" | "grace_period" | "past_due" | "suspended" | "cancelled";
+export type SubStatus =
+  | "trialing"
+  | "active"
+  | "grace_period"
+  | "past_due"
+  | "suspended"
+  | "cancelled";
 
 export interface PlanState {
   plan: Plan;
@@ -28,8 +34,13 @@ const FEATURES_BY_PLAN: Record<Plan, FeatureKey[]> = {
   starter: ["ai_suggestions"],
   pro: ["ai_suggestions", "exports", "group_chat", "advanced_analytics"],
   business: [
-    "ai_suggestions", "exports", "group_chat", "advanced_analytics",
-    "automations", "integrations", "unlimited_staff",
+    "ai_suggestions",
+    "exports",
+    "group_chat",
+    "advanced_analytics",
+    "automations",
+    "integrations",
+    "unlimited_staff",
   ],
 };
 
@@ -45,17 +56,19 @@ export function usePlanGate(): PlanState {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!store?.id) { setLoading(false); return; }
+    if (!store?.id) {
+      setLoading(false);
+      return;
+    }
     let cancelled = false;
     (async () => {
       const [{ data: sub }, { data: flags }] = await Promise.all([
-        supabase.from("subscriptions")
+        supabase
+          .from("subscriptions")
           .select("plan, status, discount_type")
           .eq("store_id", store.id)
           .maybeSingle(),
-        supabase.from("feature_flags")
-          .select("flag_key, enabled")
-          .eq("store_id", store.id),
+        supabase.from("feature_flags").select("flag_key, enabled").eq("store_id", store.id),
       ]);
       if (cancelled) return;
       if (sub) {
@@ -67,15 +80,19 @@ export function usePlanGate(): PlanState {
         }
       }
       if (flags) {
-        setOverrides((o) => new Set([...o, ...flags.filter((f) => f.enabled).map((f) => f.flag_key)]));
+        setOverrides(
+          (o) => new Set([...o, ...flags.filter((f) => f.enabled).map((f) => f.flag_key)]),
+        );
       }
       setLoading(false);
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [store?.id]);
 
-  const hasAccess = overrides.has("__waived__")
-    || ["trialing", "active", "grace_period"].includes(status);
+  const hasAccess =
+    overrides.has("__waived__") || ["trialing", "active", "grace_period"].includes(status);
 
   const can = (feature: FeatureKey) => {
     if (overrides.has("__waived__")) return true;
