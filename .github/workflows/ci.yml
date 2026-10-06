@@ -17,8 +17,7 @@ jobs:
           node-version: 22
           cache: npm
 
-      - run: npm ci
-
+      # package-lock.json is regenerated from package.json on the hardening branch.\n      - run: npm ci\n
       - run: npm run lint
 
       - run: npm run build
