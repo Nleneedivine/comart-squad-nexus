@@ -14,7 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { ArrowLeft, ArrowRight, CheckCircle2, Copy, Loader2, MessageSquare, Sparkles, Wand2 } from "lucide-react";
-import { saveWhatsAppConnection, testWhatsAppConnection, whatsappAiAssist } from "@/lib/whatsapp.functions";
+import { saveWhatsAppConnection, getWhatsAppConnection, testWhatsAppConnection, whatsappAiAssist } from "@/lib/whatsapp.functions";
 
 export const Route = createFileRoute("/integrations/whatsapp")({
   head: () => ({ meta: [{ title: "WhatsApp Integration — Comart+" }, { name: "description", content: "Connect and customize WhatsApp Business messaging for your store." }] }),
@@ -54,12 +54,13 @@ function WhatsAppSetup() {
   const [aiBusy, setAiBusy] = useState(false);
 
   const saveConn = useServerFn(saveWhatsAppConnection);
+  const getConn = useServerFn(getWhatsAppConnection);
   const testConn = useServerFn(testWhatsAppConnection);
   const aiAssist = useServerFn(whatsappAiAssist);
 
   const load = async () => {
     if (!store) return;
-    const { data: c } = await (supabase as any).from("whatsapp_integrations").select("*").eq("store_id", store.id).maybeSingle();
+    const c = await getConn({ data: { store_id: store.id } });
     setConn(c);
     if (c) {
       setCreds({ phone_number_id: c.phone_number_id ?? "", waba_id: c.waba_id ?? "", access_token: "" });
@@ -153,7 +154,6 @@ function WhatsAppSetup() {
     setBusy(true);
     try {
       for (const uc of selectedUses) if (templates[uc]) await saveTemplate(uc);
-      await (supabase as any).from("whatsapp_integrations").update({ status: "connected" }).eq("store_id", store.id);
       toast.success("WhatsApp integration activated");
       await load();
     } finally { setBusy(false); }
