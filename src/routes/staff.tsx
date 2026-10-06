@@ -68,27 +68,17 @@ function Staff() {
       })));
     }
 
-    // Auto-delete expired invitations (still pending past expiry)
-    await supabase
-      .from("staff_invites")
-      .delete()
-      .eq("store_id", store.id)
-      .eq("status", "pending")
-      .lt("expires_at", new Date().toISOString());
-
-    // Only fetch pending invites (accepted move to team members; expired are deleted above)
-    const { data: inv } = await supabase
-      .from("staff_invites")
-      .select("*")
-      .eq("store_id", store.id)
-      .eq("status", "pending")
-      .order("created_at", { ascending: false });
+    const { data: inv } = await supabase.rpc("get_store_invites", { _store_id: store.id });
     setInvites(inv || []);
   };
   useEffect(() => { load(); }, [store]);
 
   const toggleSuspend = async (m: any, suspend: boolean) => {
-    const { error } = await supabase.from("user_roles").update({ is_suspended: suspend }).in("id", m.role_ids);
+    const { error } = await supabase.rpc("suspend_staff_member", {
+      _store_id: store?.id,
+      _user_id: m.user_id,
+      _suspended: suspend,
+    });
     if (error) return toast.error(error.message);
     toast.success(suspend ? "Member suspended" : "Member reactivated");
     load();
@@ -115,9 +105,12 @@ function Staff() {
     if (!store || !user) return;
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { toast.error("Enter a valid email"); return; }
     const expiresAt = new Date(Date.now() + Number(expiryDays) * 86400000).toISOString();
-    const { data, error } = await supabase.from("staff_invites").insert({
-      store_id: store.id, email: email.trim().toLowerCase(), role: role as any, invited_by: user.id, expires_at: expiresAt,
-    }).select("token,email,role").single();
+    const { data, error } = await supabase.rpc("invite_staff", {
+      _store_id: store.id,
+      _email: email.trim().toLowerCase(),
+      _role: role,
+      _expires_at: expiresAt,
+    }).single();
     if (error) return toast.error(error.message);
     const link = inviteUrl(data.token);
     setCreated({ link, email: data.email });
@@ -129,7 +122,10 @@ function Staff() {
 
   const revoke = async (id: string) => {
     if (!confirm("Revoke this invitation?")) return;
-    const { error } = await supabase.from("staff_invites").update({ status: "revoked" }).eq("id", id);
+    const { error } = await supabase.rpc("revoke_staff_invite", {
+      _store_id: store?.id,
+      _invite_id: id,
+    });
     if (error) return toast.error(error.message);
     toast.success("Invitation revoked"); load();
   };
