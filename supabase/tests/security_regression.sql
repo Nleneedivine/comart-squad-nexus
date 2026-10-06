@@ -1,6 +1,6 @@
 BEGIN;
 
-SELECT plan(22);
+SELECT plan(27);
 
 -- These are catalog-level regression checks and do not require production data.
 SELECT ok(
@@ -136,6 +136,45 @@ SELECT ok(
 SELECT ok(
   EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='form_submissions' AND policyname='public submit active form'),
   'public form submissions must reference an active form in the same store'
+);
+
+
+SELECT ok(
+  EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='whatsapp_use_cases' AND policyname='wa use cases manage by permission'),
+  'WhatsApp use-case configuration requires integrations.manage'
+);
+
+SELECT ok(
+  EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='whatsapp_templates' AND policyname='wa templates insert by permission'),
+  'WhatsApp template creation requires integrations.manage'
+);
+
+SELECT ok(
+  NOT has_table_privilege('anon', 'public.whatsapp_message_logs', 'SELECT'),
+  'anonymous users cannot read WhatsApp message logs'
+);
+
+SELECT ok(
+  NOT has_table_privilege('authenticated', 'public.whatsapp_message_logs', 'INSERT'),
+  'authenticated users cannot directly insert WhatsApp message logs'
+);
+
+SELECT ok(
+  NOT has_function_privilege(
+    'authenticated',
+    'public.complete_wallet_funding(uuid,text,numeric,uuid)',
+    'EXECUTE'
+  ),
+  'authenticated users cannot execute internal wallet funding completion'
+);
+
+SELECT ok(
+  has_function_privilege(
+    'service_role',
+    'public.complete_wallet_funding(uuid,text,numeric,uuid)',
+    'EXECUTE'
+  ),
+  'service role can execute internal wallet funding completion'
 );
 
 SELECT * FROM finish();
