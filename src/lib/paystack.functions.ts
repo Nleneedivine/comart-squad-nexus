@@ -163,7 +163,7 @@ export const updateWalletBankDetails = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({
     bank_name: z.string().trim().min(2).max(120),
-    bank_account_number: z.string().regex(/^\\d{10,20}$/),
+    bank_account_number: z.string().regex(/^\d{10,20}$/),
     bank_account_name: z.string().trim().min(2).max(160),
   }).parse(d))
   .handler(async ({ data, context }) => {
