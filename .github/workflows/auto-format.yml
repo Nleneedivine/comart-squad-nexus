@@ -1,0 +1,41 @@
+name: Format hardening branch
+
+on:
+  push:
+    branches:
+      - hardening/phase-0-to-3
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Format TypeScript
+        run: npx prettier --write "**/*.{ts,tsx}"
+
+      - name: Commit formatting changes
+        run: |
+          git restore --staged --worktree package-lock.json 2>/dev/null || true
+          if git diff --quiet; then
+            echo "No formatting changes."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- '*.ts' '*.tsx'
+          git commit -m "chore: format TypeScript sources"
+          git push
