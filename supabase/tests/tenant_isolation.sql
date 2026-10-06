@@ -139,8 +139,8 @@ SELECT is_empty(
 
 SET LOCAL ROLE postgres;
 SELECT results_eq(
-  $SELECT name FROM public.customers
-    WHERE store_id = (SELECT store_b FROM security_ctx)$,
+  $$SELECT name FROM public.customers
+    WHERE store_id = (SELECT store_b FROM security_ctx)$$,
   ARRAY['Store B Customer'::text],
   'store B customer remains unchanged after denied update'
 );
@@ -188,8 +188,8 @@ SELECT is_empty(
 
 SET LOCAL ROLE postgres;
 SELECT results_eq(
-  $SELECT amount FROM public.orders
-    WHERE store_id = (SELECT store_b FROM security_ctx)$,
+  $$SELECT amount FROM public.orders
+    WHERE store_id = (SELECT store_b FROM security_ctx)$$,
   ARRAY[2000::numeric],
   'store B order remains unchanged after denied update'
 );
@@ -252,8 +252,8 @@ SELECT is_empty(
 
 SET LOCAL ROLE postgres;
 SELECT results_eq(
-  $SELECT name FROM public.customers
-    WHERE store_id = (SELECT store_a FROM security_ctx)$,
+  $$SELECT name FROM public.customers
+    WHERE store_id = (SELECT store_a FROM security_ctx)$$,
   ARRAY['Store A Customer'::text],
   'store A customer remains unchanged after user B denied update'
 );
