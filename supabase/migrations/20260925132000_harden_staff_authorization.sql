@@ -193,6 +193,8 @@ $$;
 GRANT EXECUTE ON FUNCTION public.get_store_members_detail(UUID) TO authenticated;
 
 -- Invitation acceptance is atomic and bound to the authenticated user's email.
+DROP FUNCTION IF EXISTS public.accept_staff_invite(TEXT);
+
 CREATE OR REPLACE FUNCTION public.accept_staff_invite(_token TEXT)
 RETURNS BOOLEAN
 LANGUAGE plpgsql
