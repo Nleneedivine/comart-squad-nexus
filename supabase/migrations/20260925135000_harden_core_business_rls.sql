@@ -6,6 +6,8 @@ INSERT INTO public.permissions(key, description) VALUES
  ('customers.manage','Create and manage customers'),
  ('agents.view','View sales agents'),
  ('agents.manage','Manage sales agents'),
+ ('sales_forms.view','View sales forms'),
+ ('sales_forms.manage','Manage sales forms'),
  ('logistics.manage','Manage waybills and logistics stock')
 ON CONFLICT (key) DO NOTHING;
 
@@ -34,7 +36,7 @@ INSERT INTO public.role_permissions(role, permission_key)
 SELECT r.role, p.key
 FROM (VALUES ('marketer'::public.app_role)) r(role)
 CROSS JOIN public.permissions p
-WHERE p.key IN ('agents.view','agents.manage')
+WHERE p.key IN ('agents.view','agents.manage','sales_forms.view','sales_forms.manage')
 ON CONFLICT DO NOTHING;
 
 INSERT INTO public.role_permissions(role, permission_key)
@@ -250,10 +252,10 @@ DROP POLICY IF EXISTS "members view sales_forms" ON public.sales_forms;
 DROP POLICY IF EXISTS "public view active sales_forms" ON public.sales_forms;
 DROP POLICY IF EXISTS "members manage sales_forms" ON public.sales_forms;
 CREATE POLICY "sales forms view by permission" ON public.sales_forms
-  FOR SELECT TO authenticated USING (public.has_permission(auth.uid(), store_id, 'agents.view'));
+  FOR SELECT TO authenticated USING (public.has_permission(auth.uid(), store_id, 'sales_forms.view'));
 CREATE POLICY "sales forms manage by permission" ON public.sales_forms
-  FOR ALL TO authenticated USING (public.has_permission(auth.uid(), store_id, 'agents.manage'))
-  WITH CHECK (public.has_permission(auth.uid(), store_id, 'agents.manage'));
+  FOR ALL TO authenticated USING (public.has_permission(auth.uid(), store_id, 'sales_forms.manage'))
+  WITH CHECK (public.has_permission(auth.uid(), store_id, 'sales_forms.manage'));
 CREATE POLICY "public active sales forms" ON public.sales_forms
   FOR SELECT TO anon USING (status = 'active');
 
@@ -262,7 +264,7 @@ DROP POLICY IF EXISTS "members view submissions" ON public.form_submissions;
 DROP POLICY IF EXISTS "public submit form" ON public.form_submissions;
 CREATE POLICY "submissions view by permission" ON public.form_submissions
   FOR SELECT TO authenticated USING (
-    public.has_permission(auth.uid(), store_id, 'agents.view')
+    public.has_permission(auth.uid(), store_id, 'sales_forms.view')
     OR public.has_permission(auth.uid(), store_id, 'customers.view')
   );
 CREATE POLICY "public submit active form" ON public.form_submissions
