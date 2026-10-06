@@ -4,8 +4,10 @@ import { z } from "zod";
 
 const GRAPH = "https://graph.facebook.com/v21.0";
 
-async function assertAdmin(ctx: any, storeId: string) {
-  const { data: ok } = await ctx.supabase.rpc("is_store_admin", { _user_id: ctx.userId, _store_id: storeId });
+async function assertIntegrationManager(ctx: any, storeId: string) {
+  const { data: ok } = await ctx.supabase.rpc("has_permission", {
+    _user_id: ctx.userId, _store_id: storeId, _permission: "integrations.manage",
+  });
   if (!ok) throw new Error("Forbidden");
 }
 
@@ -19,7 +21,7 @@ export const saveWhatsAppConnection = createServerFn({ method: "POST" })
     access_token: z.string().min(20),
   }).parse(d))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context, data.store_id);
+    await assertIntegrationManager(context, data.store_id);
 
     // Test call to Meta
     let display_phone_number: string | null = null;
@@ -58,12 +60,26 @@ export const saveWhatsAppConnection = createServerFn({ method: "POST" })
     return { status, display_phone_number, verified_name, last_error, verify_token };
   });
 
+/** Return only non-secret connection metadata to an authorized integration manager. */
+export const getWhatsAppConnection = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ store_id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertIntegrationManager(context, data.store_id);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row, error } = await supabaseAdmin.from("whatsapp_integrations" as any)
+      .select("id,store_id,phone_number_id,waba_id,display_phone_number,verified_name,webhook_verify_token,status,last_error,last_tested_at,created_at,updated_at")
+      .eq("store_id", data.store_id).maybeSingle();
+    if (error) throw new Error(error.message);
+    return row;
+  });
+
 /** Test the currently-stored connection */
 export const testWhatsAppConnection = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ store_id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context, data.store_id);
+    await assertIntegrationManager(context, data.store_id);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row } = await supabaseAdmin.from("whatsapp_integrations" as any)
       .select("*").eq("store_id", data.store_id).maybeSingle();
@@ -96,7 +112,7 @@ export const sendWhatsAppMessage = createServerFn({ method: "POST" })
     template_id: z.string().uuid().optional(),
   }).parse(d))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context, data.store_id);
+    await assertIntegrationManager(context, data.store_id);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: cfg } = await supabaseAdmin.from("whatsapp_integrations" as any)
       .select("*").eq("store_id", data.store_id).maybeSingle();
@@ -169,7 +185,7 @@ export const softDeleteAgent = createServerFn({ method: "POST" })
     reassign_to: z.string().uuid().optional(),
   }).parse(d))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context, data.store_id);
+    await assertIntegrationManager(context, data.store_id);
     const { supabase } = context;
     // Count active stock allocations
     const { data: stocks } = await supabase.from("agent_stocks")
