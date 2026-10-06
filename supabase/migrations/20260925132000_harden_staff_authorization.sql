@@ -148,6 +148,8 @@ $$;
 
 GRANT EXECUTE ON FUNCTION public.suspend_staff_member(UUID,UUID,BOOLEAN) TO authenticated;
 
+DROP FUNCTION IF EXISTS public.get_store_members_detail(UUID);
+
 CREATE OR REPLACE FUNCTION public.get_store_members_detail(_store_id UUID)
 RETURNS TABLE(
   user_id UUID,
