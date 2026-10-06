@@ -159,6 +159,35 @@ export const verifyFunding = createServerFn({ method: "POST" })
     return { ok: false, message: r.data.gateway_response || "Failed" };
   });
 
+export const updateWalletBankDetails = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({
+    bank_name: z.string().trim().min(2).max(120),
+    bank_account_number: z.string().regex(/^\\d{10,20}$/),
+    bank_account_name: z.string().trim().min(2).max(160),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { userId, supabase } = context;
+    const { data: pref } = await supabase.from("user_store_preferences")
+      .select("active_store_id").eq("user_id", userId).maybeSingle();
+    const storeId = pref?.active_store_id;
+    if (!storeId) throw new Error("No active store");
+
+    const { data: allowed } = await supabase.rpc("has_permission", {
+      _user_id: userId, _store_id: storeId, _permission: "wallet.manage",
+    });
+    if (!allowed) throw new Error("Not authorized");
+
+    const { error } = await supabase.rpc("update_wallet_bank_details", {
+      _store_id: storeId,
+      _bank_name: data.bank_name,
+      _bank_account_number: data.bank_account_number,
+      _bank_account_name: data.bank_account_name,
+    });
+    if (error) throw error;
+    return { ok: true };
+  });
+
 export const setWalletPin = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ pin: z.string().regex(/^\d{4,6}$/) }).parse(d))
