@@ -17,10 +17,7 @@ jobs:
           node-version: 22
           cache: npm
 
-      # package.json and package-lock.json are currently out of sync in the
-      # upstream Lovable export. Use npm install for validation until the lock
-      # file is regenerated from the canonical package.json.
-      - run: npm install --no-audit --no-fund
+      - run: npm ci
 
       - run: npm run lint
 
@@ -41,6 +38,22 @@ jobs:
         with:
           version: latest
 
-      - run: supabase start
+      - name: Start Supabase with retry
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3 4 5; do
+            echo "Supabase start attempt $attempt/5"
+            if supabase start; then
+              exit 0
+            fi
+            if [ "$attempt" -eq 5 ]; then
+              echo "Supabase failed to start after 5 attempts."
+              exit 1
+            fi
+            sleep_seconds=$((attempt * 30))
+            echo "Retrying in $sleep_seconds seconds..."
+            sleep "$sleep_seconds"
+          done
 
       - run: supabase test db
