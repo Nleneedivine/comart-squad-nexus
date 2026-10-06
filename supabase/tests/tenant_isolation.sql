@@ -137,12 +137,14 @@ SELECT is_empty(
   'user A cannot update store B customers'
 );
 
+SET LOCAL ROLE postgres;
 SELECT results_eq(
-  $$SELECT name FROM public.customers
-    WHERE store_id = (SELECT store_b FROM security_ctx)$$,
+  $SELECT name FROM public.customers
+    WHERE store_id = (SELECT store_b FROM security_ctx)$,
   ARRAY['Store B Customer'::text],
   'store B customer remains unchanged after denied update'
 );
+SET LOCAL ROLE authenticated;
 
 SELECT throws_ok(
   $$INSERT INTO public.orders (store_id, customer_name, amount, units, created_by)
@@ -184,12 +186,14 @@ SELECT is_empty(
   'user A cannot update store B orders'
 );
 
+SET LOCAL ROLE postgres;
 SELECT results_eq(
-  $$SELECT amount FROM public.orders
-    WHERE store_id = (SELECT store_b FROM security_ctx)$$,
+  $SELECT amount FROM public.orders
+    WHERE store_id = (SELECT store_b FROM security_ctx)$,
   ARRAY[2000::numeric],
   'store B order remains unchanged after denied update'
 );
+SET LOCAL ROLE authenticated;
 
 SELECT results_eq(
   $$SELECT public.has_permission(
@@ -246,18 +250,19 @@ SELECT is_empty(
   'user B cannot update store A customers'
 );
 
+SET LOCAL ROLE postgres;
 SELECT results_eq(
-  $$SELECT name FROM public.customers
-    WHERE store_id = (SELECT store_a FROM security_ctx)$$,
+  $SELECT name FROM public.customers
+    WHERE store_id = (SELECT store_a FROM security_ctx)$,
   ARRAY['Store A Customer'::text],
   'store A customer remains unchanged after user B denied update'
 );
+SET LOCAL ROLE authenticated;
 
-SELECT throws_ok(
-  $$DELETE FROM public.orders
-    WHERE store_id = (SELECT store_a FROM security_ctx)$$,
-  '42501',
-  NULL,
+SELECT is_empty(
+  $DELETE FROM public.orders
+    WHERE store_id = (SELECT store_a FROM security_ctx)
+    RETURNING id$,
   'user B cannot delete store A orders'
 );
 
