@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  app:
+    name: Lint and build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run lint
+
+      - run: npm run build
+        env:
+          VITE_SUPABASE_PROJECT_ID: ci-project
+          VITE_SUPABASE_URL: https://ci-project.supabase.co
+          VITE_SUPABASE_PUBLISHABLE_KEY: ci-publishable-key
+          VITE_SENTRY_DSN: ""
+
+  database:
+    name: Supabase migrations and pgTAP
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - run: supabase start
+
+      - run: supabase test db
