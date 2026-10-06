@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      user_store_preferences: {
+        Row: {
+          user_id: string
+          active_store_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          user_id: string
+          active_store_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          user_id?: string
+          active_store_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       activity_log: {
         Row: {
           activity: string
@@ -2761,6 +2779,7 @@ export type Database = {
           status: Database["public"]["Enums"]["wallet_tx_status"]
           store_id: string
           wallet_id: string
+          idempotency_key: string | null
         }
         Insert: {
           amount: number
@@ -2774,6 +2793,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["wallet_tx_status"]
           store_id: string
           wallet_id: string
+          idempotency_key?: string | null
         }
         Update: {
           amount?: number
@@ -3162,6 +3182,76 @@ export type Database = {
     Views: {
       [_ in never]: never
     }
+      has_permission: {
+        Args: { _user_id: string; _store_id: string; _permission: string }
+        Returns: boolean
+      }
+      set_wallet_pin: {
+        Args: { _store_id: string; _pin: string }
+        Returns: boolean
+      }
+      request_wallet_withdrawal: {
+        Args: { _store_id: string; _amount: number; _pin: string; _idempotency_key: string }
+        Returns: { ok: boolean; reference: string }[]
+      }
+      complete_wallet_funding: {
+        Args: { _store_id: string; _reference: string; _amount: number; _actor_user_id: string }
+        Returns: boolean
+      }
+      update_wallet_bank_details: {
+        Args: { _store_id: string; _bank_name: string; _bank_account_number: string; _bank_account_name: string }
+        Returns: boolean
+      }
+      get_invite_by_token: {
+        Args: { _token: string }
+        Returns: {
+          email: string
+          role: string
+          store_id: string
+          store_name: string
+          status: string
+          expires_at: string
+          accepted_at: string | null
+        }[]
+      }
+      get_store_invites: {
+        Args: { _store_id: string }
+        Returns: {
+          id: string
+          email: string
+          role: string
+          token: string
+          status: string
+          expires_at: string
+          created_at: string
+        }[]
+      }
+      invite_staff: {
+        Args: { _store_id: string; _email: string; _role: Database["public"]["Enums"]["app_role"]; _expires_at: string }
+        Returns: {
+          id: string
+          token: string
+          email: string
+          role: Database["public"]["Enums"]["app_role"]
+          expires_at: string
+        }[]
+      }
+      revoke_staff_invite: {
+        Args: { _store_id: string; _invite_id: string }
+        Returns: boolean
+      }
+      suspend_staff_member: {
+        Args: { _store_id: string; _user_id: string; _suspended: boolean }
+        Returns: boolean
+      }
+      set_staff_role: {
+        Args: { _store_id: string; _user_id: string; _role: Database["public"]["Enums"]["app_role"] }
+        Returns: boolean
+      }
+      remove_staff_role: {
+        Args: { _store_id: string; _user_id: string; _role: Database["public"]["Enums"]["app_role"] }
+        Returns: boolean
+      }
     Functions: {
       accept_staff_invite: { Args: { _token: string }; Returns: Json }
       advance_subscription_lifecycle: { Args: never; Returns: undefined }
