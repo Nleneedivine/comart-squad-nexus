@@ -1,6 +1,6 @@
 BEGIN;
 
-SELECT plan(27);
+SELECT plan(28);
 
 -- These are catalog-level regression checks and do not require production data.
 SELECT ok(
