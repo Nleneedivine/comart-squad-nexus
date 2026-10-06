@@ -176,6 +176,13 @@ export const whatsappAiAssist = createServerFn({ method: "POST" })
     return { text: (j.choices?.[0]?.message?.content || "").trim() };
   });
 
+async function assertInventoryManager(ctx: any, storeId: string) {
+  const { data: ok } = await ctx.supabase.rpc("has_permission", {
+    _user_id: ctx.userId, _store_id: storeId, _permission: "inventory.manage",
+  });
+  if (!ok) throw new Error("Forbidden");
+}
+
 /** Soft-delete an agent with reassignment check */
 export const softDeleteAgent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -185,7 +192,7 @@ export const softDeleteAgent = createServerFn({ method: "POST" })
     reassign_to: z.string().uuid().optional(),
   }).parse(d))
   .handler(async ({ data, context }) => {
-    await assertIntegrationManager(context, data.store_id);
+    await assertInventoryManager(context, data.store_id);
     const { supabase } = context;
     // Count active stock allocations
     const { data: stocks } = await supabase.from("agent_stocks")
