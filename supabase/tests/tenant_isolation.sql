@@ -260,9 +260,9 @@ SELECT results_eq(
 SET LOCAL ROLE authenticated;
 
 SELECT is_empty(
-  $DELETE FROM public.orders
+  $$DELETE FROM public.orders
     WHERE store_id = (SELECT store_a FROM security_ctx)
-    RETURNING id$,
+    RETURNING id$$,
   'user B cannot delete store A orders'
 );
 
