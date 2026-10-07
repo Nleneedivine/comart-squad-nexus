@@ -38,15 +38,12 @@ function PublicForm() {
 
   useEffect(() => {
     (async () => {
-      const { data: f } = await supabase.from("sales_forms").select("*").eq("slug", slug).eq("status", "active").maybeSingle();
-      if (!f) { setLoading(false); return; }
-      setForm(f);
-      const [{ data: p }, { data: s }] = await Promise.all([
-        supabase.from("products").select("id, name, selling_price, stock_qty").in("id", f.product_ids || []),
-        supabase.from("stores").select("name, logo_url, contact_phone").eq("id", f.store_id).maybeSingle(),
-      ]);
-      setProducts(p || []);
-      setStore(s);
+      const { data: raw } = await supabase.rpc("get_public_sales_form", { _key: slug });
+      const r = raw as any;
+      if (!r?.form) { setLoading(false); return; }
+      setForm(r.form);
+      setProducts(r.products || []);
+      setStore(r.store);
       setLoading(false);
     })();
   }, [slug]);
@@ -62,41 +59,13 @@ function PublicForm() {
     }));
     if (items.length === 0) return toast.error("Please select at least one product");
     setSubmitting(true);
-    const fullAddr = [info.customer_address, info.city, info.state].filter(Boolean).join(", ");
-    const { error } = await supabase.from("form_submissions").insert({
-      store_id: form.store_id, form_id: form.id,
-      customer_name: info.customer_name, customer_phone: info.customer_phone,
-      customer_email: info.customer_email || null, customer_address: fullAddr,
-      notes: info.notes || null, items, total,
+    const { data: orderNumber, error } = await supabase.rpc("submit_sales_form", {
+      _form_id: form.id,
+      _info: info as any,
+      _items: items.map(i => ({ product_id: i.product_id, quantity: i.quantity })) as any,
     });
     if (error) { setSubmitting(false); return toast.error(error.message); }
-
-    const orderNumber = "ORD-" + Date.now().toString(36).toUpperCase();
-    try {
-      const { data: existingCust } = await supabase.from("customers")
-        .select("id").eq("store_id", form.store_id).eq("phone", info.customer_phone).maybeSingle();
-      let custId = existingCust?.id;
-      if (!custId) {
-        const { data: newCust } = await supabase.from("customers").insert({
-          store_id: form.store_id, name: info.customer_name, phone: info.customer_phone,
-          email: info.customer_email || null, address: fullAddr || null, state: info.state || null, city: info.city || null,
-        }).select("id").maybeSingle();
-        custId = newCust?.id;
-      }
-      const totalUnits = items.reduce((s, i) => s + i.quantity, 0);
-      const { data: ord } = await supabase.from("orders").insert({
-        store_id: form.store_id, customer_id: custId || null, customer_name: info.customer_name,
-        amount: total, units: totalUnits, status: "pending", order_number: orderNumber,
-        notes: `From form: ${form.title}`,
-      }).select("id").maybeSingle();
-      if (ord?.id) {
-        await supabase.from("order_items").insert(items.map(i => ({
-          order_id: ord.id, store_id: form.store_id, product_id: i.product_id,
-          product_name: i.name, quantity: i.quantity, unit_price: i.unit_price, subtotal: i.subtotal,
-        })));
-      }
-    } catch { /* silent */ }
-    setOrderRef(orderNumber);
+    setOrderRef(String(orderNumber));
     setDone(true);
     setSubmitting(false);
   };

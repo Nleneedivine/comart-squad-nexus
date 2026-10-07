@@ -97,7 +97,7 @@ function SettingsPage() {
   const saveWeights = async () => {
     if (!store) return;
     for (const w of weights) {
-      const { error } = await supabase.from("user_roles").update({ assignment_weight: Math.max(0, w.weight | 0) }).eq("id", w.role_id);
+      const { error } = await supabase.rpc("staff_set_assignment_weight", { _role_id: w.role_id, _weight: Math.max(0, w.weight | 0) });
       if (error) { toast.error(error.message); return; }
     }
     toast.success("Weights saved");

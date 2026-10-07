@@ -1709,6 +1709,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          active_store_id: string | null
           address: string | null
           avatar_locked_until: string | null
           avatar_url: string | null
@@ -1725,6 +1726,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          active_store_id?: string | null
           address?: string | null
           avatar_locked_until?: string | null
           avatar_url?: string | null
@@ -1741,6 +1743,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          active_store_id?: string | null
           address?: string | null
           avatar_locked_until?: string | null
           avatar_url?: string | null
@@ -1756,7 +1759,15 @@ export type Database = {
           theme_preference?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_active_store_id_fkey"
+            columns: ["active_store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       purchase_items: {
         Row: {
@@ -2755,6 +2766,7 @@ export type Database = {
           created_by: string | null
           description: string | null
           id: string
+          idempotency_key: string | null
           kind: Database["public"]["Enums"]["wallet_tx_kind"]
           paystack_reference: string | null
           reference: string | null
@@ -2768,6 +2780,7 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           id?: string
+          idempotency_key?: string | null
           kind: Database["public"]["Enums"]["wallet_tx_kind"]
           paystack_reference?: string | null
           reference?: string | null
@@ -2781,6 +2794,7 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           id?: string
+          idempotency_key?: string | null
           kind?: Database["public"]["Enums"]["wallet_tx_kind"]
           paystack_reference?: string | null
           reference?: string | null
@@ -2797,8 +2811,11 @@ export type Database = {
           bank_account_number: string | null
           bank_name: string | null
           created_at: string
+          has_pin: boolean | null
           id: string
+          pin_failed_attempts: number
           pin_hash: string | null
+          pin_locked_until: string | null
           store_id: string
           updated_at: string
         }
@@ -2808,8 +2825,11 @@ export type Database = {
           bank_account_number?: string | null
           bank_name?: string | null
           created_at?: string
+          has_pin?: boolean | null
           id?: string
+          pin_failed_attempts?: number
           pin_hash?: string | null
+          pin_locked_until?: string | null
           store_id: string
           updated_at?: string
         }
@@ -2819,8 +2839,11 @@ export type Database = {
           bank_account_number?: string | null
           bank_name?: string | null
           created_at?: string
+          has_pin?: boolean | null
           id?: string
+          pin_failed_attempts?: number
           pin_hash?: string | null
+          pin_locked_until?: string | null
           store_id?: string
           updated_at?: string
         }
@@ -3163,6 +3186,46 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      _assert_can_manage_member: {
+        Args: { _store_id: string; _user_id: string }
+        Returns: undefined
+      }
+      _caller_rank: { Args: { _store_id: string }; Returns: number }
+      _role_rank: {
+        Args: { _role: Database["public"]["Enums"]["app_role"] }
+        Returns: number
+      }
+      _target_rank: {
+        Args: { _store_id: string; _user_id: string }
+        Returns: number
+      }
+      _wallet_check_pin: {
+        Args: { _pin: string; _wallet_id: string }
+        Returns: string
+      }
+      _wallet_for_update: {
+        Args: { _store_id: string }
+        Returns: {
+          balance: number
+          bank_account_name: string | null
+          bank_account_number: string | null
+          bank_name: string | null
+          created_at: string
+          has_pin: boolean | null
+          id: string
+          pin_failed_attempts: number
+          pin_hash: string | null
+          pin_locked_until: string | null
+          store_id: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "wallets"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       accept_staff_invite: { Args: { _token: string }; Returns: Json }
       advance_subscription_lifecycle: { Args: never; Returns: undefined }
       auto_assign_order: { Args: { _order_id: string }; Returns: string }
@@ -3179,6 +3242,8 @@ export type Database = {
         Returns: string
       }
       generate_payslips: { Args: { _period_id: string }; Returns: number }
+      get_invite_by_token: { Args: { _token: string }; Returns: Json }
+      get_public_sales_form: { Args: { _key: string }; Returns: Json }
       get_store_members_detail: {
         Args: { _store_id: string }
         Returns: {
@@ -3197,6 +3262,14 @@ export type Database = {
       get_store_webhook_secret: { Args: { _store_id: string }; Returns: string }
       has_active_feature_override: {
         Args: { _feature_key: string; _store_id: string }
+        Returns: boolean
+      }
+      has_integration_api_key: {
+        Args: { _integration_key: string; _store_id: string }
+        Returns: boolean
+      }
+      has_permission: {
+        Args: { _perm: string; _store_id: string }
         Returns: boolean
       }
       has_role: {
@@ -3223,6 +3296,7 @@ export type Database = {
         Args: { _store_id: string; _user_id: string }
         Returns: boolean
       }
+      is_store_owner: { Args: { _store_id: string }; Returns: boolean }
       is_superadmin: { Args: { _user_id: string }; Returns: boolean }
       isolation_probe: {
         Args: { _actor: string; _foreign_store: string }
@@ -3233,6 +3307,15 @@ export type Database = {
       }
       mark_admin_message_read: { Args: { _id: string }; Returns: undefined }
       mark_payroll_paid: { Args: { _period_id: string }; Returns: undefined }
+      my_stores: {
+        Args: never
+        Returns: {
+          is_active: boolean
+          name: string
+          roles: string[]
+          store_id: string
+        }[]
+      }
       receive_purchase_order_items: {
         Args: { _items: Json; _po_id: string }
         Returns: undefined
@@ -3246,6 +3329,43 @@ export type Database = {
           _status: string
           _store_id: string
         }
+        Returns: string
+      }
+      role_grants: {
+        Args: { _perm: string; _role: Database["public"]["Enums"]["app_role"] }
+        Returns: boolean
+      }
+      set_active_store: { Args: { _store_id: string }; Returns: undefined }
+      staff_assign_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _store_id: string
+          _user_id: string
+        }
+        Returns: undefined
+      }
+      staff_remove_member: {
+        Args: { _store_id: string; _user_id: string }
+        Returns: undefined
+      }
+      staff_remove_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _store_id: string
+          _user_id: string
+        }
+        Returns: undefined
+      }
+      staff_set_assignment_weight: {
+        Args: { _role_id: string; _weight: number }
+        Returns: undefined
+      }
+      staff_set_suspended: {
+        Args: { _store_id: string; _suspended: boolean; _user_id: string }
+        Returns: undefined
+      }
+      submit_sales_form: {
+        Args: { _form_id: string; _info: Json; _items: Json }
         Returns: string
       }
       superadmin_delete_store: {
@@ -3270,6 +3390,38 @@ export type Database = {
           suspended_at: string
           trial_ends_at: string
         }[]
+      }
+      wallet_create_funding: {
+        Args: { _amount: number; _reference: string; _store_id: string }
+        Returns: string
+      }
+      wallet_ensure: { Args: { _store_id: string }; Returns: string }
+      wallet_request_withdrawal: {
+        Args: {
+          _amount: number
+          _idempotency_key: string
+          _pin: string
+          _store_id: string
+        }
+        Returns: Json
+      }
+      wallet_set_pin: {
+        Args: { _current_pin?: string; _new_pin: string; _store_id: string }
+        Returns: Json
+      }
+      wallet_settle_transaction: {
+        Args: { _paid_amount?: number; _reference: string; _success: boolean }
+        Returns: Json
+      }
+      wallet_update_bank: {
+        Args: {
+          _account_name: string
+          _account_number: string
+          _bank_name: string
+          _pin: string
+          _store_id: string
+        }
+        Returns: Json
       }
     }
     Enums: {

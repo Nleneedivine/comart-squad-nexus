@@ -36,7 +36,7 @@ function StoreManagement() {
     if (!store) return;
     setLoading(true);
     const [{ data: s }, { data: p }, { data: o }] = await Promise.all([
-      supabase.from("stores").select("*").eq("id", store.id).maybeSingle(),
+      supabase.from("stores").select("id,name,owner_id,created_at,logo_url,description,contact_email,contact_phone,address,status,max_call_attempts,auto_assign_enabled,auto_assign_strategy,resumption_time,late_deadline").eq("id", store.id).maybeSingle(),
       supabase.from("products").select("*").eq("store_id", store.id).order("created_at", { ascending: false }),
       supabase.from("orders").select("*").eq("store_id", store.id).order("created_at", { ascending: false }).limit(50),
     ]);

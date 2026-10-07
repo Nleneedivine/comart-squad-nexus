@@ -88,7 +88,7 @@ function Staff() {
   useEffect(() => { load(); }, [store]);
 
   const toggleSuspend = async (m: any, suspend: boolean) => {
-    const { error } = await supabase.from("user_roles").update({ is_suspended: suspend }).in("id", m.role_ids);
+    const { error } = await supabase.rpc("staff_set_suspended", { _store_id: store!.id, _user_id: m.user_id, _suspended: suspend });
     if (error) return toast.error(error.message);
     toast.success(suspend ? "Member suspended" : "Member reactivated");
     load();

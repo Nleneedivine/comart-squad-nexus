@@ -59,7 +59,7 @@ function OnboardingWizard() {
       setPhone(prof?.phone ?? "");
       setStep(Math.min(prof?.onboarding_step ?? 0, STEPS.length - 1));
       if (store) {
-        const { data: s } = await supabase.from("stores").select("*").eq("id", store.id).maybeSingle();
+        const { data: s } = await supabase.from("stores").select("id,name,owner_id,created_at,logo_url,description,contact_email,contact_phone,address,status,max_call_attempts,auto_assign_enabled,auto_assign_strategy,resumption_time,late_deadline").eq("id", store.id).maybeSingle();
         setStoreName(s?.name ?? store.name);
         setStorePhone(s?.contact_phone ?? "");
         setStoreAddress(s?.address ?? "");
