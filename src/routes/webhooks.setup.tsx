@@ -23,7 +23,7 @@ function WebhookSetup() {
 
   const load = async () => {
     if (!store) return;
-    const { data: s } = await supabase.from("stores").select("webhook_secret").eq("id", store.id).maybeSingle();
+    const { data: secret } = await supabase.rpc("get_store_webhook_secret", { _store_id: store.id }); const s = { webhook_secret: secret as string | null };
     setSecret((s as any)?.webhook_secret || "");
     const { data: d } = await supabase.from("webhook_deliveries").select("*")
       .eq("store_id", store.id).order("created_at", { ascending: false }).limit(50);

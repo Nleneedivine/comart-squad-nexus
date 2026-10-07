@@ -58,7 +58,7 @@ function Integrations() {
     const { data: cat } = await supabase.from("integration_catalog").select("*").eq("is_active", true).order("name");
     setCatalog(cat || []);
     if (store) {
-      const { data: act } = await supabase.from("store_integrations").select("*").eq("store_id", store.id);
+      const { data: act } = await supabase.from("store_integrations").select("id,store_id,integration_key,status,activated_at,expires_at,created_at,updated_at,settings,last_webhook_at,orders_imported_count").eq("store_id", store.id);
       const m: Record<string, any> = {};
       (act || []).forEach((a: any) => { m[a.integration_key] = a; });
       setActivations(m);
