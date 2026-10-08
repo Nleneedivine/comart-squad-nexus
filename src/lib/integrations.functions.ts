@@ -94,8 +94,11 @@ export const getIntegrationFieldMapping = createServerFn({ method: "POST" })
       .eq("integration_key", data.integration_key)
       .maybeSingle();
     if (error) throw new Error(error.message);
-    const mapping = row?.settings?.field_mapping;
-    return mapping && typeof mapping === "object" ? mapping : {};
+    const settings = row?.settings;
+    const mapping = settings && typeof settings === "object" && !Array.isArray(settings)
+      ? settings["field_mapping"]
+      : undefined;
+    return mapping && typeof mapping === "object" && !Array.isArray(mapping) ? mapping : {};
   });
 
 /**
@@ -122,8 +125,12 @@ export const saveIntegrationFieldMapping = createServerFn({ method: "POST" })
     if (readError) throw new Error(readError.message);
     if (!row) throw new Error("Integration is not configured for this store");
 
+    const currentSettings = row.settings;
+    const baseSettings = currentSettings && typeof currentSettings === "object" && !Array.isArray(currentSettings)
+      ? currentSettings
+      : {};
     const nextSettings = {
-      ...(row.settings && typeof row.settings === "object" ? row.settings : {}),
+      ...baseSettings,
       field_mapping: data.mapping,
     };
     const { error: updateError } = await supabaseAdmin
