@@ -3335,6 +3335,10 @@ export type Database = {
         Args: { _perm: string; _role: Database["public"]["Enums"]["app_role"] }
         Returns: boolean
       }
+      rotate_store_webhook_secret: {
+        Args: { _store_id: string }
+        Returns: string
+      }
       set_active_store: { Args: { _store_id: string }; Returns: undefined }
       staff_assign_role: {
         Args: {
@@ -3363,6 +3367,10 @@ export type Database = {
       staff_set_suspended: {
         Args: { _store_id: string; _suspended: boolean; _user_id: string }
         Returns: undefined
+      }
+      store_webhook_configured: {
+        Args: { _store_id: string }
+        Returns: boolean
       }
       submit_sales_form: {
         Args: { _form_id: string; _info: Json; _items: Json }

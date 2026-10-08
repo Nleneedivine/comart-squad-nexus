@@ -23,8 +23,8 @@ function WebhookSetup() {
 
   const load = async () => {
     if (!store) return;
-    const { data: secret } = await supabase.rpc("get_store_webhook_secret", { _store_id: store.id }); const s = { webhook_secret: secret as string | null };
-    setSecret((s as any)?.webhook_secret || "");
+    const { data: configured } = await supabase.rpc("store_webhook_configured", { _store_id: store.id });
+    setSecret(s => s || (configured ? "•••••••• (configured — rotate to view a new secret)" : ""));
     const { data: d } = await supabase.from("webhook_deliveries").select("*")
       .eq("store_id", store.id).order("created_at", { ascending: false }).limit(50);
     setDeliveries(d || []);
@@ -33,10 +33,9 @@ function WebhookSetup() {
 
   const rotate = async () => {
     if (!store) return;
-    const newSecret = Array.from(crypto.getRandomValues(new Uint8Array(24)))
-      .map(b => b.toString(16).padStart(2, "0")).join("");
-    const { error } = await supabase.from("stores").update({ webhook_secret: newSecret }).eq("id", store.id);
+    const { data: newSecret, error } = await supabase.rpc("rotate_store_webhook_secret", { _store_id: store.id });
     if (error) return toast.error(error.message);
+    setSecret(String(newSecret));
     toast.success("Secret rotated");
     load();
   };

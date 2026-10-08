@@ -40,19 +40,17 @@ function Wallet() {
 
   const load = async () => {
     if (!store) return;
-    const { data: w } = await supabase.from("wallets").select("*").eq("store_id", store.id).maybeSingle();
-    let walletRow = w;
-    if (!walletRow) {
-      const { data: created } = await supabase.from("wallets").insert({ store_id: store.id }).select().single();
-      walletRow = created;
-    }
+    await supabase.rpc("wallet_ensure", { _store_id: store.id });
+    const { data: walletRow } = await supabase.from("wallets")
+      .select("id,store_id,balance,bank_name,bank_account_number,bank_account_name,has_pin,pin_locked_until")
+      .eq("store_id", store.id).maybeSingle();
     setWallet(walletRow);
     setBank({
       bank_name: walletRow?.bank_name || "",
       bank_account_number: walletRow?.bank_account_number || "",
       bank_account_name: walletRow?.bank_account_name || "",
     });
-    const { data: txs } = await supabase.from("wallet_transactions").select("*")
+    const { data: txs } = await supabase.from("wallet_transactions").select("id,kind,amount,status,reference,description,created_at")
       .eq("store_id", store.id).order("created_at", { ascending: false });
     setTx(txs || []);
   };
@@ -62,7 +60,7 @@ function Wallet() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const ref = new URL(window.location.href).searchParams.get("reference");
-    if (!ref) return;
+    if (!ref || !/^fund_/.test(ref)) return;
     (async () => {
       try {
         const r = await verifyFunding({ data: { reference: ref } });
@@ -91,43 +89,46 @@ function Wallet() {
     if (!amt || amt <= 0) return toast.error("Enter amount");
     if (!user?.email) return toast.error("Email required");
     try {
-      const r = await initFundWallet({ data: { amount: amt, email: user.email } });
+      if (!store) return;
+      const r = await initFundWallet({ data: { store_id: store.id, amount: amt, email: user.email } });
       window.location.href = r.authorization_url;
     } catch (e: any) { toast.error(e.message); }
   };
 
   const [wdPin, setWdPin] = useState("");
+  const [curPin, setCurPin] = useState("");
+  const [bankPin, setBankPin] = useState("");
+  const [wdKey, setWdKey] = useState(() => crypto.randomUUID());
   const withdraw = async () => {
     const amt = Number(amount);
+    if (!store) return;
     if (!amt || amt <= 0) return toast.error("Enter amount");
-    if (!wallet?.pin_hash) return toast.error("Set a wallet PIN first (Wallet Settings)");
+    if (!wallet?.has_pin) return toast.error("Set a wallet PIN first (Wallet Settings)");
     if (!/^\d{4,6}$/.test(wdPin)) return toast.error("Enter your PIN");
-    const enc = new TextEncoder().encode(wdPin);
-    const buf = await crypto.subtle.digest("SHA-256", enc);
-    const hex = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
-    if (hex !== wallet.pin_hash) return toast.error("Incorrect PIN");
     try {
-      await requestWithdrawal({ data: { amount: amt } });
-      toast.success("Withdrawal requested"); setWdOpen(false); setAmount(""); setWdPin(""); load();
+      await requestWithdrawal({ data: { store_id: store.id, amount: amt, pin: wdPin, idempotency_key: wdKey } });
+      toast.success("Withdrawal requested"); setWdOpen(false); setAmount(""); setWdPin(""); setWdKey(crypto.randomUUID()); load();
     } catch (e: any) { toast.error(e.message); }
   };
 
   const saveBank = async () => {
-    if (!wallet) return;
-    const { error } = await supabase.from("wallets").update(bank).eq("id", wallet.id);
-    if (error) return toast.error(error.message);
-    toast.success("Bank account saved"); setBankOpen(false); load();
+    if (!store) return;
+    const { data, error } = await supabase.rpc("wallet_update_bank", {
+      _store_id: store.id, _bank_name: bank.bank_name, _account_number: bank.bank_account_number,
+      _account_name: bank.bank_account_name, _pin: bankPin,
+    });
+    const res = data as any;
+    if (error || !res?.ok) return toast.error(error?.message || res?.error || "Could not save");
+    toast.success("Bank account saved"); setBankOpen(false); setBankPin(""); load();
   };
 
   const savePin = async () => {
+    if (!store) return;
     if (!/^\d{4,6}$/.test(pin)) return toast.error("PIN must be 4-6 digits");
-    // store hash via web crypto
-    const enc = new TextEncoder().encode(pin);
-    const buf = await crypto.subtle.digest("SHA-256", enc);
-    const hex = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
-    const { error } = await supabase.from("wallets").update({ pin_hash: hex }).eq("id", wallet.id);
-    if (error) return toast.error(error.message);
-    toast.success("PIN set"); setPinOpen(false); setPin("");
+    const { data, error } = await supabase.rpc("wallet_set_pin", { _store_id: store.id, _new_pin: pin, _current_pin: curPin || undefined });
+    const res = data as any;
+    if (error || !res?.ok) return toast.error(error?.message || res?.error || "Could not set PIN");
+    toast.success("PIN set"); setPinOpen(false); setPin(""); setCurPin(""); load();
   };
 
   const noBank = wallet && !wallet.bank_account_number;
@@ -179,7 +180,7 @@ function Wallet() {
               <div className="space-y-3">
                 <p className="text-xs text-muted-foreground">To: {wallet?.bank_name} • {wallet?.bank_account_number}</p>
                 <div className="space-y-1.5"><Label>Amount (₦)</Label><Input type="number" value={amount} onChange={e => setAmount(e.target.value)} /></div>
-                <div className="space-y-1.5"><Label>Wallet PIN</Label><Input type="password" inputMode="numeric" maxLength={6} value={wdPin} onChange={e => setWdPin(e.target.value)} placeholder={wallet?.pin_hash ? "Enter PIN" : "Set a PIN first via Wallet Settings"} /></div>
+                <div className="space-y-1.5"><Label>Wallet PIN</Label><Input type="password" inputMode="numeric" maxLength={6} value={wdPin} onChange={e => setWdPin(e.target.value)} placeholder={wallet?.has_pin ? "Enter PIN" : "Set a PIN first via Wallet Settings"} /></div>
                 <Button onClick={withdraw} className="w-full">Request Withdrawal</Button>
               </div>
             </DialogContent>
@@ -233,6 +234,7 @@ function Wallet() {
             <div className="space-y-1.5"><Label>Bank Name</Label><Input value={bank.bank_name} onChange={e => setBank({ ...bank, bank_name: e.target.value })} /></div>
             <div className="space-y-1.5"><Label>Account Number</Label><Input value={bank.bank_account_number} onChange={e => setBank({ ...bank, bank_account_number: e.target.value })} /></div>
             <div className="space-y-1.5"><Label>Account Name</Label><Input value={bank.bank_account_name} onChange={e => setBank({ ...bank, bank_account_name: e.target.value })} /></div>
+            <div className="space-y-1.5"><Label>Wallet PIN</Label><Input type="password" inputMode="numeric" maxLength={6} value={bankPin} onChange={e => setBankPin(e.target.value.replace(/\D/g, ""))} placeholder={wallet?.has_pin ? "Required to change bank details" : "Set a PIN first"} /></div>
             <Button onClick={saveBank} className="w-full">Save</Button>
           </div>
         </DialogContent>
@@ -242,7 +244,8 @@ function Wallet() {
         <DialogContent>
           <DialogHeader><DialogTitle>Set Wallet PIN</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <div className="space-y-1.5"><Label>PIN (4-6 digits)</Label><Input type="password" maxLength={6} value={pin} onChange={e => setPin(e.target.value.replace(/\D/g, ""))} /></div>
+            {wallet?.has_pin && <div className="space-y-1.5"><Label>Current PIN</Label><Input type="password" maxLength={6} value={curPin} onChange={e => setCurPin(e.target.value.replace(/\D/g, ""))} /></div>}
+            <div className="space-y-1.5"><Label>New PIN (4-6 digits)</Label><Input type="password" maxLength={6} value={pin} onChange={e => setPin(e.target.value.replace(/\D/g, ""))} /></div>
             <Button onClick={savePin} className="w-full">Save PIN</Button>
           </div>
         </DialogContent>

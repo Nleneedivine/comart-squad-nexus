@@ -1,6 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { captureServerException } from "@/lib/sentry.server";
 import { z } from "zod";
 
@@ -13,109 +12,69 @@ function key() {
 }
 
 async function ps(path: string, init?: RequestInit) {
-  try {
-    const res = await fetch(`${PAYSTACK}${path}`, {
-      ...init,
-      headers: {
-        Authorization: `Bearer ${key()}`,
-        "Content-Type": "application/json",
-        ...(init?.headers || {}),
-      },
-    });
-    const json = await res.json();
-    if (!res.ok || json?.status === false) {
-      const err = new Error(json?.message || `Paystack ${res.status}`);
-      await captureServerException(err, {
-        tags: { kind: "paystack_api", path, status: res.status },
-        extra: { gateway_response: json?.data?.gateway_response ?? null },
-        fingerprint: ["paystack-api", path],
-      });
-      throw err;
-    }
-    return json;
-  } catch (e) {
-    if (!(e instanceof Error && e.message.startsWith("Paystack"))) {
-      await captureServerException(e, {
-        tags: { kind: "paystack_api", path },
-        fingerprint: ["paystack-api", path],
-      });
-    }
-    throw e;
+  const res = await fetch(`${PAYSTACK}${path}`, {
+    ...init,
+    headers: { Authorization: `Bearer ${key()}`, "Content-Type": "application/json", ...(init?.headers || {}) },
+  });
+  const json = await res.json();
+  if (!res.ok || json?.status === false) {
+    const err = new Error(json?.message || `Paystack ${res.status}`);
+    await captureServerException(err, { tags: { kind: "paystack_api", path, status: res.status }, fingerprint: ["paystack-api", path] });
+    throw err;
   }
+  return json;
 }
 
-async function ensureWallet(storeId: string) {
-  const { data } = await supabaseAdmin.from("wallets").select("*").eq("store_id", storeId).maybeSingle();
-  if (data) return data;
-  const { data: created, error } = await supabaseAdmin.from("wallets").insert({ store_id: storeId }).select("*").single();
-  if (error) throw error;
-  return created;
-}
-
+// Funding: the caller must hold wallet.fund on the given store (checked in the DB function as auth.uid()).
 export const initFundWallet = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ amount: z.number().positive().max(10_000_000), email: z.string().email() }).parse(d))
+  .inputValidator((d) => z.object({ store_id: z.string().uuid(), amount: z.number().positive().max(10_000_000), email: z.string().email() }).parse(d))
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const { data: roles } = await supabase.from("user_roles").select("store_id").limit(1);
-    const storeId = roles?.[0]?.store_id;
-    if (!storeId) throw new Error("No store");
-    const wallet = await ensureWallet(storeId);
-    const reference = `fund_${storeId.slice(0, 8)}_${Date.now()}`;
+    const reference = `fund_${data.store_id.replace(/-/g, "").slice(0, 12)}_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
+    const { error } = await context.supabase.rpc("wallet_create_funding", { _store_id: data.store_id, _amount: data.amount, _reference: reference });
+    if (error) throw new Error(error.message);
     const r = await ps("/transaction/initialize", {
       method: "POST",
       body: JSON.stringify({
-        email: data.email,
-        amount: Math.round(data.amount * 100),
-        reference,
-        metadata: { store_id: storeId, wallet_id: wallet.id, kind: "funding" },
+        email: data.email, amount: Math.round(data.amount * 100), reference,
+        metadata: { store_id: data.store_id, kind: "funding" },
       }),
     });
-    await supabaseAdmin.from("wallet_transactions").insert({
-      store_id: storeId, wallet_id: wallet.id, kind: "funding", amount: data.amount,
-      status: "pending", reference, paystack_reference: reference, created_by: userId,
-      description: "Wallet funding (Paystack)",
-    });
-    return { authorization_url: r.data.authorization_url, reference };
+    return { authorization_url: r.data.authorization_url as string, reference };
   });
 
+// Verify: the reference must belong to a store the caller can see (RLS), then settle via the trusted path.
 export const verifyFunding = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ reference: z.string().min(3).max(120) }).parse(d))
-  .handler(async ({ data }) => {
-    const r = await ps(`/transaction/verify/${encodeURIComponent(data.reference)}`);
-    const { data: tx } = await supabaseAdmin.from("wallet_transactions").select("*").eq("reference", data.reference).maybeSingle();
+  .inputValidator((d) => z.object({ reference: z.string().regex(/^fund_[a-z0-9_]{8,80}$/) }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: tx } = await context.supabase.from("wallet_transactions")
+      .select("id, store_id, status, amount").eq("reference", data.reference).maybeSingle();
     if (!tx) return { ok: false, message: "Transaction not found" };
-    if (tx.status === "success") return { ok: true, already: true };
-    if (r.data.status === "success") {
-      await supabaseAdmin.from("wallet_transactions").update({ status: "success" }).eq("id", tx.id);
-      const { data: w } = await supabaseAdmin.from("wallets").select("balance").eq("id", tx.wallet_id).single();
-      const newBal = Number(w?.balance || 0) + Number(tx.amount);
-      await supabaseAdmin.from("wallets").update({ balance: newBal }).eq("id", tx.wallet_id);
-      return { ok: true };
-    }
-    await supabaseAdmin.from("wallet_transactions").update({ status: "failed" }).eq("id", tx.id);
-    return { ok: false, message: r.data.gateway_response || "Failed" };
+    if (tx.status !== "pending") return { ok: tx.status === "success", already: true };
+    const r = await ps(`/transaction/verify/${encodeURIComponent(data.reference)}`);
+    const paid = r.data?.status === "success";
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: res, error } = await supabaseAdmin.rpc("wallet_settle_transaction", {
+      _reference: data.reference, _success: paid, _paid_amount: paid ? Number(r.data.amount) / 100 : undefined,
+    });
+    if (error) throw new Error(error.message);
+    const out = res as any;
+    return { ok: !!out?.ok, message: out?.error || (paid ? undefined : r.data?.gateway_response || "Failed") };
   });
 
 export const requestWithdrawal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ amount: z.number().positive() }).parse(d))
+  .inputValidator((d) => z.object({
+    store_id: z.string().uuid(), amount: z.number().positive().max(10_000_000),
+    pin: z.string().regex(/^\d{4,6}$/), idempotency_key: z.string().min(8).max(100),
+  }).parse(d))
   .handler(async ({ data, context }) => {
-    const { userId } = context;
-    const { data: roles } = await context.supabase.from("user_roles").select("store_id").limit(1);
-    const storeId = roles?.[0]?.store_id;
-    if (!storeId) throw new Error("No store");
-    const wallet = await ensureWallet(storeId);
-    if (!wallet.bank_account_number) throw new Error("Add bank account first");
-    if (Number(wallet.balance) < data.amount) throw new Error("Insufficient balance");
-    const reference = `wd_${storeId.slice(0, 8)}_${Date.now()}`;
-    // Record as pending; manual approval / Paystack transfer flow handled offline
-    await supabaseAdmin.from("wallet_transactions").insert({
-      store_id: storeId, wallet_id: wallet.id, kind: "withdrawal", amount: data.amount,
-      status: "pending", reference, created_by: userId,
-      description: `Withdraw to ${wallet.bank_name || ""} ${wallet.bank_account_number}`,
+    const { data: res, error } = await context.supabase.rpc("wallet_request_withdrawal", {
+      _store_id: data.store_id, _amount: data.amount, _pin: data.pin, _idempotency_key: data.idempotency_key,
     });
-    await supabaseAdmin.from("wallets").update({ balance: Number(wallet.balance) - Number(data.amount) }).eq("id", wallet.id);
-    return { ok: true, reference };
+    if (error) throw new Error(error.message);
+    const out = res as any;
+    if (!out?.ok) throw new Error(out?.error || "Withdrawal failed");
+    return { ok: true, reference: out.reference as string };
   });

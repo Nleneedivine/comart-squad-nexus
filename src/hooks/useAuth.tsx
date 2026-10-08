@@ -33,9 +33,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .select("role, store_id, stores(id, name)")
         .eq("user_id", uid);
       if (roleRows && roleRows.length > 0) {
-        const first = roleRows[0] as any;
+        // Prefer the server-validated active store; fall back to the first membership.
+        const { data: prof } = await supabase.from("profiles").select("active_store_id").eq("id", uid).maybeSingle();
+        const activeId = (prof as any)?.active_store_id as string | null;
+        const first = ((activeId && roleRows.find((r: any) => r.store_id === activeId)) || roleRows[0]) as any;
         const storeInfo = first.stores ? { id: first.stores.id, name: first.stores.name } : null;
-        const roleList = roleRows.map((r: any) => r.role);
+        const roleList = roleRows.filter((r: any) => r.store_id === first.store_id).map((r: any) => r.role);
+        if (!activeId && first.store_id) void supabase.rpc("set_active_store", { _store_id: first.store_id });
         setStore(storeInfo);
         setRoles(roleList);
         setSentryUser({ userId: uid, storeId: storeInfo?.id, role: roleList[0] });
