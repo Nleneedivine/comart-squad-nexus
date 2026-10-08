@@ -11,7 +11,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Search, Plug, Lock, Sparkles, CheckCircle2, Copy, RefreshCw, Settings2, PlayCircle, FileText, AlertCircle, Clock, MessageSquare, ArrowRight } from "lucide-react";
-import { initIntegrationPurchase } from "@/lib/integrations.functions";
+import { initIntegrationPurchase, getIntegrationFieldMapping, saveIntegrationFieldMapping } from "@/lib/integrations.functions";
 import { Label } from "@/components/ui/label";
 import { Link } from "@tanstack/react-router";
 
@@ -53,18 +53,29 @@ function Integrations() {
   const [logs, setLogs] = useState<any[]>([]);
   const [failedCount, setFailedCount] = useState(0);
   const purchase = useServerFn(initIntegrationPurchase);
+  const getFieldMapping = useServerFn(getIntegrationFieldMapping);
+  const saveFieldMapping = useServerFn(saveIntegrationFieldMapping);
 
   const load = async () => {
     const { data: cat } = await supabase.from("integration_catalog").select("*").eq("is_active", true).order("name");
     setCatalog(cat || []);
     if (store) {
-      const { data: act } = await supabase.from("store_integrations").select("id,store_id,integration_key,status,activated_at,expires_at,created_at,updated_at,settings,last_webhook_at,orders_imported_count").eq("store_id", store.id);
+      const { data: act } = await supabase.from("store_integrations").select("id,store_id,integration_key,status,activated_at,expires_at,created_at,updated_at,last_webhook_at,orders_imported_count").eq("store_id", store.id);
       const m: Record<string, any> = {};
       (act || []).forEach((a: any) => { m[a.integration_key] = a; });
       setActivations(m);
       const wp = m[WPFORMS_KEY];
-      if (wp?.settings?.field_mapping) {
-        setMapping({ ...DEFAULT_MAPPING, ...wp.settings.field_mapping });
+      if (wp) {
+        try {
+          const fieldMapping = await getFieldMapping({
+            data: { store_id: store.id, integration_key: WPFORMS_KEY },
+          });
+          if (fieldMapping && typeof fieldMapping === "object") {
+            setMapping({ ...DEFAULT_MAPPING, ...fieldMapping });
+          }
+        } catch {
+          // Keep the safe defaults if the user cannot manage integrations.
+        }
       }
       // Failed webhook count (last 30d)
       const since = new Date(Date.now() - 30 * 86_400_000).toISOString();
@@ -138,10 +149,17 @@ function Integrations() {
 
   const saveMapping = async () => {
     if (!store || !wpRow) return;
-    const { error } = await supabase.from("store_integrations").update({
-      settings: { ...(wpRow.settings || {}), field_mapping: mapping },
-    }).eq("id", wpRow.id);
-    if (error) return toast.error(error.message);
+    try {
+      await saveFieldMapping({
+        data: {
+          store_id: store.id,
+          integration_key: WPFORMS_KEY,
+          mapping,
+        },
+      });
+    } catch (e: any) {
+      return toast.error(e.message || "Could not save field mapping");
+    }
     toast.success("Field mapping saved");
     setMapModal(false);
     load();
