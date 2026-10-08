@@ -19,19 +19,21 @@ export const initIntegrationPurchase = createServerFn({ method: "POST" })
     store_id: z.string().uuid(),
   }).parse(d))
   .handler(async ({ data, context }) => {
-    const { userId, supabase } = context;
-    // Verify user is admin of the store
-    const { data: roles } = await supabase.from("user_roles").select("role")
-      .eq("user_id", userId).eq("store_id", data.store_id);
-    const isAdmin = (roles || []).some((r: any) => ["owner","admin","manager","head_of_operations"].includes(r.role));
-    if (!isAdmin) throw new Error("Only store admins can purchase integrations");
+    const { supabase } = context;
+    // Use the same permission boundary as the rest of the integration surface.
+    // Do not duplicate role semantics here; permissions can evolve independently.
+    const { data: allowed, error: permissionError } = await supabase.rpc("has_permission", {
+      _store_id: data.store_id,
+      _permission: "integrations.manage",
+    });
+    if (permissionError || !allowed) throw new Error("Only users with integrations.manage can purchase integrations");
 
     const { data: cat } = await supabaseAdmin.from("integration_catalog")
       .select("*").eq("key", data.integration_key).eq("is_active", true).maybeSingle();
     if (!cat) throw new Error("Integration not available");
     if (Number(cat.monthly_price) <= 0) throw new Error("This integration has no price set yet");
 
-    const reference = `int_${data.integration_key.slice(0,12)}_${data.store_id.slice(0,8)}_${Date.now()}`;
+    const reference = `int_${data.integration_key.slice(0,12)}_${data.store_id.slice(0,8)}_${Date.now()}_${crypto.randomUUID().slice(0,8)}`;
     const res = await fetch(`${PAYSTACK}/transaction/initialize`, {
       method: "POST",
       headers: { Authorization: `Bearer ${key()}`, "Content-Type": "application/json" },
