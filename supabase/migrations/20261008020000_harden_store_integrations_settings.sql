@@ -1,9 +1,18 @@
 BEGIN;
 
--- Browser sessions must never be able to delete, truncate, alter triggers,
--- or create foreign-key references against integration state. RLS does not
--- protect TRUNCATE, so table-level TRUNCATE is especially dangerous here.
-REVOKE DELETE, TRUNCATE, TRIGGER, REFERENCES
+-- Browser sessions do not need DDL-adjacent table privileges. In particular,
+-- TRUNCATE bypasses RLS, so leaving it granted would allow a signed-in role
+-- to erase an entire tenant table despite otherwise-correct row policies.
+REVOKE TRUNCATE, TRIGGER, REFERENCES
+  ON ALL TABLES IN SCHEMA public
+  FROM anon, authenticated;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+  REVOKE TRUNCATE, TRIGGER, REFERENCES ON TABLES
+  FROM anon, authenticated;
+
+-- Integration state must never be destructively modified by browser sessions.
+REVOKE DELETE
   ON TABLE public.store_integrations
   FROM anon, authenticated;
 
