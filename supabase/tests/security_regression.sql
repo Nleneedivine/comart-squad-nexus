@@ -65,7 +65,7 @@ BEGIN
   EXECUTE 'SET LOCAL ROLE authenticated';
   BEGIN INSERT INTO public.user_roles(user_id,store_id,role) VALUES (uc,sa,'admin'); ok:=false; EXCEPTION WHEN others THEN ok:=true; END;
   res := res || (suite||':rep_direct_insert_admin_role:'||ok); IF ok THEN pass:=pass+1; ELSE fail:=fail+1; END IF;
-  UPDATE public.user_roles SET role='owner' WHERE user_id=uc; GET DIAGNOSTICS n = ROW_COUNT; ok := n=0;
+  BEGIN UPDATE public.user_roles SET role='owner' WHERE user_id=uc; GET DIAGNOSTICS n = ROW_COUNT; ok := n=0; EXCEPTION WHEN others THEN ok:=true; END;
   res := res || (suite||':rep_direct_update_role:'||ok); IF ok THEN pass:=pass+1; ELSE fail:=fail+1; END IF;
   BEGIN PERFORM public.staff_assign_role(sa, uc, 'admin'); ok:=false; EXCEPTION WHEN others THEN ok:=true; END;
   res := res || (suite||':rep_rpc_self_assign:'||ok); IF ok THEN pass:=pass+1; ELSE fail:=fail+1; END IF;
@@ -270,6 +270,14 @@ BEGIN
   res := res || (suite||':wa_verify_token_hidden:'||ok); IF ok THEN pass:=pass+1; ELSE fail:=fail+1; END IF;
   BEGIN EXECUTE 'SELECT api_key FROM public.store_integrations LIMIT 1'; ok:=false; EXCEPTION WHEN others THEN ok:=true; END;
   res := res || (suite||':integration_api_key_hidden:'||ok); IF ok THEN pass:=pass+1; ELSE fail:=fail+1; END IF;
+  BEGIN EXECUTE 'SELECT settings FROM public.store_integrations LIMIT 1'; ok:=false; EXCEPTION WHEN others THEN ok:=true; END;
+  res := res || (suite||':integration_settings_hidden:'||ok); IF ok THEN pass:=pass+1; ELSE fail:=fail+1; END IF;
+  BEGIN UPDATE public.store_integrations SET settings='{"probe":"should_fail"}'::jsonb WHERE store_id=sa AND integration_key='wp_forms'; ok:=false; EXCEPTION WHEN others THEN ok:=true; END;
+  res := res || (suite||':integration_settings_not_writable:'||ok); IF ok THEN pass:=pass+1; ELSE fail:=fail+1; END IF;
+  BEGIN DELETE FROM public.store_integrations WHERE store_id=sa AND integration_key='wp_forms'; ok:=false; EXCEPTION WHEN others THEN ok:=true; END;
+  res := res || (suite||':integration_delete_blocked:'||ok); IF ok THEN pass:=pass+1; ELSE fail:=fail+1; END IF;
+  BEGIN TRUNCATE public.store_integrations; ok:=false; EXCEPTION WHEN others THEN ok:=true; END;
+  res := res || (suite||':integration_truncate_blocked:'||ok); IF ok THEN pass:=pass+1; ELSE fail:=fail+1; END IF;
   BEGIN EXECUTE 'SELECT webhook_secret FROM public.stores LIMIT 1'; ok:=false; EXCEPTION WHEN others THEN ok:=true; END;
   res := res || (suite||':store_webhook_secret_hidden:'||ok); IF ok THEN pass:=pass+1; ELSE fail:=fail+1; END IF;
   BEGIN PERFORM public.get_store_webhook_secret(sa); ok:=false; EXCEPTION WHEN others THEN ok:=true; END;
