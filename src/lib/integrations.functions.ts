@@ -59,3 +59,88 @@ export const initIntegrationPurchase = createServerFn({ method: "POST" })
 
     return { authorization_url: json.data.authorization_url, reference };
   });
+
+
+const fieldMappingSchema = z.object({
+  customer_name: z.string().trim().min(1).max(120).optional(),
+  phone: z.string().trim().min(1).max(120).optional(),
+  address: z.string().trim().min(1).max(120).optional(),
+  product: z.string().trim().min(1).max(120).optional(),
+  quantity: z.string().trim().min(1).max(120).optional(),
+  amount: z.string().trim().min(1).max(120).optional(),
+  notes: z.string().trim().min(1).max(120).optional(),
+});
+
+async function requireIntegrationManager(
+  storeId: string,
+  supabase: typeof supabaseAdmin,
+  userId: string,
+) {
+  const { data: allowed, error } = await supabase.rpc("has_permission", {
+    _store_id: storeId,
+    _permission: "integrations.manage",
+  });
+  if (error || !allowed) {
+    throw new Error("You do not have permission to manage integrations");
+  }
+  return userId;
+}
+
+/**
+ * Read only the non-secret field mapping from store_integrations.settings.
+ * The underlying settings JSON is never returned to the browser.
+ */
+export const getIntegrationFieldMapping = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({
+    store_id: z.string().uuid(),
+    integration_key: z.string().min(2).max(64),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    await requireIntegrationManager(data.store_id, context.supabase, context.userId);
+    const { data: row, error } = await supabaseAdmin
+      .from("store_integrations")
+      .select("settings")
+      .eq("store_id", data.store_id)
+      .eq("integration_key", data.integration_key)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    const mapping = row?.settings?.field_mapping;
+    return mapping && typeof mapping === "object" ? mapping : {};
+  });
+
+/**
+ * Update only the approved non-secret field_mapping key inside settings.
+ * This is deliberately server-side so authenticated clients never receive
+ * or write the raw settings JSON, which may contain future credentials.
+ */
+export const saveIntegrationFieldMapping = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({
+    store_id: z.string().uuid(),
+    integration_key: z.string().min(2).max(64),
+    mapping: fieldMappingSchema,
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    await requireIntegrationManager(data.store_id, context.supabase, context.userId);
+    const { data: row, error: readError } = await supabaseAdmin
+      .from("store_integrations")
+      .select("settings")
+      .eq("store_id", data.store_id)
+      .eq("integration_key", data.integration_key)
+      .maybeSingle();
+    if (readError) throw new Error(readError.message);
+    if (!row) throw new Error("Integration is not configured for this store");
+
+    const nextSettings = {
+      ...(row.settings && typeof row.settings === "object" ? row.settings : {}),
+      field_mapping: data.mapping,
+    };
+    const { error: updateError } = await supabaseAdmin
+      .from("store_integrations")
+      .update({ settings: nextSettings })
+      .eq("store_id", data.store_id)
+      .eq("integration_key", data.integration_key);
+    if (updateError) throw new Error(updateError.message);
+    return data.mapping;
+  });
