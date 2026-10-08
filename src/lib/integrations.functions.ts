@@ -71,20 +71,6 @@ const fieldMappingSchema = z.object({
   notes: z.string().trim().min(1).max(120).optional(),
 });
 
-async function requireIntegrationManager(
-  storeId: string,
-  supabase: typeof supabaseAdmin,
-  userId: string,
-) {
-  const { data: allowed, error } = await supabase.rpc("has_permission", {
-    _store_id: storeId,
-    _permission: "integrations.manage",
-  });
-  if (error || !allowed) {
-    throw new Error("You do not have permission to manage integrations");
-  }
-  return userId;
-}
 
 /**
  * Read only the non-secret field mapping from store_integrations.settings.
@@ -97,7 +83,8 @@ export const getIntegrationFieldMapping = createServerFn({ method: "POST" })
     integration_key: z.string().min(2).max(64),
   }).parse(d))
   .handler(async ({ data, context }) => {
-    await requireIntegrationManager(data.store_id, context.supabase, context.userId);
+    const { data: allowed, error: permissionError } = await context.supabase.rpc("has_permission", { _store_id: data.store_id, _permission: "integrations.manage" });
+    if (permissionError || !allowed) throw new Error("You do not have permission to manage integrations");
     const { data: row, error } = await supabaseAdmin
       .from("store_integrations")
       .select("settings")
@@ -122,7 +109,8 @@ export const saveIntegrationFieldMapping = createServerFn({ method: "POST" })
     mapping: fieldMappingSchema,
   }).parse(d))
   .handler(async ({ data, context }) => {
-    await requireIntegrationManager(data.store_id, context.supabase, context.userId);
+    const { data: allowed, error: permissionError } = await context.supabase.rpc("has_permission", { _store_id: data.store_id, _permission: "integrations.manage" });
+    if (permissionError || !allowed) throw new Error("You do not have permission to manage integrations");
     const { data: row, error: readError } = await supabaseAdmin
       .from("store_integrations")
       .select("settings")
