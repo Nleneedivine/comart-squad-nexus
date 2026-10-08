@@ -45,15 +45,8 @@ export const Route = createFileRoute("/api/public/paystack-webhook")({
         const storeId = event?.data?.metadata?.store_id || null;
 
         try {
-          if (topic === "charge.success" && reference) {
-            const { data: tx } = await supabaseAdmin.from("wallet_transactions")
-              .select("*").eq("reference", reference).maybeSingle();
-            if (tx && tx.status !== "success") {
-              await supabaseAdmin.from("wallet_transactions").update({ status: "success" }).eq("id", tx.id);
-              const { data: w } = await supabaseAdmin.from("wallets").select("balance").eq("id", tx.wallet_id).single();
-              const newBal = Number(w?.balance || 0) + Number(tx.amount);
-              await supabaseAdmin.from("wallets").update({ balance: newBal }).eq("id", tx.wallet_id);
-            }
+          if (topic === "charge.success" && reference && /^fund_/.test(reference)) {
+            await supabaseAdmin.rpc("wallet_settle_transaction", { _reference: reference, _success: true, _paid_amount: Number(event?.data?.amount || 0) / 100 });
           } else if (topic === "charge.success" && event?.data?.metadata?.kind === "integration_purchase" && reference) {
             const meta = event.data.metadata;
             await supabaseAdmin.from("store_integrations").upsert({
@@ -69,18 +62,7 @@ export const Route = createFileRoute("/api/public/paystack-webhook")({
               title: "Integration activated", body: `${meta.integration_key} is now active.`, kind: "success",
             }).then(() => null, () => null);
           } else if ((topic === "transfer.success" || topic === "transfer.failed" || topic === "transfer.reversed") && reference) {
-            const newStatus = topic === "transfer.success" ? "success" : "failed";
-            const { data: tx } = await supabaseAdmin.from("wallet_transactions")
-              .select("*").eq("reference", reference).maybeSingle();
-            if (tx && tx.status === "pending") {
-              await supabaseAdmin.from("wallet_transactions").update({ status: newStatus }).eq("id", tx.id);
-              if (newStatus === "failed") {
-                // refund amount back to wallet for withdrawals
-                const { data: w } = await supabaseAdmin.from("wallets").select("balance").eq("id", tx.wallet_id).single();
-                const newBal = Number(w?.balance || 0) + Number(tx.amount);
-                await supabaseAdmin.from("wallets").update({ balance: newBal }).eq("id", tx.wallet_id);
-              }
-            }
+            await supabaseAdmin.rpc("wallet_settle_transaction", { _reference: reference, _success: topic === "transfer.success" });
           }
           await logWebhook(storeId, topic, "successful", `Processed ${topic} ref=${reference || "n/a"}`, event, Date.now() - start);
           return new Response(JSON.stringify({ ok: true }), { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } });

@@ -51,8 +51,8 @@ function AcceptInvite() {
       const { data: raw } = await supabase.rpc("get_invite_by_token", { _token: token }); const data = raw as any;
       if (!data) { setState("missing"); return; }
       setInvite(data);
-      if (data.status !== "pending" || data.accepted_at) { setState("used"); return; }
-      if (new Date(data.expires_at).getTime() < Date.now()) { setState("expired"); return; }
+      if (data.state === "used") { setState("used"); return; }
+      if (data.state === "expired") { setState("expired"); return; }
       setStore({ name: data.store_name });
       setState("ready");
     })();

@@ -59,7 +59,7 @@ function WhatsAppSetup() {
 
   const load = async () => {
     if (!store) return;
-    const { data: c } = await (supabase as any).from("whatsapp_integrations").select("id,store_id,phone_number_id,waba_id,display_phone_number,verified_name,webhook_verify_token,status,last_error,last_tested_at").eq("store_id", store.id).maybeSingle();
+    const { data: c } = await (supabase as any).from("whatsapp_integrations").select("id,store_id,phone_number_id,waba_id,display_phone_number,verified_name,status,last_error,last_tested_at").eq("store_id", store.id).maybeSingle();
     setConn(c);
     if (c) {
       setCreds({ phone_number_id: c.phone_number_id ?? "", waba_id: c.waba_id ?? "", access_token: "" });
@@ -81,6 +81,7 @@ function WhatsAppSetup() {
       if (r.status === "connected") toast.success(`Connected: ${r.display_phone_number}`);
       else toast.error(r.last_error || "Connection saved but failed test");
       await load();
+      setConn((c: any) => ({ ...(c || {}), webhook_verify_token: r.verify_token }));
       if (r.status === "connected") setStep(2);
     } catch (e: any) { toast.error(e.message); }
     finally { setBusy(false); }

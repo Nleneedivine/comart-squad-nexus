@@ -104,7 +104,15 @@ function Integrations() {
     } finally { setBusy(false); }
   };
 
-  const wpRow = activations[WPFORMS_KEY];
+  const [freshKey, setFreshKey] = useState<string | null>(null);
+  const [hasKey, setHasKey] = useState(false);
+  useEffect(() => {
+    if (!store) return;
+    supabase.rpc("has_integration_api_key", { _store_id: store.id, _integration_key: WPFORMS_KEY }).then(({ data }) => setHasKey(!!data));
+  }, [store, freshKey]);
+  const wpBase = activations[WPFORMS_KEY];
+  // The API key is only visible right after generation; it is never readable afterwards.
+  const wpRow = wpBase ? { ...wpBase, api_key: freshKey } : (freshKey ? { api_key: freshKey } as any : undefined);
 
   const generateKey = async () => {
     if (!store) return;
@@ -114,7 +122,8 @@ function Integrations() {
         _store_id: store.id, _integration_key: WPFORMS_KEY,
       });
       if (error) throw error;
-      toast.success("API key generated");
+      setFreshKey(data as string);
+      toast.success("API key generated — copy it now, it will not be shown again");
       await load();
       return data as string;
     } catch (e: any) {
@@ -221,7 +230,7 @@ function Integrations() {
                   <div className="rounded-md bg-muted/40 p-3">
                     <div className="text-xs text-muted-foreground">Connection</div>
                     <div className="font-medium flex items-center gap-1.5">
-                      {act?.api_key
+                      {(act && (hasKey || freshKey))
                         ? <><span className="h-2 w-2 rounded-full bg-emerald-500 inline-block" /> Connected</>
                         : <><span className="h-2 w-2 rounded-full bg-muted-foreground inline-block" /> Not connected</>}
                     </div>
@@ -241,16 +250,16 @@ function Integrations() {
                 </div>
 
                 <div className="flex flex-wrap gap-2 mt-4">
-                  <Button onClick={() => setWpModal(true)} variant={act?.api_key ? "secondary" : "default"}>
-                    <Plug className="h-4 w-4 mr-2" />{act?.api_key ? "View Setup" : "Connect"}
+                  <Button onClick={() => setWpModal(true)} variant={(act && (hasKey || freshKey)) ? "secondary" : "default"}>
+                    <Plug className="h-4 w-4 mr-2" />{(act && (hasKey || freshKey)) ? "View Setup" : "Connect"}
                   </Button>
                   <Button variant="outline" onClick={generateKey} disabled={busy}>
-                    <RefreshCw className="h-4 w-4 mr-2" />{act?.api_key ? "Regenerate Key" : "Generate API Key"}
+                    <RefreshCw className="h-4 w-4 mr-2" />{(act && (hasKey || freshKey)) ? "Regenerate Key" : "Generate API Key"}
                   </Button>
                   <Button variant="outline" onClick={() => setMapModal(true)}>
                     <Settings2 className="h-4 w-4 mr-2" />Configure Fields
                   </Button>
-                  <Button variant="outline" onClick={testConnection} disabled={!act?.api_key}>
+                  <Button variant="outline" onClick={testConnection} disabled={!(act && (hasKey || freshKey))}>
                     <PlayCircle className="h-4 w-4 mr-2" />Test Connection
                   </Button>
                   <Button variant="outline" onClick={openLogs}>
