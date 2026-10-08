@@ -49,17 +49,39 @@ export const Route = createFileRoute("/api/public/paystack-webhook")({
             await supabaseAdmin.rpc("wallet_settle_transaction", { _reference: reference, _success: true, _paid_amount: Number(event?.data?.amount || 0) / 100 });
           } else if (topic === "charge.success" && event?.data?.metadata?.kind === "integration_purchase" && reference) {
             const meta = event.data.metadata;
-            await supabaseAdmin.from("store_integrations").upsert({
-              store_id: meta.store_id,
-              integration_key: meta.integration_key,
+            if (!meta?.store_id || !meta?.integration_key) {
+              throw new Error("Integration purchase webhook is missing store metadata");
+            }
+
+            // Bind the webhook to the exact pending transaction we created.
+            // Do not let an authenticated Paystack event activate an arbitrary
+            // store/integration pair merely because metadata contains IDs.
+            const { data: pending, error: pendingError } = await supabaseAdmin
+              .from("store_integrations")
+              .select("store_id, integration_key, status, paystack_reference")
+              .eq("paystack_reference", reference)
+              .maybeSingle();
+            if (pendingError) throw pendingError;
+            if (
+              !pending ||
+              pending.status !== "pending" ||
+              pending.store_id !== meta.store_id ||
+              pending.integration_key !== meta.integration_key
+            ) {
+              throw new Error("Integration purchase reference is not a matching pending transaction");
+            }
+
+            const { error: activateError } = await supabaseAdmin.from("store_integrations").update({
               status: "active",
               activated_at: new Date().toISOString(),
-              paystack_reference: reference,
               expires_at: new Date(Date.now() + 31 * 86400000).toISOString(),
-            }, { onConflict: "store_id,integration_key" });
+            }).eq("store_id", pending.store_id).eq("integration_key", pending.integration_key)
+              .eq("paystack_reference", reference).eq("status", "pending");
+            if (activateError) throw activateError;
+
             await supabaseAdmin.from("notifications").insert({
-              store_id: meta.store_id, user_id: meta.user_id || null,
-              title: "Integration activated", body: `${meta.integration_key} is now active.`, kind: "success",
+              store_id: pending.store_id, user_id: meta.user_id || null,
+              title: "Integration activated", body: `${pending.integration_key} is now active.`, kind: "success",
             }).then(() => null, () => null);
           } else if ((topic === "transfer.success" || topic === "transfer.failed" || topic === "transfer.reversed") && reference) {
             await supabaseAdmin.rpc("wallet_settle_transaction", { _reference: reference, _success: topic === "transfer.success" });
