@@ -1,0 +1,98 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - 'hardening/**'
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend:
+    name: Frontend typecheck + build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript
+        run: npx tsc --noEmit
+
+      - name: Production build
+        run: npm run build
+
+  lint:
+    name: ESLint
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: ESLint
+        run: npm run lint
+
+  security-static:
+    name: Security migration/static checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify no committed environment file
+        shell: bash
+        run: |
+          if git ls-files --error-unmatch .env >/dev/null 2>&1; then
+            echo "::error::.env is tracked"
+            exit 1
+          fi
+
+      - name: Verify migration exists
+        shell: bash
+        run: |
+          test -f supabase/migrations/20261008020000_harden_store_integrations_settings.sql
+
+      - name: Verify sensitive integration settings are server-only
+        shell: bash
+        run: |
+          grep -q "REVOKE ALL PRIVILEGES" supabase/migrations/20261008020000_harden_store_integrations_settings.sql
+          grep -q "store_integrations.settings" supabase/migrations/20261008020000_harden_store_integrations_settings.sql
+
+      - name: Verify security regression suite exists
+        shell: bash
+        run: |
+          test -f supabase/tests/security_regression.sql
+          test -f supabase/tests/tenant_isolation.sql
