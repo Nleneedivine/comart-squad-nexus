@@ -61,6 +61,7 @@ export interface ProcessWpFormsResult {
   order_id?: string;
   assigned_to?: string | null;
   error?: string;
+  duplicate?: boolean;
 }
 
 /**
@@ -72,8 +73,17 @@ export async function processWpFormsOrder(
   storeId: string,
   payload: any,
   mapping?: WpFormsFieldMapping,
+  opts: { dedupeKey?: string } = {},
 ): Promise<ProcessWpFormsResult> {
   try {
+    if (opts.dedupeKey) {
+      const { data: prior, error: dErr } = await supabaseAdmin.from("webhook_deliveries")
+        .select("result").eq("store_id", storeId).eq("status", "processed")
+        .eq("result->>dedupe_key", opts.dedupeKey).limit(1);
+      if (dErr) throw dErr;
+      const r = (prior?.[0]?.result as any) || null;
+      if (r?.order_id) return { ok: true, order_id: r.order_id, assigned_to: r.assigned_to ?? null, duplicate: true };
+    }
     const flat = flattenWpFormsPayload(payload);
 
     const resolve = (k: keyof typeof DEFAULTS): string | undefined => {
@@ -94,8 +104,9 @@ export async function processWpFormsOrder(
     // Upsert customer
     let customerId: string | null = null;
     if (phone && phone !== "—") {
-      const { data: existing } = await supabaseAdmin.from("customers")
-        .select("id").eq("store_id", storeId).eq("phone", phone).maybeSingle();
+      const { data: existing, error: exErr } = await supabaseAdmin.from("customers")
+        .select("id").eq("store_id", storeId).eq("phone", phone).limit(1).maybeSingle();
+      if (exErr) throw exErr;
       if (existing) customerId = existing.id;
     }
     if (!customerId) {
@@ -150,15 +161,19 @@ export async function processWpFormsOrder(
     if (oErr) throw oErr;
 
     if (product) {
-      await supabaseAdmin.from("order_items").insert({
+      const { error: iErr } = await supabaseAdmin.from("order_items").insert({
         store_id: storeId, order_id: order.id,
-        product_name: product, quantity: qty,
+        product_name: String(product).slice(0, 500), quantity: qty,
         unit_price: amount / qty, subtotal: amount,
       });
+      if (iErr) {
+        // Compensate: never leave an order without its line item.
+        await supabaseAdmin.from("orders").delete().eq("id", order.id);
+        throw iErr;
+      }
     }
 
     // Bump integration counters (best-effort)
-    await supabaseAdmin.rpc as any; // noop to keep TS happy if rpc unused
     await supabaseAdmin.from("store_integrations").update({
       last_webhook_at: new Date().toISOString(),
     }).eq("store_id", storeId).eq("integration_key", "wp_forms");
