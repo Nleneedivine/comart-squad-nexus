@@ -1,7 +1,16 @@
+// Legacy HMAC-signed WP Forms endpoint. Same order pipeline as the x-api-key
+// endpoint (processWpFormsOrder) so validation, atomicity and dedupe match.
 import { createFileRoute } from "@tanstack/react-router";
-import { createHmac, timingSafeEqual } from "crypto";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { captureServerException } from "@/lib/sentry.server";
+import { processWpFormsOrder } from "@/lib/wpforms.server";
+import {
+  BodyTooLargeError,
+  deliveryDedupeKey,
+  hmacHex,
+  readBodyLimited,
+  safeHexEqual,
+  safeJsonParse,
+} from "@/lib/webhook-security";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -9,31 +18,10 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, x-comart-signature, x-comart-store",
 };
 
-function pickField(obj: any, keys: string[]): string | undefined {
-  for (const k of keys) {
-    if (obj?.[k] != null && String(obj[k]).trim()) return String(obj[k]).trim();
-  }
-  return undefined;
-}
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json", ...corsHeaders } });
 
-async function pickRoundRobinAssignee(storeId: string): Promise<string | null> {
-  const { data: roleRows } = await supabaseAdmin
-    .from("user_roles").select("user_id, is_suspended").eq("store_id", storeId);
-  const targets = Array.from(new Map((roleRows || [])
-    .filter((r: any) => !r.is_suspended)
-    .map((r: any) => [r.user_id, r.user_id])).values()) as string[];
-  if (!targets.length) return null;
-  let best: string | null = null; let bestCount = Infinity;
-  for (const uid of targets) {
-    const { count } = await supabaseAdmin.from("orders")
-      .select("id", { count: "exact", head: true })
-      .eq("store_id", storeId).eq("assigned_to", uid).eq("is_archived", false)
-      .in("status", ["pending","processing","shipped"]);
-    const c = count ?? 0;
-    if (c < bestCount) { bestCount = c; best = uid; }
-  }
-  return best;
-}
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export const Route = createFileRoute("/api/public/wp-forms-webhook")({
   server: {
@@ -41,108 +29,57 @@ export const Route = createFileRoute("/api/public/wp-forms-webhook")({
       OPTIONS: async () => new Response(null, { status: 204, headers: corsHeaders }),
       POST: async ({ request }) => {
         const storeId = request.headers.get("x-comart-store") || new URL(request.url).searchParams.get("store");
-        if (!storeId) return new Response("Missing store id", { status: 400, headers: corsHeaders });
+        if (!storeId || !UUID.test(storeId)) return json({ ok: false, error: "Unauthorized" }, 401);
 
-        const { data: store } = await supabaseAdmin.from("stores")
-          .select("id, webhook_secret").eq("id", storeId).maybeSingle();
-        if (!store?.webhook_secret) return new Response("Unknown store", { status: 404, headers: corsHeaders });
+        let body: string;
+        try {
+          body = await readBodyLimited(request, 64 * 1024);
+        } catch (e) {
+          return json({ ok: false, error: e instanceof BodyTooLargeError ? "Payload too large" : "Bad request" }, e instanceof BodyTooLargeError ? 413 : 400);
+        }
 
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const { data: store, error: sErr } = await supabaseAdmin.from("stores")
+          .select("id, webhook_secret, status").eq("id", storeId).maybeSingle();
+        if (sErr) return json({ ok: false, error: "Temporary error" }, 500);
         const signature = request.headers.get("x-comart-signature") || "";
-        const body = await request.text();
-        const expected = createHmac("sha256", store.webhook_secret).update(body).digest("hex");
-        try {
-          const a = Buffer.from(signature, "hex");
-          const b = Buffer.from(expected, "hex");
-          if (a.length !== b.length || !timingSafeEqual(a, b)) {
+        // Same response for unknown store and bad signature: no store enumeration.
+        if (!store?.webhook_secret || store.status !== "active" || !safeHexEqual(signature, hmacHex("sha256", store.webhook_secret, body))) {
+          if (store?.id) {
             await supabaseAdmin.from("webhook_deliveries").insert({
-              store_id: storeId, source: "wp-forms", status: "rejected",
-              payload: {}, error: "Invalid signature",
+              store_id: store.id, source: "wp-forms", status: "rejected", payload: {}, error: "Invalid signature",
             });
-            return new Response("Invalid signature", { status: 401, headers: corsHeaders });
           }
-        } catch {
-          return new Response("Invalid signature", { status: 401, headers: corsHeaders });
+          return json({ ok: false, error: "Unauthorized" }, 401);
         }
 
-        let payload: any = {};
-        try { payload = JSON.parse(body); } catch {
-          return new Response("Invalid JSON", { status: 400, headers: corsHeaders });
-        }
-
-        // WP Forms shape: { fields: { id: { name, value }, ... }, ... } OR flat object
-        const flat: Record<string, any> = {};
-        if (payload?.fields && typeof payload.fields === "object") {
-          for (const f of Object.values<any>(payload.fields)) {
-            if (f?.name) flat[String(f.name).toLowerCase().replace(/\s+/g, "_")] = f.value;
-          }
-        }
-        const merged = { ...payload, ...flat };
-
-        const name = pickField(merged, ["name","customer_name","full_name","first_name"]) || "Web lead";
-        const phone = pickField(merged, ["phone","customer_phone","mobile","whatsapp"]) || "—";
-        const address = pickField(merged, ["address","delivery_address","full_address"]);
-        const product = pickField(merged, ["product","product_name","item"]);
-        const qtyRaw = pickField(merged, ["quantity","qty"]);
-        const amountRaw = pickField(merged, ["amount","total","price"]);
-        const notes = pickField(merged, ["notes","message","comment"]);
+        const parsed = safeJsonParse(body);
+        if (!parsed.ok) return json({ ok: false, error: "Invalid JSON" }, 400);
+        const payload = parsed.value;
+        const dedupeKey = deliveryDedupeKey(payload, body);
 
         try {
-          // upsert customer
-          let customerId: string | null = null;
-          if (phone && phone !== "—") {
-            const { data: existing } = await supabaseAdmin.from("customers")
-              .select("id").eq("store_id", storeId).eq("phone", phone).maybeSingle();
-            if (existing) customerId = existing.id;
-          }
-          if (!customerId) {
-            const { data: c, error: cErr } = await supabaseAdmin.from("customers").insert({
-              store_id: storeId, name, phone, full_address: address || null,
-            }).select("id").single();
-            if (cErr) throw cErr;
-            customerId = c.id;
-          }
-
-          const qty = Number(qtyRaw || 1);
-          const amount = Number(amountRaw || 0);
-          const assignTo = await pickRoundRobinAssignee(storeId);
-
-          const { data: order, error: oErr } = await supabaseAdmin.from("orders").insert({
-            store_id: storeId, customer_id: customerId, customer_name: name,
-            amount, units: qty, notes: notes || null, status: "pending",
-            assigned_to: assignTo, assigned_at: assignTo ? new Date().toISOString() : null,
-          }).select("id").single();
-          if (oErr) throw oErr;
-
-          if (product) {
-            await supabaseAdmin.from("order_items").insert({
-              store_id: storeId, order_id: order.id,
-              product_name: product, quantity: qty, unit_price: amount / Math.max(qty,1),
-              subtotal: amount,
+          const result = await processWpFormsOrder(storeId, payload, undefined, { dedupeKey });
+          if (!result.duplicate) {
+            const { error: logErr } = await supabaseAdmin.from("webhook_deliveries").insert({
+              store_id: storeId, source: "wp-forms", status: result.ok ? "processed" : "failed",
+              payload,
+              result: result.ok ? { order_id: result.order_id, assigned_to: result.assigned_to, dedupe_key: dedupeKey } : { dedupe_key: dedupeKey },
+              error: result.ok ? null : result.error,
             });
+            if (logErr) console.error("[wp-forms-webhook] delivery log failed:", logErr.message);
           }
-
-          await supabaseAdmin.from("webhook_deliveries").insert({
-            store_id: storeId, source: "wp-forms", status: "processed",
-            payload, result: { order_id: order.id, assigned_to: assignTo },
-          });
-          return new Response(JSON.stringify({ ok: true, order_id: order.id }), {
-            status: 200, headers: { "Content-Type": "application/json", ...corsHeaders },
-          });
+          return result.ok
+            ? json({ ok: true, order_id: result.order_id, duplicate: !!result.duplicate })
+            : json({ ok: false, error: "Order could not be created" }, 500);
         } catch (e: any) {
-          await supabaseAdmin.from("webhook_deliveries").insert({
-            store_id: storeId, source: "wp-forms", status: "failed",
-            payload, error: e?.message || String(e),
-          });
           await captureServerException(e, {
             tags: { route: "wp-forms-webhook", kind: "webhook", source: "wp-forms" },
             extra: { storeId, payload_keys: Object.keys(payload || {}) },
-            user: { id: storeId },
             request: { url: request.url, method: request.method },
             fingerprint: ["wp-forms-webhook"],
           });
-          return new Response(JSON.stringify({ ok: false, error: e?.message }), {
-            status: 500, headers: { "Content-Type": "application/json", ...corsHeaders },
-          });
+          return json({ ok: false, error: "Order could not be created" }, 500);
         }
       },
     },
