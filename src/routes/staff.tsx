@@ -39,6 +39,8 @@ function Staff() {
   const { store, user } = useAuth();
   const [members, setMembers] = useState<any[]>([]);
   const [invites, setInvites] = useState<any[]>([]);
+  const [canManageStaff, setCanManageStaff] = useState(false);
+  const [removingUserId, setRemovingUserId] = useState<string | null>(null);
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("sales_rep");
   const [expiryDays, setExpiryDays] = useState("7");
@@ -48,7 +50,15 @@ function Staff() {
   const sendEmailFn = useServerFn(sendInviteEmail);
 
   const load = async () => {
-    if (!store) return;
+    if (!store) {
+      setCanManageStaff(false);
+      return;
+    }
+    const { data: staffPermission } = await supabase.rpc("has_permission", {
+      _store_id: store.id,
+      _perm: "staff.manage",
+    });
+    setCanManageStaff(staffPermission === true);
     const { data: detail, error: detailErr } = await supabase.rpc("get_store_members_detail", { _store_id: store.id });
     if (detailErr) {
       console.error("members detail error", detailErr);
@@ -92,6 +102,32 @@ function Staff() {
     if (error) return toast.error(error.message);
     toast.success(suspend ? "Member suspended" : "Member reactivated");
     load();
+  };
+
+  const removeMember = async (m: any) => {
+    if (!store || !canManageStaff || m.user_id === user?.id) return;
+    const confirmed = window.confirm(
+      `Remove ${m.name} from this store? They will lose store access. Their order records will remain, but regular and call orders will be unassigned.`,
+    );
+    if (!confirmed) return;
+
+    setRemovingUserId(m.user_id);
+    try {
+      const { error } = await supabase.rpc("staff_remove_member", {
+        _store_id: store.id,
+        _user_id: m.user_id,
+      });
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+      toast.success(`${m.name} was removed from this store; their orders remain unassigned.`);
+      await load();
+    } catch {
+      toast.error("Could not remove this staff member. Please try again.");
+    } finally {
+      setRemovingUserId(null);
+    }
   };
 
   const sendEmail = async (token: string, email: string, roleKey: string) => {
@@ -191,7 +227,7 @@ function Staff() {
         <h2 className="font-semibold mb-4">Team members</h2>
         {members.length === 0 ? <p className="text-sm text-muted-foreground">No members yet.</p> : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm min-w-[720px]">
+            <table className="w-full text-sm min-w-[780px]">
               <thead className="text-left text-muted-foreground">
                 <tr>
                   <th className="py-2">Name</th>
@@ -201,6 +237,7 @@ function Staff() {
                   <th>Last active</th>
                   <th>Status</th>
                   <th className="text-right">Active</th>
+                  {canManageStaff && <th className="text-right">Remove</th>}
                 </tr>
               </thead>
               <tbody>
@@ -219,6 +256,22 @@ function Staff() {
                           : <Badge variant="default">Active</Badge>}
                     </td>
                     <td className="text-right"><Switch checked={!m.is_suspended} onCheckedChange={(v) => toggleSuspend(m, !v)} /></td>
+                    {canManageStaff && (
+                      <td className="text-right">
+                        {m.user_id !== user?.id && (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            title={`Remove ${m.name} from this store`}
+                            aria-label={`Remove ${m.name} from this store`}
+                            disabled={removingUserId === m.user_id}
+                            onClick={() => removeMember(m)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

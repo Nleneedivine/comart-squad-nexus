@@ -4,7 +4,7 @@ DO $$
 DECLARE
   ua uuid := gen_random_uuid(); ub uuid := gen_random_uuid(); uc uuid := gen_random_uuid();
   ud uuid := gen_random_uuid(); ue uuid := gen_random_uuid();
-  sa uuid; sb uuid; cust_b uuid; prod_a uuid; prod_b uuid; ord_b uuid; sup_a uuid; po_a uuid; poi_a uuid;
+  sa uuid; sb uuid; cust_b uuid; prod_a uuid; prod_b uuid; ord_b uuid; ord_a uuid; call_a uuid; sup_a uuid; po_a uuid; poi_a uuid;
   form_a uuid; per_a uuid; tok text; n int; ok boolean; j jsonb; t text; bal numeric; ref text;
   res text[] := '{}'; pass int := 0; fail int := 0; suite text;
 BEGIN
@@ -337,6 +337,23 @@ BEGIN
   EXECUTE 'RESET ROLE';
   ok := public.role_grants('hr','payroll.manage') AND NOT public.role_grants('sales_rep','payroll.manage');
   res := res || (suite||':hr_has_payroll_manage:'||ok); IF ok THEN pass:=pass+1; ELSE fail:=fail+1; END IF;
+
+  -- =============== N. staff removal and order assignment cleanup ===============
+  suite := 'N';
+  INSERT INTO public.orders(store_id, customer_name, amount, units, assigned_to, assigned_at)
+    VALUES (sa, 'Staff assignment test', 100, 1, uc, now()) RETURNING id INTO ord_a;
+  INSERT INTO public.call_orders(store_id, agent_user_id, agent_name)
+    VALUES (sa, uc, 'Staff assignment test') RETURNING id INTO call_a;
+  PERFORM set_config('request.jwt.claims', json_build_object('sub',ua,'role','authenticated')::text, true);
+  EXECUTE 'SET LOCAL ROLE authenticated';
+  PERFORM public.staff_remove_member(sa, uc);
+  EXECUTE 'RESET ROLE';
+  SELECT assigned_to IS NULL AND assigned_at IS NULL INTO ok FROM public.orders WHERE id = ord_a;
+  res := res || (suite||':regular_order_retained_and_unassigned:'||ok); IF ok THEN pass:=pass+1; ELSE fail:=fail+1; END IF;
+  SELECT agent_user_id IS NULL AND agent_name IS NULL INTO ok FROM public.call_orders WHERE id = call_a;
+  res := res || (suite||':call_order_retained_and_unassigned:'||ok); IF ok THEN pass:=pass+1; ELSE fail:=fail+1; END IF;
+  SELECT NOT EXISTS (SELECT 1 FROM public.user_roles WHERE store_id=sa AND user_id=uc) INTO ok;
+  res := res || (suite||':staff_membership_removed:'||ok); IF ok THEN pass:=pass+1; ELSE fail:=fail+1; END IF;
 
   RAISE EXCEPTION 'TEST_RESULTS pass=% fail=% | %', pass, fail, array_to_string(res, ' | ');
 END $$;

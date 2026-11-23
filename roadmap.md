@@ -1,6 +1,4 @@
 # Roadmap
-- [ ] Apply security_hardening_stage1 migration (written, not applied)
-- [ ] Update wallet, staff, settings, invite, public form, store pages to new secure functions
-- [ ] Update Paystack fund/verify/withdraw/webhook to secure functions
-- [ ] Two-store isolation test script + run
-- [ ] Lint/build + final report
+- [ ] Add store-permission-gated staff removal on Staff Management.
+- [ ] Clear removed staff assignments from regular and call orders without deleting records.
+- [ ] Add regression coverage and verify the app.
