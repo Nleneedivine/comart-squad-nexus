@@ -114,11 +114,17 @@ export const Route = createFileRoute("/api/public/paystack-webhook")({
                   }).eq("id", row.id).eq("paystack_reference", reference);
                   if (upErr) throw new RetryableError(upErr.message);
                   outcome = "activated";
-                  const { error: nErr } = await supabaseAdmin.from("notifications").insert({
-                    store_id: row.store_id, user_id: null,
-                    title: "Integration activated", body: `${row.integration_key} is now active.`, kind: "success",
-                  });
-                  if (nErr) console.error("[paystack-webhook] notification failed:", nErr.message);
+                  const { data: store, error: storeErr } = await supabaseAdmin.from("stores")
+                    .select("owner_id").eq("id", row.store_id).maybeSingle();
+                  if (storeErr) {
+                    console.error("[paystack-webhook] notification recipient lookup failed:", storeErr.message);
+                  } else if (store?.owner_id) {
+                    const { error: nErr } = await supabaseAdmin.from("notifications").insert({
+                      store_id: row.store_id, user_id: store.owner_id,
+                      title: "Integration activated", body: `${row.integration_key} is now active.`, kind: "success",
+                    });
+                    if (nErr) console.error("[paystack-webhook] notification failed:", nErr.message);
+                  }
                 }
               }
             }
