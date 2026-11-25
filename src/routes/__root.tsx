@@ -1,9 +1,11 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import { lazy } from "react";
 import appCss from "../styles.css?url";
 import { AuthProvider } from "@/hooks/useAuth";
 import { Toaster } from "@/components/ui/sonner";
-import RouteErrorBoundary from "@/components/RouteErrorBoundary";
 import { SentryErrorBoundary } from "@/lib/sentry";
+
+const LazyRouteErrorBoundary = lazy(() => import("@/components/RouteErrorBoundary"));
 
 function NotFoundComponent() {
   return (
@@ -53,7 +55,7 @@ export const Route = createRootRoute({
     </SentryErrorBoundary>
   ),
   notFoundComponent: NotFoundComponent,
-  errorComponent: RouteErrorBoundary,
+  errorComponent: LazyRouteErrorBoundary,
 });
 
 function RootShell({ children }: { children: React.ReactNode }) {

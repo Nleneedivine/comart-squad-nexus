@@ -1,11 +1,13 @@
 import { createRouter, useRouter } from "@tanstack/react-router";
+import { lazy } from "react";
 import { routeTree } from "./routeTree.gen";
 import { initSentry } from "@/lib/sentry";
 
 initSentry();
 
-function DefaultErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
+function DefaultErrorComponent({ error, reset }: { error: unknown; reset: () => void }) {
   const router = useRouter();
+  const errorMessage = error instanceof Error ? error.message : "";
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -30,9 +32,9 @@ function DefaultErrorComponent({ error, reset }: { error: Error; reset: () => vo
         <p className="mt-2 text-sm text-muted-foreground">
           An unexpected error occurred. Please try again.
         </p>
-        {import.meta.env.DEV && error.message && (
+        {import.meta.env.DEV && errorMessage && (
           <pre className="mt-4 max-h-40 overflow-auto rounded-md bg-muted p-3 text-left font-mono text-xs text-destructive">
-            {error.message}
+            {errorMessage}
           </pre>
         )}
         <div className="mt-6 flex items-center justify-center gap-3">
@@ -57,13 +59,15 @@ function DefaultErrorComponent({ error, reset }: { error: Error; reset: () => vo
   );
 }
 
+const LazyDefaultErrorComponent = lazy(() => Promise.resolve({ default: DefaultErrorComponent }));
+
 export const getRouter = () => {
   const router = createRouter({
     routeTree,
     context: {},
     scrollRestoration: true,
     defaultPreloadStaleTime: 0,
-    defaultErrorComponent: DefaultErrorComponent,
+    defaultErrorComponent: LazyDefaultErrorComponent,
   });
 
   return router;

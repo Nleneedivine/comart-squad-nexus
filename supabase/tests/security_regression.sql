@@ -340,6 +340,11 @@ BEGIN
 
   -- =============== N. staff removal and order assignment cleanup ===============
   suite := 'N';
+  PERFORM set_config('request.jwt.claims', json_build_object('sub',uc,'role','authenticated')::text, true);
+  EXECUTE 'SET LOCAL ROLE authenticated';
+  BEGIN PERFORM public.staff_remove_member(sa, ud); ok:=false; EXCEPTION WHEN others THEN ok:=true; END;
+  res := res || (suite||':rep_cannot_remove_staff:'||ok); IF ok THEN pass:=pass+1; ELSE fail:=fail+1; END IF;
+  EXECUTE 'RESET ROLE';
   INSERT INTO public.orders(store_id, customer_name, amount, units, assigned_to, assigned_at)
     VALUES (sa, 'Staff assignment test', 100, 1, uc, now()) RETURNING id INTO ord_a;
   INSERT INTO public.call_orders(store_id, agent_user_id, agent_name)

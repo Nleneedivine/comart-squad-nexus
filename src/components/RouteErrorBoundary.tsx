@@ -3,8 +3,9 @@ import { useRouter } from "@tanstack/react-router";
 import { AlertTriangle } from "lucide-react";
 import { captureError } from "@/lib/sentry";
 
-export default function RouteErrorBoundary({ error, reset }: { error: Error; reset: () => void }) {
+export default function RouteErrorBoundary({ error, reset }: { error: unknown; reset: () => void }) {
   const router = useRouter();
+  const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred.";
 
   useEffect(() => {
     captureError(error, {
@@ -21,7 +22,7 @@ export default function RouteErrorBoundary({ error, reset }: { error: Error; res
       <div className="max-w-md text-center space-y-3">
         <AlertTriangle className="mx-auto h-10 w-10 text-destructive" />
         <h1 className="text-2xl font-bold">Something went wrong</h1>
-        <p className="text-sm text-muted-foreground break-words">{error?.message || "An unexpected error occurred."}</p>
+        <p className="text-sm text-muted-foreground break-words">{errorMessage}</p>
         <div className="flex gap-2 justify-center">
           <button onClick={() => { router.invalidate(); reset(); }} className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground">Retry</button>
           <button onClick={() => (window.location.href = "/")} className="rounded-md border px-4 py-2 text-sm">Go home</button>
